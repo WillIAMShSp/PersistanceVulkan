@@ -1,0 +1,131 @@
+#pragma once
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+
+#include <iostream>
+#include <vector>
+
+#include "DebugUtilsMessengerEXT.h"
+
+#define BREAK __debugbreak();
+
+const uint32_t screenwidth = 800;
+const uint32_t screenheight = 600;
+
+const std::vector<const char*> m_validationlayers = {
+	"VK_LAYER_KHRONOS_validation"
+};
+
+
+#ifdef NDEBUG
+const bool enablevalidationlayers = false;
+#else
+const bool enablevalidationlayers = true;
+#endif
+
+
+
+
+class Application
+{
+public:
+	void run()
+	{
+		InitWindow();
+		InitVulkan();
+		MainLoop();
+		CleanUp();
+
+	}
+
+private:
+
+	void InitWindow()
+	{
+		glfwInit();
+
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+
+		m_window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+
+		std::cout << "initialized window";
+		
+
+
+
+	}
+
+	void InitVulkan()
+	{
+		CreateInstance();
+		SetUpDebugCallBack();
+		SelectPhysicalDevice();
+
+	}
+
+
+
+	void MainLoop()
+	{
+		while (!glfwWindowShouldClose(m_window)) {
+			glfwPollEvents();
+		}
+
+
+
+
+	}
+
+	void CleanUp()
+	{
+		if (enablevalidationlayers) {
+			//DestroyDebugUtilsMessengerEXT(m_instance, debugmessenger, nullptr);
+			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
+		}
+
+		vkDestroyInstance(m_instance, nullptr);
+
+		glfwDestroyWindow(m_window);
+
+		glfwTerminate();
+
+	}
+
+	void SetUpDebugCallBack();
+
+	void CreateInstance();
+
+	bool CheckValidationLayers();
+
+	std::vector<const char*> GetRequiredInstanceExtensions();
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallBack(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData);
+
+	void SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateInfoEXT& createinfo);
+
+	void SelectPhysicalDevice();
+	
+private:
+
+	GLFWwindow* m_window;
+	VkInstance m_instance;
+	VkDebugUtilsMessengerEXT debugmessenger;
+	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
+
+private:
+	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
+	float RateDevice(VkPhysicalDevice& physicaldevice);
+
+
+};
