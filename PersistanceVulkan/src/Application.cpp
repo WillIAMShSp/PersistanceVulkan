@@ -242,6 +242,9 @@ void Application::SelectPhysicalDevice()
 
 float Application::RateDevice(VkPhysicalDevice& physicaldevice)
 {
+
+	
+
 	uint32_t score = 0;
 
 	VkPhysicalDeviceProperties properties;
@@ -264,8 +267,87 @@ float Application::RateDevice(VkPhysicalDevice& physicaldevice)
 	}
 
 
+	const auto& devicefamilies = FindQueueFamilies(physicaldevice);
+	
+	if (devicefamilies.graphicsfamily.has_value())
+	{
+		score += 100;
+
+
+	}
+
+	if (devicefamilies.computefamily.has_value())
+	{
+		score += 100;
+
+
+	}
+
+	if (devicefamilies.transferfamily.has_value())
+	{
+		score += 100;
+
+	}
+
+
+
 
 	return score;
+}
+
+QueueFamilyIndices Application::FindQueueFamilies(VkPhysicalDevice& physicaldevice)
+{
+	QueueFamilyIndices indices;
+
+	uint32_t familycount;
+
+	vkGetPhysicalDeviceQueueFamilyProperties(physicaldevice, &familycount, nullptr);
+
+	std::vector<VkQueueFamilyProperties>familyproperties(familycount);
+
+	vkGetPhysicalDeviceQueueFamilyProperties(physicaldevice, &familycount, familyproperties.data());
+
+	for (int i = 0; i < familycount; i++)
+	{
+		if (familyproperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphicsfamily = i;
+
+
+		}
+		else if (familyproperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			indices.computefamily = i;
+		}
+		
+		else if (familyproperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			indices.transferfamily = i;
+
+		}
+
+
+		// well a switch statement would be ideal honestly
+
+		//switch (queueflag)// & VK_QUEUE_GRAPHICS_BIT)
+		//{
+		// case (const char)queueflag & VK_QUEUE_GRAPHICS_BIT:
+		//	indices.graphicsfamily = i;
+		//	break; 
+		// case VK_QUEUE_COMPUTE_BIT:
+		//	 indices.computefamily = i;
+		//	 break;
+		// case VK_QUEUE_TRANSFER_BIT:
+		//	 indices.transferfamily = i;
+		//	 break;
+
+		//}
+
+
+	}
+
+
+	return indices;
 }
 
 //bool Application::IsDeviceSuitable(VkPhysicalDevice& physicaldevice)

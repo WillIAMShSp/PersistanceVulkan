@@ -10,8 +10,10 @@
 
 #include <iostream>
 #include <vector>
+#include <optional>
 
 #include "DebugUtilsMessengerEXT.h"
+
 
 #define BREAK __debugbreak();
 
@@ -29,7 +31,14 @@ const bool enablevalidationlayers = false;
 const bool enablevalidationlayers = true;
 #endif
 
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsfamily;
+	std::optional<uint32_t> computefamily;
+	std::optional<uint32_t> transferfamily;
 
+
+};
 
 
 class Application
@@ -55,7 +64,7 @@ private:
 
 		m_window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
-		std::cout << "initialized window";
+		std::cout << "Initialized Window \n";
 		
 
 
@@ -98,6 +107,8 @@ private:
 
 	}
 
+private:
+
 	void SetUpDebugCallBack();
 
 	void CreateInstance();
@@ -116,16 +127,20 @@ private:
 
 	void SelectPhysicalDevice();
 	
+	float RateDevice(VkPhysicalDevice& physicaldevice);
+
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice& physicaldevice);
+
 private:
 
-	GLFWwindow* m_window;
-	VkInstance m_instance;
+	GLFWwindow* m_window = nullptr;
+	VkInstance m_instance = nullptr;
 	VkDebugUtilsMessengerEXT debugmessenger;
 	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
 
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
-	float RateDevice(VkPhysicalDevice& physicaldevice);
+	
 
 
 };
