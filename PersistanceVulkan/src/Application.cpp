@@ -218,10 +218,11 @@ void Application::SelectPhysicalDevice()
 			bestscore = devicescore;
 			
 			m_physicaldevice = physicaldevices[i];
+
 			
 		}
 
-
+		m_queuefamilyindices = FindQueueFamilies(m_physicaldevice);
 
 
 		if (m_physicaldevice == nullptr)
@@ -266,24 +267,25 @@ float Application::RateDevice(VkPhysicalDevice& physicaldevice)
 
 	}
 
-
-	const auto& devicefamilies = FindQueueFamilies(physicaldevice);
 	
-	if (devicefamilies.graphicsfamily.has_value())
+
+	m_queuefamilyindices = FindQueueFamilies(physicaldevice);
+	
+	if (m_queuefamilyindices.graphicsfamily.has_value())
 	{
 		score += 100;
 
 
 	}
 
-	if (devicefamilies.computefamily.has_value())
+	if (m_queuefamilyindices.computefamily.has_value())
 	{
 		score += 100;
 
 
 	}
 
-	if (devicefamilies.transferfamily.has_value())
+	if (m_queuefamilyindices.transferfamily.has_value())
 	{
 		score += 100;
 
@@ -349,6 +351,58 @@ QueueFamilyIndices Application::FindQueueFamilies(VkPhysicalDevice& physicaldevi
 
 	return indices;
 }
+
+void Application::CreateLogicalDevice()
+{
+
+	VkDeviceQueueCreateInfo devicequeuecreateinfo{};
+	devicequeuecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	devicequeuecreateinfo.queueFamilyIndex = m_queuefamilyindices.graphicsfamily.value();
+	devicequeuecreateinfo.queueCount = 1;
+	
+	float queuepriority = 1.0;
+	devicequeuecreateinfo.pQueuePriorities = &queuepriority;
+
+	VkPhysicalDeviceFeatures devicefeatures{};
+
+	VkDeviceCreateInfo devicecreateinfo{};
+
+	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	devicecreateinfo.pQueueCreateInfos = &devicequeuecreateinfo;
+	devicecreateinfo.queueCreateInfoCount = 1;
+
+	devicecreateinfo.pEnabledFeatures = &devicefeatures;
+
+	devicecreateinfo.enabledExtensionCount = 0;
+	
+	if (enablevalidationlayers) {
+		devicecreateinfo.enabledLayerCount = static_cast<uint32_t>(m_validationlayers.size());
+		devicecreateinfo.ppEnabledLayerNames = m_validationlayers.data();
+	}
+	else {
+		devicecreateinfo.enabledLayerCount = 0;
+	}
+
+
+
+	if (vkCreateDevice(m_physicaldevice, &devicecreateinfo, nullptr, &m_device) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Could not create logical device");
+
+	}
+
+	vkGetDeviceQueue(m_device, m_queuefamilyindices.graphicsfamily.value(), 0, &m_graphicsqueue);
+
+
+	
+
+	
+}
+
+
+
+
+
 
 //bool Application::IsDeviceSuitable(VkPhysicalDevice& physicaldevice)
 //{

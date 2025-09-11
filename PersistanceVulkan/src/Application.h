@@ -76,6 +76,7 @@ private:
 		CreateInstance();
 		SetUpDebugCallBack();
 		SelectPhysicalDevice();
+		CreateLogicalDevice();
 
 	}
 
@@ -98,6 +99,8 @@ private:
 			//DestroyDebugUtilsMessengerEXT(m_instance, debugmessenger, nullptr);
 			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
 		}
+
+		vkDestroyDevice(m_device, nullptr);
 
 		vkDestroyInstance(m_instance, nullptr);
 
@@ -131,12 +134,17 @@ private:
 
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice& physicaldevice);
 
+	void CreateLogicalDevice();
+
 private:
 
 	GLFWwindow* m_window = nullptr;
 	VkInstance m_instance = nullptr;
 	VkDebugUtilsMessengerEXT debugmessenger;
 	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
+	QueueFamilyIndices m_queuefamilyindices;
+	VkDevice m_device;
+	VkQueue m_graphicsqueue;
 
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
