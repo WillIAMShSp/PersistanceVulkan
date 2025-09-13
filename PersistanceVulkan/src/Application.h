@@ -10,7 +10,9 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 #include <optional>
+#include <set>
 
 #include "DebugUtilsMessengerEXT.h"
 
@@ -34,9 +36,10 @@ const bool enablevalidationlayers = true;
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsfamily;
+	std::optional<uint32_t> presentfamily;
 	std::optional<uint32_t> computefamily;
 	std::optional<uint32_t> transferfamily;
-
+	
 
 };
 
@@ -75,6 +78,7 @@ private:
 	{
 		CreateInstance();
 		SetUpDebugCallBack();
+		CreateSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
 
@@ -102,6 +106,7 @@ private:
 
 		vkDestroyDevice(m_device, nullptr);
 
+		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 		vkDestroyInstance(m_instance, nullptr);
 
 		glfwDestroyWindow(m_window);
@@ -130,11 +135,15 @@ private:
 
 	void SelectPhysicalDevice();
 	
-	float RateDevice(VkPhysicalDevice& physicaldevice);
+	bool RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle = nullptr);
 
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice& physicaldevice);
 
+	bool DeviceExtensionSupport(VkPhysicalDevice& physicaldevice);
+
 	void CreateLogicalDevice();
+	
+	void CreateSurface();
 
 private:
 
@@ -143,8 +152,17 @@ private:
 	VkDebugUtilsMessengerEXT debugmessenger;
 	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
 	QueueFamilyIndices m_queuefamilyindices;
+
+
 	VkDevice m_device;
 	VkQueue m_graphicsqueue;
+	VkQueue m_presentqueue;
+	VkSurfaceKHR m_surface;
+
+	const std::vector<const char*> m_deviceextensions
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
