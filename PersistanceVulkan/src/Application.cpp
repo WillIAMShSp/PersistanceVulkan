@@ -229,7 +229,7 @@ void Application::SelectPhysicalDevice()
 				
 				if (enablevalidationlayers)
 				{
-					std::cout << "\n  Using: " << deviceproperties.deviceName << "\n \n";
+					std::cout << "\n  Using Device: " << deviceproperties.deviceName << "\n \n";
 					
 				}
 
@@ -337,11 +337,35 @@ bool Application::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scoreha
 
 	}
 
+	bool isswapchainadequate = false;
+
+
 	if (!requiredextensionsupport)
 	{
 		return false;
 
 	}
+
+	else
+	{
+
+		SwapChainSupportDetails swapchainsupport = QuerySwapChainSupport(physicaldevice);
+
+		isswapchainadequate = !swapchainsupport.surfaceformat.empty() && !swapchainsupport.presentmode.empty();
+
+
+	}
+
+
+	if (!isswapchainadequate)
+	{
+		return false;
+
+	}
+	
+
+
+
 
 	scorehandle = score;
 
@@ -537,6 +561,42 @@ void Application::CreateSurface()
 
 	}
 
+}
+
+SwapChainSupportDetails Application::QuerySwapChainSupport(VkPhysicalDevice& physicaldevice)
+{
+	SwapChainSupportDetails details{};
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicaldevice, m_surface, &details.surfacecapabilities);
+
+	uint32_t formatcount = 0;
+	
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physicaldevice, m_surface, &formatcount, nullptr);
+
+	if (formatcount != 0)
+	{
+		details.surfaceformat.resize(formatcount);
+
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physicaldevice, m_surface, &formatcount, details.surfaceformat.data());
+	}
+
+	uint32_t presentcount = 0;
+
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicaldevice, m_surface, &presentcount, nullptr);
+
+	if (presentcount != 0)
+	{
+
+		details.presentmode.resize(presentcount);
+
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physicaldevice, m_surface, &presentcount, details.presentmode.data());
+
+	}
+
+
+
+
+	return details;
 }
 
 

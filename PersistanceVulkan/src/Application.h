@@ -42,6 +42,13 @@ struct QueueFamilyIndices
 	
 
 };
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR surfacecapabilities;
+	std::vector<VkSurfaceFormatKHR> surfaceformat;
+	std::vector<VkPresentModeKHR> presentmode;
+
+};
 
 
 class Application
@@ -144,6 +151,9 @@ private:
 	void CreateLogicalDevice();
 	
 	void CreateSurface();
+	
+	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice& physicaldevice);
+
 
 private:
 
