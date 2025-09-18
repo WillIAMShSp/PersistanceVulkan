@@ -13,6 +13,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <algorithm>
 
 #include "DebugUtilsMessengerEXT.h"
 
@@ -88,6 +89,7 @@ private:
 		CreateSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
+		CreateSwapChain();
 
 	}
 
@@ -111,6 +113,8 @@ private:
 			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
 		}
 
+		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
 		vkDestroyDevice(m_device, nullptr);
 
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -127,6 +131,8 @@ private:
 	void SetUpDebugCallBack();
 
 	void CreateInstance();
+
+	void CreateSwapChain();
 
 	bool CheckValidationLayers();
 
@@ -154,6 +160,12 @@ private:
 	
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice& physicaldevice);
 
+	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableformats);
+
+	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablepresentmodes);
+
+	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities);
+
 
 private:
 
@@ -168,6 +180,11 @@ private:
 	VkQueue m_graphicsqueue;
 	VkQueue m_presentqueue;
 	VkSurfaceKHR m_surface;
+	VkSwapchainKHR m_swapchain;
+	std::vector<VkImage> m_swapchainimages;
+	VkFormat m_swapchainimageformat;
+	VkExtent2D m_swapchainextent;
+
 
 	const std::vector<const char*> m_deviceextensions
 	{
