@@ -193,6 +193,50 @@ void Application::CreateSwapChain()
 
 }
 
+void Application::CreateImageViews()
+{
+	m_swapchainimageviews.resize(m_swapchainimages.size());
+
+	for (int i = 0; i < m_swapchainimages.size(); i++)
+	{
+		VkImageViewCreateInfo createinfo{};
+		createinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createinfo.image = m_swapchainimages[i];
+		
+		createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createinfo.format = m_swapchainimageformat;
+
+		createinfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createinfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createinfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createinfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createinfo.subresourceRange.baseArrayLayer = 0;
+		createinfo.subresourceRange.layerCount = 1;
+		createinfo.subresourceRange.levelCount = 1;
+		createinfo.subresourceRange.baseMipLevel = 0;
+
+		if (vkCreateImageView(m_device, &createinfo, nullptr, &m_swapchainimageviews[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create Image View");
+
+		}
+
+
+
+
+	}
+
+
+
+
+}
+
+void Application::CreateGraphicsPipeline()
+{
+}
+
 bool Application::CheckValidationLayers()
 {
 

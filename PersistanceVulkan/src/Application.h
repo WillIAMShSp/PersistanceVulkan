@@ -90,6 +90,8 @@ private:
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
 		CreateSwapChain();
+		CreateImageViews();
+		CreateGraphicsPipeline();
 
 	}
 
@@ -108,20 +110,29 @@ private:
 
 	void CleanUp()
 	{
-		if (enablevalidationlayers) {
-			//DestroyDebugUtilsMessengerEXT(m_instance, debugmessenger, nullptr);
-			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
+		
+		for (const auto& imageviews : m_swapchainimageviews)
+		{
+			vkDestroyImageView(m_device, imageviews, nullptr);
+
 		}
 
 		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
 		vkDestroyDevice(m_device, nullptr);
 
+		if (enablevalidationlayers) {
+			//DestroyDebugUtilsMessengerEXT(m_instance, debugmessenger, nullptr);
+			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
+		}
+
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
 		vkDestroyInstance(m_instance, nullptr);
 
 		glfwDestroyWindow(m_window);
 
+		
 		glfwTerminate();
 
 	}
@@ -133,6 +144,10 @@ private:
 	void CreateInstance();
 
 	void CreateSwapChain();
+
+	void CreateImageViews();
+
+	void CreateGraphicsPipeline();
 
 	bool CheckValidationLayers();
 
@@ -184,6 +199,8 @@ private:
 	std::vector<VkImage> m_swapchainimages;
 	VkFormat m_swapchainimageformat;
 	VkExtent2D m_swapchainextent;
+	std::vector<VkImageView> m_swapchainimageviews;
+
 
 
 	const std::vector<const char*> m_deviceextensions
