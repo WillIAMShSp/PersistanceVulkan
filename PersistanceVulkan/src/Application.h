@@ -14,8 +14,11 @@
 #include <optional>
 #include <set>
 #include <algorithm>
+#include <fstream>
 
 #include "DebugUtilsMessengerEXT.h"
+
+
 
 
 #define BREAK __debugbreak();
@@ -180,6 +183,10 @@ private:
 	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablepresentmodes);
 
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities);
+
+	static std::vector<char> ReadFile(const std::string& filepath);
+	
+	VkShaderModule CreateShaderModule(const std::vector<char>& shaderfile);
 
 
 private:

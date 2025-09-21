@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src;$(SolutionDir)Include;$(SolutionDir)Include\GLFW;$(SolutionDir)Include\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;res;$(SolutionDir)Include;$(SolutionDir)Include\GLFW;$(SolutionDir)Include\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src;$(SolutionDir)Include;$(SolutionDir)Include\GLFW;$(SolutionDir)Include\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;res;$(SolutionDir)Include;$(SolutionDir)Include\GLFW;$(SolutionDir)Include\Vulkan;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -137,6 +137,13 @@
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\DebugUtilsMessengerEXT.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\Shaders\basicfrag.spv" />
+    <None Include="res\Shaders\BasicFragment.frag" />
+    <None Include="res\Shaders\basicvert.spv" />
+    <None Include="res\Shaders\BasicVertex.vert" />
+    <None Include="res\Shaders\compile.bat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

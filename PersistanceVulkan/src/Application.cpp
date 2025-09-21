@@ -235,6 +235,32 @@ void Application::CreateImageViews()
 
 void Application::CreateGraphicsPipeline()
 {
+	const auto vertexshaderfile = ReadFile("Shaders/basicvert.spv");
+	const auto fragmentshaderfile = ReadFile("Shaders/basicfrag.spv");
+
+	VkShaderModule vertexmodule = CreateShaderModule(vertexshaderfile);
+	VkShaderModule fragmentmodule = CreateShaderModule(fragmentshaderfile);
+
+	VkPipelineShaderStageCreateInfo vertcreateinfo{};
+	vertcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertcreateinfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertcreateinfo.module = vertexmodule;
+	vertcreateinfo.pName = "main";
+
+
+	VkPipelineShaderStageCreateInfo fragcreateinfo{};
+	fragcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragcreateinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragcreateinfo.module = fragmentmodule;
+	fragcreateinfo.pName = "main";
+
+
+	VkPipelineShaderStageCreateInfo shaderstages[] = {vertcreateinfo, fragcreateinfo};
+	
+	vkDestroyShaderModule(m_device, vertexmodule, nullptr);
+	vkDestroyShaderModule(m_device, fragmentmodule, nullptr);
+
+
 }
 
 bool Application::CheckValidationLayers()
@@ -814,6 +840,55 @@ VkExtent2D Application::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surface
 
 	}
 
+
+
+
+}
+
+std::vector<char> Application::ReadFile(const std::string& filepath)
+{
+	std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+
+;
+	if (!file.is_open())
+	{
+		std::cout << filepath << "\n";
+
+
+		throw std::runtime_error("failed to read the file");
+
+	}
+
+
+	size_t filesize = (size_t)file.tellg();
+
+	std::vector<char> buffer(filesize);
+
+
+	file.seekg(0);
+	file.read(buffer.data(), filesize);
+
+	file.close();
+
+
+	
+	
+}
+
+VkShaderModule Application::CreateShaderModule(const std::vector<char>& shaderfile)
+{
+
+	VkShaderModuleCreateInfo createinfo{};
+	createinfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createinfo.codeSize = shaderfile.size();
+	createinfo.pCode = reinterpret_cast<const uint32_t*> (shaderfile.data());
+
+	VkShaderModule shadermodule;
+	
+	if (vkCreateShaderModule(m_device, &createinfo, nullptr, &shadermodule) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create shader module");
+	}
 
 
 
