@@ -257,6 +257,40 @@ void Application::CreateGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo shaderstages[] = {vertcreateinfo, fragcreateinfo};
 	
+
+	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
+	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	
+	inputvertexcreateinfo.vertexBindingDescriptionCount = 0;
+	inputvertexcreateinfo.pVertexBindingDescriptions = nullptr;
+	
+	inputvertexcreateinfo.vertexAttributeDescriptionCount = 0;
+	inputvertexcreateinfo.pVertexAttributeDescriptions = nullptr;
+
+
+	VkPipelineInputAssemblyStateCreateInfo inputassemblycreateinfo{};
+	inputassemblycreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputassemblycreateinfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputassemblycreateinfo.primitiveRestartEnable = VK_FALSE;
+
+
+	VkViewport viewport{};
+	viewport.x = 0.f;
+	viewport.y = 0.f;
+	viewport.minDepth = 0.f;
+	viewport.maxDepth = 1.f;
+	viewport.width = (float)m_swapchainextent.width;
+	viewport.height = (float)m_swapchainextent.height;
+
+	VkRect2D scissor{};
+	scissor.offset = { 0,0 };
+	scissor.extent = m_swapchainextent;
+
+
+
+
+
+
 	vkDestroyShaderModule(m_device, vertexmodule, nullptr);
 	vkDestroyShaderModule(m_device, fragmentmodule, nullptr);
 
