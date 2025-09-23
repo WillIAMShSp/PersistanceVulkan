@@ -235,8 +235,8 @@ void Application::CreateImageViews()
 
 void Application::CreateGraphicsPipeline()
 {
-	const auto vertexshaderfile = ReadFile("Shaders/basicvert.spv");
-	const auto fragmentshaderfile = ReadFile("Shaders/basicfrag.spv");
+	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
+	const auto fragmentshaderfile = ReadFile("res/Shaders/basicfrag.spv");
 
 	VkShaderModule vertexmodule = CreateShaderModule(vertexshaderfile);
 	VkShaderModule fragmentmodule = CreateShaderModule(fragmentshaderfile);
@@ -870,6 +870,8 @@ std::vector<char> Application::ReadFile(const std::string& filepath)
 
 	file.close();
 
+	return buffer;
+
 
 	
 	
@@ -889,7 +891,8 @@ VkShaderModule Application::CreateShaderModule(const std::vector<char>& shaderfi
 	{
 		throw std::runtime_error("Failed to create shader module");
 	}
-
+	
+	return shadermodule;
 
 
 }
