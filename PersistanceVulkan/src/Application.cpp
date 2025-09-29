@@ -258,6 +258,21 @@ void Application::CreateGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo shaderstages[] = {vertcreateinfo, fragcreateinfo};
 	
 
+	std::vector<VkDynamicState> dynamicstates =
+	{
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicstatecreateinfo{};
+	dynamicstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicstatecreateinfo.dynamicStateCount = static_cast<uint32_t>(dynamicstates.size());
+	dynamicstatecreateinfo.pDynamicStates = dynamicstates.data();
+
+
+
+
 	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
 	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	
@@ -287,6 +302,74 @@ void Application::CreateGraphicsPipeline()
 	scissor.extent = m_swapchainextent;
 
 
+	VkPipelineViewportStateCreateInfo viewportcreateinfo{};
+	viewportcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportcreateinfo.viewportCount = 1;
+	viewportcreateinfo.scissorCount = 1;
+
+	VkPipelineRasterizationStateCreateInfo rastercreateinfo{};
+	rastercreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rastercreateinfo.depthClampEnable = VK_FALSE;
+	rastercreateinfo.polygonMode = VK_POLYGON_MODE_FILL;
+	rastercreateinfo.lineWidth = 1.0f;
+	rastercreateinfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rastercreateinfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rastercreateinfo.rasterizerDiscardEnable = VK_FALSE;
+
+	rastercreateinfo.depthBiasClamp = VK_FALSE;
+	rastercreateinfo.depthBiasEnable = VK_FALSE;
+	rastercreateinfo.depthBiasSlopeFactor = 0.f;
+	rastercreateinfo.depthBiasConstantFactor = 0.f;
+
+	
+
+	VkPipelineMultisampleStateCreateInfo multisamplecreateinfo{};
+	multisamplecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisamplecreateinfo.sampleShadingEnable = VK_FALSE;
+	multisamplecreateinfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisamplecreateinfo.minSampleShading = 1.0f;
+	multisamplecreateinfo.pSampleMask = nullptr;
+	multisamplecreateinfo.alphaToCoverageEnable = VK_FALSE;
+	multisamplecreateinfo.alphaToOneEnable = VK_FALSE;
+
+
+	VkPipelineColorBlendAttachmentState colorblendattachment{};
+	colorblendattachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+	colorblendattachment.blendEnable = VK_TRUE;
+	
+	colorblendattachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorblendattachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+	colorblendattachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorblendattachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+
+	colorblendattachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorblendattachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+
+
+	VkPipelineColorBlendStateCreateInfo colorblendcreateinfo{};
+	colorblendcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorblendcreateinfo.attachmentCount = 1;
+	colorblendcreateinfo.logicOpEnable = VK_FALSE;
+	colorblendcreateinfo.logicOp = VK_LOGIC_OP_COPY;
+	colorblendcreateinfo.pAttachments = &colorblendattachment;
+	colorblendcreateinfo.blendConstants[0] = 0.0f;
+	colorblendcreateinfo.blendConstants[1] = 0.0f;
+	colorblendcreateinfo.blendConstants[2] = 0.0f;
+	colorblendcreateinfo.blendConstants[3] = 0.0f;
+
+	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
+	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelinelayoutcreateinfo.setLayoutCount = 0;
+	pipelinelayoutcreateinfo.pSetLayouts = nullptr;
+	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
+	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
+
+	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &m_pipelinelayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create pipeline layout!");
+	}
 
 
 

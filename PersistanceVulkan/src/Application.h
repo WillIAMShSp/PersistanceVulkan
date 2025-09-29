@@ -114,6 +114,8 @@ private:
 	void CleanUp()
 	{
 		
+		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
+
 		for (const auto& imageviews : m_swapchainimageviews)
 		{
 			vkDestroyImageView(m_device, imageviews, nullptr);
@@ -207,6 +209,8 @@ private:
 	VkFormat m_swapchainimageformat;
 	VkExtent2D m_swapchainextent;
 	std::vector<VkImageView> m_swapchainimageviews;
+	VkPipelineLayout m_pipelinelayout;
+
 
 
 
