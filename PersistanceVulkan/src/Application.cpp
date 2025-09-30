@@ -233,6 +233,47 @@ void Application::CreateImageViews()
 
 }
 
+void Application::CreateRenderPass()
+{
+	VkAttachmentDescription colorattachment{};
+	colorattachment.format = m_swapchainimageformat;
+	colorattachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorattachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorattachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+	colorattachment.stencilLoadOp= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorattachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	colorattachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorattachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+
+	VkAttachmentReference colorattachmentref{};
+	colorattachmentref.attachment = 0;
+	colorattachmentref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass{};
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorattachmentref;
+
+
+	VkRenderPassCreateInfo renderpasscreateinfo{};
+	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderpasscreateinfo.attachmentCount = 1;
+	renderpasscreateinfo.pAttachments = &colorattachment;
+	renderpasscreateinfo.subpassCount = 1;
+	renderpasscreateinfo.pSubpasses = &subpass;
+
+	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &m_renderpass) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create render pass!");
+
+	}
+
+
+
+}
+
 void Application::CreateGraphicsPipeline()
 {
 	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
@@ -369,6 +410,37 @@ void Application::CreateGraphicsPipeline()
 	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &m_pipelinelayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create pipeline layout!");
+	}
+
+
+	VkGraphicsPipelineCreateInfo pipelinecreateinfo{};
+	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelinecreateinfo.stageCount = 2;
+	pipelinecreateinfo.pStages = shaderstages;
+	
+	
+	pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
+	pipelinecreateinfo.pInputAssemblyState = &inputassemblycreateinfo;
+	pipelinecreateinfo.pViewportState = &viewportcreateinfo;
+	pipelinecreateinfo.pRasterizationState = &rastercreateinfo;
+	pipelinecreateinfo.pMultisampleState = &multisamplecreateinfo;
+	pipelinecreateinfo.pColorBlendState = &colorblendcreateinfo;
+	pipelinecreateinfo.pDepthStencilState = nullptr;
+	
+	
+	pipelinecreateinfo.layout = m_pipelinelayout;
+	pipelinecreateinfo.pDynamicState = &dynamicstatecreateinfo;
+	pipelinecreateinfo.renderPass = m_renderpass;
+	pipelinecreateinfo.subpass = 0;
+
+	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelinecreateinfo.basePipelineIndex = -1;
+
+
+	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &m_pipeline) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create the graphics pipeline");
+
 	}
 
 

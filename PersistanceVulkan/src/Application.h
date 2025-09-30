@@ -94,6 +94,7 @@ private:
 		CreateLogicalDevice();
 		CreateSwapChain();
 		CreateImageViews();
+		CreateRenderPass();
 		CreateGraphicsPipeline();
 
 	}
@@ -113,8 +114,9 @@ private:
 
 	void CleanUp()
 	{
-		
+		vkDestroyPipeline(m_device, m_pipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
+		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
 
 		for (const auto& imageviews : m_swapchainimageviews)
 		{
@@ -151,6 +153,8 @@ private:
 	void CreateSwapChain();
 
 	void CreateImageViews();
+
+	void CreateRenderPass();
 
 	void CreateGraphicsPipeline();
 
@@ -209,7 +213,9 @@ private:
 	VkFormat m_swapchainimageformat;
 	VkExtent2D m_swapchainextent;
 	std::vector<VkImageView> m_swapchainimageviews;
+	VkRenderPass m_renderpass;
 	VkPipelineLayout m_pipelinelayout;
+	VkPipeline m_pipeline;
 
 
 
