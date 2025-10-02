@@ -96,6 +96,10 @@ private:
 		CreateImageViews();
 		CreateRenderPass();
 		CreateGraphicsPipeline();
+		CreateFramebuffers();
+		CreateCommandPool();
+		CreateCommandBuffer();
+		CreateSyncObjects();
 
 	}
 
@@ -103,17 +107,27 @@ private:
 
 	void MainLoop()
 	{
-		while (!glfwWindowShouldClose(m_window)) {
+		while (!glfwWindowShouldClose(m_window)) 
+		{
 			glfwPollEvents();
+			
+			DrawFrame();
+		
 		}
-
-
-
 
 	}
 
 	void CleanUp()
 	{
+		vkDestroySemaphore(m_device, s_imageavailable, nullptr);
+		vkDestroySemaphore(m_device, s_renderfinished, nullptr);
+		vkDestroyFence(m_device, f_inflightfence, nullptr);
+		
+		vkDestroyCommandPool(m_device, m_commandpool, nullptr);
+		for (auto framebuffer : m_swapchainframebuffers)
+		{
+			vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+		}
 		vkDestroyPipeline(m_device, m_pipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
 		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
@@ -129,7 +143,7 @@ private:
 		vkDestroyDevice(m_device, nullptr);
 
 		if (enablevalidationlayers) {
-			//DestroyDebugUtilsMessengerEXT(m_instance, debugmessenger, nullptr);
+		
 			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
 		}
 
@@ -147,6 +161,12 @@ private:
 private:
 
 	void SetUpDebugCallBack();
+	
+	void CreateLogicalDevice();
+
+	void CreateSurface();
+	
+	void SelectPhysicalDevice();
 
 	void CreateInstance();
 
@@ -157,6 +177,14 @@ private:
 	void CreateRenderPass();
 
 	void CreateGraphicsPipeline();
+
+	void CreateFramebuffers();
+
+	void CreateCommandPool();
+	
+	void CreateCommandBuffer();
+
+	void CreateSyncObjects();
 
 	bool CheckValidationLayers();
 
@@ -170,7 +198,7 @@ private:
 
 	void SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateInfoEXT& createinfo);
 
-	void SelectPhysicalDevice();
+	
 	
 	bool RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle = nullptr);
 
@@ -178,9 +206,7 @@ private:
 
 	bool DeviceExtensionSupport(VkPhysicalDevice& physicaldevice);
 
-	void CreateLogicalDevice();
 	
-	void CreateSurface();
 	
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice& physicaldevice);
 
@@ -193,6 +219,10 @@ private:
 	static std::vector<char> ReadFile(const std::string& filepath);
 	
 	VkShaderModule CreateShaderModule(const std::vector<char>& shaderfile);
+
+	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex);
+
+	void DrawFrame();
 
 
 private:
@@ -216,6 +246,15 @@ private:
 	VkRenderPass m_renderpass;
 	VkPipelineLayout m_pipelinelayout;
 	VkPipeline m_pipeline;
+	std::vector<VkFramebuffer> m_swapchainframebuffers;
+	VkCommandPool m_commandpool;
+	VkCommandBuffer m_commandbuffer;
+
+	VkSemaphore s_imageavailable;
+	VkSemaphore s_renderfinished;
+	VkFence f_inflightfence;
+
+
 
 
 
