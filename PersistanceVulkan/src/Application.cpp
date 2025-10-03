@@ -472,6 +472,7 @@ void Application::CreateFramebuffers()
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferinfo.renderPass = m_renderpass;
 		framebufferinfo.layers = 1;
+		framebufferinfo.attachmentCount = 1;
 		framebufferinfo.pAttachments = attachments;
 		framebufferinfo.width = m_swapchainextent.width;
 		framebufferinfo.height = m_swapchainextent.height;
@@ -1189,7 +1190,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	cmdbufferbegininfo.flags = 0;
 	cmdbufferbegininfo.pInheritanceInfo = nullptr;
 
-	if (vkBeginCommandBuffer(m_commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to begin command buffer!");
 
@@ -1208,10 +1209,10 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	renderpassbegininfo.pClearValues = &clearcolor;
 
 
-	vkCmdBeginRenderPass(m_commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
 
 
-	vkCmdBindPipeline(m_commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
 
 	VkViewport viewport{};
@@ -1221,22 +1222,22 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	viewport.maxDepth = 1.f;
 	viewport.width = (float)m_swapchainextent.width;
 	viewport.height = (float)m_swapchainextent.height;
-	vkCmdSetViewport(m_commandbuffer, 0, 1, &viewport);
+	vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
 	scissor.extent = m_swapchainextent;
-	vkCmdSetScissor(m_commandbuffer, 0, 1, &scissor);
+	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
 
 
 
-	vkCmdDraw(m_commandbuffer, 3, 1, 0, 0);
+	vkCmdDraw(commandbuffer, 3, 1, 0, 0);
 
 
-	vkCmdEndRenderPass(m_commandbuffer);
+	vkCmdEndRenderPass(commandbuffer);
 
-	if (vkEndCommandBuffer(m_commandbuffer) != VK_SUCCESS)
+	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to record command buffer");
 

@@ -115,6 +115,8 @@ private:
 		
 		}
 
+		vkDeviceWaitIdle(m_device);
+
 	}
 
 	void CleanUp()
