@@ -121,9 +121,15 @@ private:
 
 	void CleanUp()
 	{
-		vkDestroySemaphore(m_device, s_imageavailable, nullptr);
-		vkDestroySemaphore(m_device, s_renderfinished, nullptr);
-		vkDestroyFence(m_device, f_inflightfence, nullptr);
+		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+		{
+			vkDestroySemaphore(m_device, s_imageavailable[i], nullptr);
+			vkDestroySemaphore(m_device, s_renderfinished[i], nullptr);
+			vkDestroyFence(m_device, f_inflightfence[i], nullptr);
+
+		}
+
+		
 		
 		vkDestroyCommandPool(m_device, m_commandpool, nullptr);
 		for (auto framebuffer : m_swapchainframebuffers)
@@ -250,11 +256,11 @@ private:
 	VkPipeline m_pipeline;
 	std::vector<VkFramebuffer> m_swapchainframebuffers;
 	VkCommandPool m_commandpool;
-	VkCommandBuffer m_commandbuffer;
+	std::vector<VkCommandBuffer> m_commandbuffers;
 
-	VkSemaphore s_imageavailable;
-	VkSemaphore s_renderfinished;
-	VkFence f_inflightfence;
+	std::vector<VkSemaphore> s_imageavailable;
+	std::vector<VkSemaphore> s_renderfinished;
+	std::vector<VkFence> f_inflightfence;
 
 
 
@@ -269,6 +275,10 @@ private:
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
 	
+	const uint32_t MAXFRAMESINFLIGHT = 2;
+	uint32_t m_currentframe = 0;
+
+
 
 
 };
