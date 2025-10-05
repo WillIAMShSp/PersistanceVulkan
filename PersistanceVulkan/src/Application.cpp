@@ -563,6 +563,24 @@ void Application::CreateSyncObjects()
 
 }
 
+void Application::CleanUpSwapchain()
+{
+	for (auto framebuffer : m_swapchainframebuffers)
+	{
+		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+	}
+	for (const auto& imageviews : m_swapchainimageviews)
+	{
+		vkDestroyImageView(m_device, imageviews, nullptr);
+
+	}
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
+
+
+
+}
+
 bool Application::CheckValidationLayers()
 {
 
@@ -1270,11 +1288,26 @@ void Application::DrawFrame()
 {
 
 	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
-	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
+	
 
 
 	uint32_t imageindex;
-	vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], f_inflightfence[m_currentframe], &imageindex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], f_inflightfence[m_currentframe], &imageindex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		RecreateSwapchain();
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("Failed to aquire swapchain image!");
+
+	}
+	
+	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
+	
+
+
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
 
@@ -1317,14 +1350,53 @@ void Application::DrawFrame()
 
 	presentinfo.pResults = nullptr;
 
-	vkQueuePresentKHR(m_presentqueue, &presentinfo);
+	result = vkQueuePresentKHR(m_presentqueue, &presentinfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
+	{
+		RecreateSwapchain();
+		m_windowresized = false;
+
+	}
+	else if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to present queue!");
+
+	}
+
+
+	m_currentframe = (m_currentframe + 1) % MAXFRAMESINFLIGHT;
+
+}
+
+void Application::RecreateSwapchain()
+{
+	int width = 0;
+	int height = 0;
+
+	glfwGetWindowSize(m_window, &width, &height);
+
+	while (width == 0 || height == 0)
+	{
+		glfwGetWindowSize(m_window, &width, &height);
+		glfwWaitEvents();
+
+	}
+	
+
+	vkDeviceWaitIdle(m_device);
+
+	CleanUpSwapchain();
+
+	CreateSwapChain();
+	CreateImageViews();
+	CreateFramebuffers();
+
+
 
 
 
 	
-
-	m_currentframe = (m_currentframe + 1) % MAXFRAMESINFLIGHT;
-
 }
 
 

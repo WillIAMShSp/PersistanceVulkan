@@ -79,6 +79,10 @@ private:
 		m_window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
 		std::cout << "Initialized Window \n";
+
+		glfwSetWindowUserPointer(m_window, this);
+
+		glfwSetWindowSizeCallback(m_window, ResizeWindowCallback);
 		
 
 
@@ -121,6 +125,10 @@ private:
 
 	void CleanUp()
 	{
+
+		CleanUpSwapchain();
+
+
 		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
 		{
 			vkDestroySemaphore(m_device, s_imageavailable[i], nullptr);
@@ -132,21 +140,14 @@ private:
 		
 		
 		vkDestroyCommandPool(m_device, m_commandpool, nullptr);
-		for (auto framebuffer : m_swapchainframebuffers)
-		{
-			vkDestroyFramebuffer(m_device, framebuffer, nullptr);
-		}
+		
 		vkDestroyPipeline(m_device, m_pipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
 		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
 
-		for (const auto& imageviews : m_swapchainimageviews)
-		{
-			vkDestroyImageView(m_device, imageviews, nullptr);
+		
 
-		}
-
-		vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+		
 
 		vkDestroyDevice(m_device, nullptr);
 
@@ -165,6 +166,18 @@ private:
 		glfwTerminate();
 
 	}
+
+public:
+
+	static void ResizeWindowCallback(GLFWwindow* window, int width, int height)
+	{
+		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+		app->m_windowresized = true;
+
+		
+	}
+
+
 
 private:
 
@@ -193,6 +206,8 @@ private:
 	void CreateCommandBuffer();
 
 	void CreateSyncObjects();
+
+	void CleanUpSwapchain();
 
 	bool CheckValidationLayers();
 
@@ -232,6 +247,8 @@ private:
 
 	void DrawFrame();
 
+	void RecreateSwapchain();
+
 
 private:
 
@@ -261,6 +278,7 @@ private:
 	std::vector<VkSemaphore> s_imageavailable;
 	std::vector<VkSemaphore> s_renderfinished;
 	std::vector<VkFence> f_inflightfence;
+	bool m_windowresized = false;
 
 
 
