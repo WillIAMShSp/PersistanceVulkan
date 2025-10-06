@@ -102,6 +102,7 @@ private:
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPool();
+		CreateVertexBuffers();
 		CreateCommandBuffer();
 		CreateSyncObjects();
 
@@ -126,7 +127,10 @@ private:
 	void CleanUp()
 	{
 
+
 		CleanUpSwapchain();
+
+		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
 
 
 		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
@@ -151,7 +155,8 @@ private:
 
 		vkDestroyDevice(m_device, nullptr);
 
-		if (enablevalidationlayers) {
+		if (enablevalidationlayers) 
+		{
 		
 			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
 		}
@@ -176,6 +181,44 @@ public:
 
 		
 	}
+
+	struct Vertex
+	{
+		glm::vec2 position;
+		glm::vec3 color;
+
+		static VkVertexInputBindingDescription GetBindingDescription()
+		{
+			VkVertexInputBindingDescription bindingdescription{};
+			bindingdescription.binding = 0;
+			bindingdescription.stride = sizeof(Vertex);
+			bindingdescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			
+
+
+			return bindingdescription;
+
+		}
+
+		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription()
+		{
+			std::vector<VkVertexInputAttributeDescription> attributedescription{};
+			attributedescription.resize(2);
+			
+			attributedescription[0].binding = 0;
+			attributedescription[0].location = 0;
+			attributedescription[0].format = VK_FORMAT_R32G32_SFLOAT;
+			attributedescription[0].offset = offsetof(Vertex, position);
+
+			attributedescription[1].binding = 0;
+			attributedescription[1].location = 1;
+			attributedescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributedescription[1].offset = offsetof(Vertex, color);
+
+		}
+
+
+	};
 
 
 
@@ -203,6 +246,8 @@ private:
 
 	void CreateCommandPool();
 	
+	void CreateVertexBuffers();
+
 	void CreateCommandBuffer();
 
 	void CreateSyncObjects();
@@ -280,6 +325,8 @@ private:
 	std::vector<VkFence> f_inflightfence;
 	bool m_windowresized = false;
 
+	VkBuffer m_vertexbuffer;
+
 
 
 
@@ -295,6 +342,17 @@ private:
 	
 	const uint32_t MAXFRAMESINFLIGHT = 2;
 	uint32_t m_currentframe = 0;
+
+
+
+	const std::vector<Vertex> vertices = {
+	
+		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	
+	};
+
 
 
 

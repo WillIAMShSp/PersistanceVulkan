@@ -31,12 +31,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\Shaders\basicfrag.spv" />
     <None Include="res\Shaders\BasicFragment.frag" />
-    <None Include="res\Shaders\basicvert.spv" />
     <None Include="res\Shaders\BasicVertex.vert" />
     <None Include="res\Shaders\compile.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="res\Shaders\basicfrag.spv" />
+    <None Include="res\Shaders\basicvert.spv" />
   </ItemGroup>
 </Project>

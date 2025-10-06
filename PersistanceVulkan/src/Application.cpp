@@ -339,6 +339,16 @@ void Application::CreateGraphicsPipeline()
 	inputvertexcreateinfo.vertexAttributeDescriptionCount = 0;
 	inputvertexcreateinfo.pVertexAttributeDescriptions = nullptr;
 
+	auto bindingdescription = Vertex::GetBindingDescription();
+	auto attributedescription = Vertex::GetAttributeDescription();
+
+
+	inputvertexcreateinfo.vertexBindingDescriptionCount = 1;
+	inputvertexcreateinfo.vertexAttributeDescriptionCount = attributedescription.size();
+
+	inputvertexcreateinfo.pVertexBindingDescriptions = &bindingdescription;
+	inputvertexcreateinfo.pVertexAttributeDescriptions = attributedescription.data();
+
 
 	VkPipelineInputAssemblyStateCreateInfo inputassemblycreateinfo{};
 	inputassemblycreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -504,6 +514,25 @@ void Application::CreateCommandPool()
 	if (vkCreateCommandPool(m_device, &poolinfo,  nullptr, &m_commandpool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command pool!");
+
+	}
+
+
+}
+
+void Application::CreateVertexBuffers()
+{
+
+	VkBufferCreateInfo vertexbuffercreateinfo{};
+	vertexbuffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	vertexbuffercreateinfo.size = sizeof(vertices[0]) * vertices.size();
+	
+	vertexbuffercreateinfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	vertexbuffercreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(m_device, &vertexbuffercreateinfo, nullptr, &m_vertexbuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create vertex buffer!");
 
 	}
 
