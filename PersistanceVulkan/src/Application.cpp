@@ -536,6 +536,10 @@ void Application::CreateVertexBuffers()
 
 	}
 
+	VkMemoryRequirements memrequirements;
+	vkGetBufferMemoryRequirements(m_device, m_vertexbuffer, &memrequirements);
+
+
 
 }
 
