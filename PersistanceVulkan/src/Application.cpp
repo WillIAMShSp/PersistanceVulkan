@@ -540,6 +540,18 @@ void Application::CreateVertexBuffers()
 	vkGetBufferMemoryRequirements(m_device, m_vertexbuffer, &memrequirements);
 
 
+	VkMemoryAllocateInfo allocateinfo{};
+	allocateinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateinfo.allocationSize = memrequirements.size;
+	allocateinfo.memoryTypeIndex = FindMemoryType(memrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(m_device, &allocateinfo, nullptr, &m_vertexbuffermemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate vertex buffer memory!");
+	}
+
+
+	vkBindBufferMemory(m_device, m_vertexbuffer, m_vertexbuffermemory, 0);
 
 
 }

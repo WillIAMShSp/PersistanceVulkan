@@ -131,6 +131,7 @@ private:
 		CleanUpSwapchain();
 
 		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
+		vkFreeMemory(m_device, m_vertexbuffermemory, nullptr);
 
 
 		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
@@ -328,7 +329,7 @@ private:
 	bool m_windowresized = false;
 
 	VkBuffer m_vertexbuffer;
-
+	VkDeviceMemory m_vertexbuffermemory;
 
 
 
