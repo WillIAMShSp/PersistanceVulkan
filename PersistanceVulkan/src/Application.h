@@ -294,6 +294,8 @@ private:
 
 	void RecreateSwapchain();
 
+	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
+
 
 private:
 

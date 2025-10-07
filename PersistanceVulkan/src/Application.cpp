@@ -541,6 +541,7 @@ void Application::CreateVertexBuffers()
 
 
 
+
 }
 
 void Application::CreateCommandBuffer()
@@ -1430,6 +1431,26 @@ void Application::RecreateSwapchain()
 
 
 	
+}
+
+uint32_t Application::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags)
+{
+	VkPhysicalDeviceMemoryProperties memproperties;
+
+	vkGetPhysicalDeviceMemoryProperties(m_physicaldevice, &memproperties);
+
+	for (uint32_t i = 0; i < memproperties.memoryTypeCount; i++)
+	{
+		if (typefilter & (i << i) && (memproperties.memoryTypes[i].propertyFlags & flags) == flags)
+		{
+			return i;
+		}
+
+	}
+	throw std::runtime_error("Failed to find a suitable memory type!");
+
+
+	return 0;
 }
 
 
