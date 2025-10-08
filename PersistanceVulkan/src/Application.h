@@ -175,7 +175,7 @@ private:
 
 public:
 
-	static void ResizeWindowCallback(GLFWwindow* window, int width, int height)
+	static void ResizeWindowCallback(GLFWwindow* window, int width, int height) 
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 		app->m_windowresized = true;
@@ -215,6 +215,8 @@ public:
 			attributedescription[1].location = 1;
 			attributedescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 			attributedescription[1].offset = offsetof(Vertex, color);
+
+			return attributedescription;
 
 		}
 

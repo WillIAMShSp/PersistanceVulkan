@@ -554,6 +554,17 @@ void Application::CreateVertexBuffers()
 	vkBindBufferMemory(m_device, m_vertexbuffer, m_vertexbuffermemory, 0);
 
 
+	void* data;
+
+	vkMapMemory(m_device, m_vertexbuffermemory, 0, vertexbuffercreateinfo.size, 0, &data);
+
+	memcpy(data, vertices.data(), (size_t)vertexbuffercreateinfo.size);
+
+	vkUnmapMemory(m_device, m_vertexbuffermemory);
+
+
+
+
 }
 
 void Application::CreateCommandBuffer()
@@ -1293,6 +1304,9 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
+	VkBuffer buffers[] = {m_vertexbuffer};
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 
 	VkViewport viewport{};
 	viewport.x = 0.f;
@@ -1311,7 +1325,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 
 
-	vkCmdDraw(commandbuffer, 3, 1, 0, 0);
+	vkCmdDraw(commandbuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 
 	vkCmdEndRenderPass(commandbuffer);
