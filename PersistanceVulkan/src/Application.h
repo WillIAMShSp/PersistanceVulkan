@@ -101,7 +101,7 @@ private:
 		CreateRenderPass();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
-		CreateCommandPool();
+		CreateCommandPools();
 		CreateVertexBuffers();
 		CreateCommandBuffer();
 		CreateSyncObjects();
@@ -144,8 +144,9 @@ private:
 
 		
 		
-		vkDestroyCommandPool(m_device, m_commandpool, nullptr);
-		
+		vkDestroyCommandPool(m_device, m_graphicscommandpool, nullptr);
+		vkDestroyCommandPool(m_device, m_transfercommandpool, nullptr);
+
 		vkDestroyPipeline(m_device, m_pipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
 		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
@@ -247,7 +248,7 @@ private:
 
 	void CreateFramebuffers();
 
-	void CreateCommandPool();
+	void CreateCommandPools();
 	
 	void CreateVertexBuffers();
 
@@ -297,6 +298,10 @@ private:
 
 	void RecreateSwapchain();
 
+	void CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+
+	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size);
+
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
 
 
@@ -312,6 +317,7 @@ private:
 	VkDevice m_device;
 	VkQueue m_graphicsqueue;
 	VkQueue m_presentqueue;
+	VkQueue m_transferqueue;
 	VkSurfaceKHR m_surface;
 	VkSwapchainKHR m_swapchain;
 	std::vector<VkImage> m_swapchainimages;
@@ -322,7 +328,8 @@ private:
 	VkPipelineLayout m_pipelinelayout;
 	VkPipeline m_pipeline;
 	std::vector<VkFramebuffer> m_swapchainframebuffers;
-	VkCommandPool m_commandpool;
+	VkCommandPool m_graphicscommandpool;
+	VkCommandPool m_transfercommandpool;
 	std::vector<VkCommandBuffer> m_commandbuffers;
 
 	std::vector<VkSemaphore> s_imageavailable;

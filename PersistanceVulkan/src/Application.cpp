@@ -500,22 +500,40 @@ void Application::CreateFramebuffers()
 
 }
 
-void Application::CreateCommandPool()
+void Application::CreateCommandPools()
 {
 	
 	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
 
 
-	VkCommandPoolCreateInfo poolinfo{};
-	poolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolinfo.queueFamilyIndex = indices.graphicsfamily.value();
-	poolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	VkCommandPoolCreateInfo graphicspoolinfo{};
+	graphicspoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily.value();
+	graphicspoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(m_device, &poolinfo,  nullptr, &m_commandpool) != VK_SUCCESS)
+	if (vkCreateCommandPool(m_device, &graphicspoolinfo,  nullptr, &m_graphicscommandpool) != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create command pool!");
+		throw std::runtime_error("Failed to create the graphics command pool!");
 
 	}
+	
+	VkCommandPoolCreateInfo transferpoolinfo{};
+	transferpoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	transferpoolinfo.queueFamilyIndex = indices.transferfamily.value();
+	transferpoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transfercommandpool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create the transfer command pool!");
+
+	}
+
+
+
+
+
+
+
 
 
 }
@@ -523,47 +541,29 @@ void Application::CreateCommandPool()
 void Application::CreateVertexBuffers()
 {
 
-	VkBufferCreateInfo vertexbuffercreateinfo{};
-	vertexbuffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	vertexbuffercreateinfo.size = sizeof(vertices[0]) * vertices.size();
+
+	VkDeviceSize buffersize = sizeof(vertices[0]) * vertices.size();
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingbuffermem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
 	
-	vertexbuffercreateinfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	vertexbuffercreateinfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(m_device, &vertexbuffercreateinfo, nullptr, &m_vertexbuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create vertex buffer!");
-
-	}
-
-	VkMemoryRequirements memrequirements;
-	vkGetBufferMemoryRequirements(m_device, m_vertexbuffer, &memrequirements);
-
-
-	VkMemoryAllocateInfo allocateinfo{};
-	allocateinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateinfo.allocationSize = memrequirements.size;
-	allocateinfo.memoryTypeIndex = FindMemoryType(memrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	if (vkAllocateMemory(m_device, &allocateinfo, nullptr, &m_vertexbuffermemory) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate vertex buffer memory!");
-	}
-
-
-	vkBindBufferMemory(m_device, m_vertexbuffer, m_vertexbuffermemory, 0);
-
 
 	void* data;
 
-	vkMapMemory(m_device, m_vertexbuffermemory, 0, vertexbuffercreateinfo.size, 0, &data);
+	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
 
-	memcpy(data, vertices.data(), (size_t)vertexbuffercreateinfo.size);
+	memcpy(data, vertices.data(), (size_t)buffersize);
 
-	vkUnmapMemory(m_device, m_vertexbuffermemory);
+	vkUnmapMemory(m_device, stagingbuffermem);
 
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexbuffer, m_vertexbuffermemory, VK_SHARING_MODE_CONCURRENT);
 
+	CopyBuffer(stagingbuffer, m_vertexbuffer, buffersize);
 
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingbuffermem, nullptr);
 
 }
 
@@ -574,7 +574,7 @@ void Application::CreateCommandBuffer()
 	VkCommandBufferAllocateInfo cmdbufferinfo{};
 	cmdbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	cmdbufferinfo.commandBufferCount = static_cast<uint32_t>( m_commandbuffers.size());
-	cmdbufferinfo.commandPool = m_commandpool;
+	cmdbufferinfo.commandPool = m_graphicscommandpool;
 	cmdbufferinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, m_commandbuffers.data()) != VK_SUCCESS)
@@ -952,7 +952,7 @@ QueueFamilyIndices Application::FindQueueFamilies(VkPhysicalDevice& physicaldevi
 			indices.computefamily = i;
 		}
 		
-		else if (familyproperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+		else if (familyproperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT && !(familyproperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT))
 		{
 			indices.transferfamily = i;
 
@@ -1023,7 +1023,8 @@ void Application::CreateLogicalDevice()
 	std::set<uint32_t>uniquequeuefamilies =
 	{
 		m_queuefamilyindices.graphicsfamily.value(),
-		m_queuefamilyindices.presentfamily.value()
+		m_queuefamilyindices.presentfamily.value(),
+		m_queuefamilyindices.transferfamily.value()
 
 	};
 	queuecreateinfos.reserve(uniquequeuefamilies.size());
@@ -1090,10 +1091,8 @@ void Application::CreateLogicalDevice()
 
 	vkGetDeviceQueue(m_device, m_queuefamilyindices.graphicsfamily.value(), 0, &m_graphicsqueue);
 	vkGetDeviceQueue(m_device, m_queuefamilyindices.presentfamily.value(), 0, &m_presentqueue);
+	vkGetDeviceQueue(m_device, m_queuefamilyindices.transferfamily.value(), 0, &m_transferqueue);
 
-	
-
-	
 }
 
 void Application::CreateSurface()
@@ -1457,6 +1456,80 @@ void Application::RecreateSwapchain()
 
 
 	
+}
+
+void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode)
+{
+	VkBufferCreateInfo buffercreateinfo{};
+	buffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffercreateinfo.size = size;
+
+	buffercreateinfo.usage = usageflags;
+	buffercreateinfo.sharingMode = sharingmode;
+
+	if (vkCreateBuffer(m_device, &buffercreateinfo, nullptr, &buffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create vertex buffer!");
+
+	}
+
+	VkMemoryRequirements memrequirements;
+	vkGetBufferMemoryRequirements(m_device, buffer, &memrequirements);
+
+
+	VkMemoryAllocateInfo allocateinfo{};
+	allocateinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateinfo.allocationSize = memrequirements.size;
+	allocateinfo.memoryTypeIndex = FindMemoryType(memrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(m_device, &allocateinfo, nullptr, &buffermemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate vertex buffer memory!");
+	}
+
+
+	vkBindBufferMemory(m_device, buffer, buffermemory, 0);
+
+
+}
+
+void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo cmdinfo{};
+	cmdinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdinfo.commandBufferCount = 1;
+	cmdinfo.commandPool = m_transfercommandpool;
+	cmdinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	
+	VkCommandBuffer cmdbuffer;
+	vkAllocateCommandBuffers(m_device, &cmdinfo, &cmdbuffer);
+
+	VkCommandBufferBeginInfo begininfo{};
+	begininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(cmdbuffer, &begininfo);
+
+	VkBufferCopy copyregion{};
+	copyregion.srcOffset = 0;
+	copyregion.dstOffset = 0;
+	copyregion.size = size;
+	vkCmdCopyBuffer(cmdbuffer, srcbuffer, dstbuffer, 1, &copyregion);
+
+	vkEndCommandBuffer(cmdbuffer);
+
+	VkSubmitInfo submitinfo{};
+	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitinfo.commandBufferCount = 1;
+	submitinfo.pCommandBuffers = &cmdbuffer;
+	
+	vkQueueSubmit(m_transferqueue, 1, &submitinfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(m_transferqueue);
+
+	vkFreeCommandBuffers(m_device, m_transfercommandpool, 1, &cmdbuffer);
+
+
+
 }
 
 uint32_t Application::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags)
