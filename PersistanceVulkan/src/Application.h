@@ -103,6 +103,7 @@ private:
 		CreateFramebuffers();
 		CreateCommandPools();
 		CreateVertexBuffers();
+		CreateIndexBuffers();
 		CreateCommandBuffer();
 		CreateSyncObjects();
 
@@ -130,8 +131,13 @@ private:
 
 		CleanUpSwapchain();
 
+
+
 		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
 		vkFreeMemory(m_device, m_vertexbuffermemory, nullptr);
+
+		vkDestroyBuffer(m_device, m_indexbuffer, nullptr);
+		vkFreeMemory(m_device, m_indexbuffermemory, nullptr);
 
 
 		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
@@ -252,6 +258,8 @@ private:
 	
 	void CreateVertexBuffers();
 
+	void CreateIndexBuffers();
+
 	void CreateCommandBuffer();
 
 	void CreateSyncObjects();
@@ -299,7 +307,7 @@ private:
 	void RecreateSwapchain();
 
 	void CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
-
+	
 	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size);
 
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
@@ -339,8 +347,8 @@ private:
 
 	VkBuffer m_vertexbuffer;
 	VkDeviceMemory m_vertexbuffermemory;
-
-
+	VkBuffer m_indexbuffer;
+	VkDeviceMemory m_indexbuffermemory;
 
 
 
@@ -359,11 +367,18 @@ private:
 
 	const std::vector<Vertex> vertices = {
 	
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 	
 	};
+	const std::vector<uint16_t> indices =
+	{
+		0, 1, 2, 2, 3, 0
+
+	};
+	
 
 
 

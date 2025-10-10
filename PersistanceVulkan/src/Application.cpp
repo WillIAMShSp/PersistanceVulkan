@@ -567,6 +567,34 @@ void Application::CreateVertexBuffers()
 
 }
 
+void Application::CreateIndexBuffers()
+{
+
+	VkDeviceSize buffersize = sizeof(indices[0]) * indices.size();
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingbuffermem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+
+
+	void* data;
+
+	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
+
+	memcpy(data, indices.data(), (size_t)buffersize);
+
+	vkUnmapMemory(m_device, stagingbuffermem);
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexbuffer, m_indexbuffermemory, VK_SHARING_MODE_CONCURRENT);
+
+	CopyBuffer(stagingbuffer, m_indexbuffer, buffersize);
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingbuffermem, nullptr);
+
+}
+
 void Application::CreateCommandBuffer()
 {
 	m_commandbuffers.resize(MAXFRAMESINFLIGHT);
@@ -1306,6 +1334,8 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	VkBuffer buffers[] = {m_vertexbuffer};
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
+	
+	vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT16);
 
 	VkViewport viewport{};
 	viewport.x = 0.f;
@@ -1324,7 +1354,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 
 
-	vkCmdDraw(commandbuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
 
 
 	vkCmdEndRenderPass(commandbuffer);
