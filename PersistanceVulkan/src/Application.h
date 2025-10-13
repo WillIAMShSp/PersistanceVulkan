@@ -7,6 +7,13 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
+#define GLM_FORCE_RADIANS
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+
 
 #include <iostream>
 #include <vector>
@@ -54,6 +61,15 @@ struct SwapChainSupportDetails
 
 };
 
+struct ModelViewProjectionBuffer
+{
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 projection;
+
+};
+
+
 
 class Application
 {
@@ -99,11 +115,15 @@ private:
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();
+		CreateDescriptorSetLayout();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPools();
 		CreateVertexBuffers();
 		CreateIndexBuffers();
+		CreateUniformBuffer();
+		CreateDescriptorPool();
+		CreateDescriptorSets();
 		CreateCommandBuffer();
 		CreateSyncObjects();
 
@@ -131,7 +151,16 @@ private:
 
 		CleanUpSwapchain();
 
+		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
 
+		vkDestroyDescriptorSetLayout(m_device, m_descriptorsetlayout, nullptr);
+
+		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+		{
+			vkDestroyBuffer(m_device, m_uniformbuffers[i], nullptr);
+			vkFreeMemory(m_device, m_uniformbuffermem[i], nullptr);
+
+		}
 
 		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
 		vkFreeMemory(m_device, m_vertexbuffermemory, nullptr);
@@ -250,12 +279,20 @@ private:
 
 	void CreateRenderPass();
 
+	void CreateDescriptorSetLayout();
+
+	void CreateDescriptorSets();
+
 	void CreateGraphicsPipeline();
 
 	void CreateFramebuffers();
 
 	void CreateCommandPools();
+
+	void CreateUniformBuffer();
 	
+	void CreateDescriptorPool();
+
 	void CreateVertexBuffers();
 
 	void CreateIndexBuffers();
@@ -312,6 +349,8 @@ private:
 
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
 
+	void UpdateUniformBuffer(const uint32_t& currentframe);
+
 
 private:
 
@@ -333,6 +372,9 @@ private:
 	VkExtent2D m_swapchainextent;
 	std::vector<VkImageView> m_swapchainimageviews;
 	VkRenderPass m_renderpass;
+	VkDescriptorSetLayout m_descriptorsetlayout;
+	VkDescriptorPool m_descriptorpool;
+	std::vector<VkDescriptorSet> m_descriptorsets;
 	VkPipelineLayout m_pipelinelayout;
 	VkPipeline m_pipeline;
 	std::vector<VkFramebuffer> m_swapchainframebuffers;
@@ -349,7 +391,9 @@ private:
 	VkDeviceMemory m_vertexbuffermemory;
 	VkBuffer m_indexbuffer;
 	VkDeviceMemory m_indexbuffermemory;
-
+	std::vector<VkBuffer> m_uniformbuffers;
+	std::vector<VkDeviceMemory> m_uniformbuffermem;
+	std::vector<void*> m_uniformbuffersmapped;
 
 
 	const std::vector<const char*> m_deviceextensions
@@ -380,14 +424,7 @@ private:
 	};
 	
 
-	struct ModelViewProjectionBuffer
-	{
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 projection;
-
-	};
-
+	
 
 
 };

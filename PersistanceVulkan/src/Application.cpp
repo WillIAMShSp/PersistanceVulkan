@@ -290,6 +290,74 @@ void Application::CreateRenderPass()
 
 }
 
+void Application::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding layoutbinding{};
+	layoutbinding.descriptorCount = 1;
+	layoutbinding.binding = 0;
+	layoutbinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	layoutbinding.pImmutableSamplers = nullptr;
+	layoutbinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+
+	VkDescriptorSetLayoutCreateInfo layoutinfo{};
+	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutinfo.bindingCount = 1;
+	layoutinfo.pBindings = &layoutbinding;
+	
+	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &m_descriptorsetlayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create descriptor set layout!");
+	}
+
+
+
+}
+
+void Application::CreateDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAXFRAMESINFLIGHT, m_descriptorsetlayout);
+	VkDescriptorSetAllocateInfo allocateinfo{};
+	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateinfo.descriptorPool = m_descriptorpool;
+	allocateinfo.descriptorSetCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	allocateinfo.pSetLayouts = layouts.data();
+
+
+	m_descriptorsets.resize(MAXFRAMESINFLIGHT);
+	
+	if (vkAllocateDescriptorSets(m_device, &allocateinfo, m_descriptorsets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate descriptor sets!");
+	}
+
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+		VkDescriptorBufferInfo bufferinfo{};
+		bufferinfo.buffer = m_uniformbuffers[i];
+		bufferinfo.offset = 0;
+		bufferinfo.range = sizeof(ModelViewProjectionBuffer);
+
+		VkWriteDescriptorSet writedescriptor{};
+		writedescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writedescriptor.descriptorCount = 1;
+		writedescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writedescriptor.dstSet = m_descriptorsets[i];
+		writedescriptor.dstBinding = 0;
+		writedescriptor.dstArrayElement = 0;
+		writedescriptor.pBufferInfo = &bufferinfo;
+		writedescriptor.pImageInfo = nullptr;
+		writedescriptor.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(m_device, 1, &writedescriptor, 0, nullptr);
+
+
+	}
+
+
+
+}
+
 void Application::CreateGraphicsPipeline()
 {
 	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
@@ -370,7 +438,7 @@ void Application::CreateGraphicsPipeline()
 	rastercreateinfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rastercreateinfo.lineWidth = 1.0f;
 	rastercreateinfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rastercreateinfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rastercreateinfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rastercreateinfo.rasterizerDiscardEnable = VK_FALSE;
 
 	rastercreateinfo.depthBiasClamp = VK_FALSE;
@@ -418,8 +486,8 @@ void Application::CreateGraphicsPipeline()
 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
 	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelinelayoutcreateinfo.setLayoutCount = 0;
-	pipelinelayoutcreateinfo.pSetLayouts = nullptr;
+	pipelinelayoutcreateinfo.setLayoutCount = 1;
+	pipelinelayoutcreateinfo.pSetLayouts = &m_descriptorsetlayout;
 	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
 	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
 
@@ -535,6 +603,47 @@ void Application::CreateCommandPools()
 
 
 
+
+}
+
+void Application::CreateUniformBuffer()
+{
+	m_uniformbuffers.resize(MAXFRAMESINFLIGHT);
+	m_uniformbuffermem.resize(MAXFRAMESINFLIGHT);
+	m_uniformbuffersmapped.resize(MAXFRAMESINFLIGHT);
+
+	VkDeviceSize buffersize = sizeof(ModelViewProjectionBuffer);
+
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+
+		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformbuffers[i], m_uniformbuffermem[i], VK_SHARING_MODE_CONCURRENT);
+
+		vkMapMemory(m_device, m_uniformbuffermem[i], 0, buffersize, 0, &m_uniformbuffersmapped[i]);
+
+	}
+
+
+
+}
+
+void Application::CreateDescriptorPool()
+{
+	VkDescriptorPoolSize poolsize{};
+	poolsize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolsize.descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+
+	VkDescriptorPoolCreateInfo poolinfo{};
+	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolinfo.poolSizeCount = 1;
+	poolinfo.pPoolSizes = &poolsize;
+	poolinfo.maxSets = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+
+	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &m_descriptorpool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create descriptor pool!");
+
+	}
 
 }
 
@@ -1335,7 +1444,6 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 	
-	vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT16);
 
 	VkViewport viewport{};
 	viewport.x = 0.f;
@@ -1351,8 +1459,9 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
+	vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT16);
 
-
+	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
 
 	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
 
@@ -1396,6 +1505,8 @@ void Application::DrawFrame()
 	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
 	
 
+
+	UpdateUniformBuffer(m_currentframe);
 
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
@@ -1580,6 +1691,27 @@ uint32_t Application::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags 
 
 
 	return 0;
+}
+
+void Application::UpdateUniformBuffer(const uint32_t& currentframe)
+{
+	static auto starttime = std::chrono::high_resolution_clock::now();
+	
+	auto currenttime = std::chrono::high_resolution_clock::now();
+	
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
+
+	ModelViewProjectionBuffer mvp;
+
+	mvp.model = glm::mat4(1.0);
+	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+	mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
+
+	mvp.projection[1][1] *= -1;
+
+	memcpy(m_uniformbuffersmapped[currentframe], &mvp, sizeof(mvp));
+
+
 }
 
 
