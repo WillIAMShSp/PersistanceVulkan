@@ -12,7 +12,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <chrono>
+
+#include "stb_image.h"
 
 
 #include <iostream>
@@ -22,6 +23,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <chrono>
 
 #include "DebugUtilsMessengerEXT.h"
 
@@ -119,6 +121,7 @@ private:
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPools();
+		CreateTextureImage();
 		CreateVertexBuffers();
 		CreateIndexBuffers();
 		CreateUniformBuffer();
@@ -303,6 +306,8 @@ private:
 
 	void CleanUpSwapchain();
 
+	void CreateTextureImage();
+
 	bool CheckValidationLayers();
 
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -337,6 +342,10 @@ private:
 	
 	VkShaderModule CreateShaderModule(const std::vector<char>& shaderfile);
 
+	VkCommandBuffer BeginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+	void EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue);
+
 	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex);
 
 	void DrawFrame();
@@ -344,12 +353,15 @@ private:
 	void RecreateSwapchain();
 
 	void CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+
+	void CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags&  usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
 	
-	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size);
+	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue);
 
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
 
 	void UpdateUniformBuffer(const uint32_t& currentframe);
+
 
 
 private:
@@ -394,6 +406,11 @@ private:
 	std::vector<VkBuffer> m_uniformbuffers;
 	std::vector<VkDeviceMemory> m_uniformbuffermem;
 	std::vector<void*> m_uniformbuffersmapped;
+
+	//textures
+	VkImage m_textureimage;
+	VkDeviceMemory m_textureimagemem;
+
 
 
 	const std::vector<const char*> m_deviceextensions

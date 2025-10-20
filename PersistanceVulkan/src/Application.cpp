@@ -669,7 +669,7 @@ void Application::CreateVertexBuffers()
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexbuffer, m_vertexbuffermemory, VK_SHARING_MODE_CONCURRENT);
 
-	CopyBuffer(stagingbuffer, m_vertexbuffer, buffersize);
+	CopyBuffer(stagingbuffer, m_vertexbuffer, buffersize, m_transfercommandpool, m_transferqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingbuffermem, nullptr);
@@ -697,7 +697,7 @@ void Application::CreateIndexBuffers()
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexbuffer, m_indexbuffermemory, VK_SHARING_MODE_CONCURRENT);
 
-	CopyBuffer(stagingbuffer, m_indexbuffer, buffersize);
+	CopyBuffer(stagingbuffer, m_indexbuffer, buffersize, m_transfercommandpool, m_transferqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingbuffermem, nullptr);
@@ -770,6 +770,38 @@ void Application::CleanUpSwapchain()
 	}
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
+
+
+
+}
+
+void Application::CreateTextureImage()
+{
+	int width, height, bpp;
+
+	stbi_uc* pixels = stbi_load("res/Textures/Placeholder.png", &width, &height, &bpp, STBI_rgb_alpha);
+	VkDeviceSize buffersize = width * height * 4;
+
+	if (!pixels)
+	{
+		throw std::runtime_error("Didnt find the texture!");
+	}
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingmem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+	
+	void* data;
+	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vkUnmapMemory(m_device, stagingmem);
+
+	stbi_image_free(pixels);
+
+	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_textureimage, m_textureimagemem, VK_SHARING_MODE_CONCURRENT);
 
 
 
@@ -1408,6 +1440,50 @@ VkShaderModule Application::CreateShaderModule(const std::vector<char>& shaderfi
 
 }
 
+VkCommandBuffer Application::BeginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level)
+{
+
+	VkCommandBufferAllocateInfo allocinfo{};
+	allocinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocinfo.commandBufferCount = 1;
+	allocinfo.commandPool = commandpool;
+	allocinfo.level = level;
+
+	VkCommandBuffer commandbuffer;
+
+	if (vkAllocateCommandBuffers(m_device, &allocinfo, &commandbuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate command buffer");
+	}
+
+	VkCommandBufferBeginInfo begininfo{};
+	begininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandbuffer, &begininfo);
+
+	
+
+	return commandbuffer;
+}
+
+void Application::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue)
+{
+
+	vkEndCommandBuffer(commandbuffer);
+
+	VkSubmitInfo submitinfo{};
+	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitinfo.commandBufferCount = 1;
+	submitinfo.pCommandBuffers = &commandbuffer;
+
+	vkQueueSubmit(submitqueue, 1, &submitinfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(submitqueue);
+	
+	vkFreeCommandBuffers(m_device, commandpool, 1, &commandbuffer);
+
+}
+
 void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex)
 {
 
@@ -1634,41 +1710,62 @@ void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usag
 
 }
 
-void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size)
+void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode)
 {
-	VkCommandBufferAllocateInfo cmdinfo{};
-	cmdinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cmdinfo.commandBufferCount = 1;
-	cmdinfo.commandPool = m_transfercommandpool;
-	cmdinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	VkImageCreateInfo imageinfo{};
+	imageinfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageinfo.imageType = VK_IMAGE_TYPE_2D;
+	imageinfo.extent.width = width;
+	imageinfo.extent.height = height;
+	imageinfo.extent.depth = 1;
+	imageinfo.mipLevels = 1;
+	imageinfo.arrayLayers = 1;
+	imageinfo.format = format;
+	imageinfo.tiling = tiling;
+	imageinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageinfo.usage = usage;
+	imageinfo.sharingMode = sharingmode;
+	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageinfo.flags = 0;
+
+	if (vkCreateImage(m_device, &imageinfo, nullptr, &image) != VK_SUCCESS)
+	{
+		throw std::runtime_error("There is always gonna be someone who's better than you at something, that doesnt make you any less. I AM THAT I AM, I want to see who dares oppose that! also your image couldnt be created :( !");
+
+	}
+
+	VkMemoryRequirements imagememrequirements;
+	vkGetImageMemoryRequirements(m_device, image, &imagememrequirements);
+
+	VkMemoryAllocateInfo allocinfo{};
+	allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocinfo.allocationSize = imagememrequirements.size;
+	allocinfo.memoryTypeIndex = FindMemoryType(imagememrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	if (vkAllocateMemory(m_device, &allocinfo, nullptr, &imagememory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate texture memory.");
+	}
+
+	vkBindImageMemory(m_device, image, imagememory, 0);
+
+
+
+}
+
+void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue)
+{
 	
-	VkCommandBuffer cmdbuffer;
-	vkAllocateCommandBuffers(m_device, &cmdinfo, &cmdbuffer);
+	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
 
-	VkCommandBufferBeginInfo begininfo{};
-	begininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(cmdbuffer, &begininfo);
 
 	VkBufferCopy copyregion{};
 	copyregion.srcOffset = 0;
 	copyregion.dstOffset = 0;
 	copyregion.size = size;
-	vkCmdCopyBuffer(cmdbuffer, srcbuffer, dstbuffer, 1, &copyregion);
+	vkCmdCopyBuffer(commandbuffer, srcbuffer, dstbuffer, 1, &copyregion);
 
-	vkEndCommandBuffer(cmdbuffer);
-
-	VkSubmitInfo submitinfo{};
-	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitinfo.commandBufferCount = 1;
-	submitinfo.pCommandBuffers = &cmdbuffer;
-	
-	vkQueueSubmit(m_transferqueue, 1, &submitinfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(m_transferqueue);
-
-	vkFreeCommandBuffers(m_device, m_transfercommandpool, 1, &cmdbuffer);
-
+	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
 
 
 }

@@ -29,6 +29,9 @@
     <ClInclude Include="src\DebugUtilsMessengerEXT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Vendor\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\Shaders\BasicFragment.frag" />
