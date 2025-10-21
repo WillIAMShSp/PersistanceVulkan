@@ -804,6 +804,16 @@ void Application::CreateTextureImage()
 		m_textureimage, m_textureimagemem, VK_SHARING_MODE_CONCURRENT);
 
 
+	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_presentqueue);
+
+	CopyBuffertoImage(stagingbuffer, m_textureimage, width, height, m_transfercommandpool, m_presentqueue);
+
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingmem, nullptr);
+
+
+
 
 }
 
@@ -1808,6 +1818,102 @@ void Application::UpdateUniformBuffer(const uint32_t& currentframe)
 
 	memcpy(m_uniformbuffersmapped[currentframe], &mvp, sizeof(mvp));
 
+
+}
+
+void Application::TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue)
+{
+	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
+
+
+	VkPipelineStageFlags srcstage;
+	VkPipelineStageFlags dststage;
+
+
+
+	VkImageMemoryBarrier membarrier{};
+	membarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	membarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	membarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	membarrier.oldLayout = oldlayout;
+	membarrier.newLayout = newlayout;
+
+	membarrier.image = image;
+	membarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	membarrier.subresourceRange.baseArrayLayer = 0;
+	membarrier.subresourceRange.layerCount = 1;
+	membarrier.subresourceRange.baseMipLevel = 0;
+	membarrier.subresourceRange.levelCount = 1;
+
+	if (oldlayout == VK_IMAGE_LAYOUT_UNDEFINED && newlayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+
+		membarrier.srcAccessMask = 0; 
+		membarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; 
+
+		srcstage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dststage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+
+	}
+	else if (oldlayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newlayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		membarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; 
+		membarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		srcstage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dststage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+
+	}
+	else
+	{
+		throw std::invalid_argument("Layout unsupported!");
+
+	}
+
+
+
+	
+
+
+	vkCmdPipelineBarrier(commandbuffer,
+		srcstage, //todo
+		dststage, //todo
+		0, 0,
+		nullptr, 0,
+		nullptr, 1,
+		&membarrier);
+
+	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
+
+
+}
+
+void Application::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue)
+{
+	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
+
+	
+	VkBufferImageCopy imgcopy{};
+	imgcopy.bufferOffset = 0;
+	imgcopy.bufferImageHeight = 0;
+	imgcopy.bufferRowLength = 0;
+
+	imgcopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imgcopy.imageSubresource.baseArrayLayer = 0;
+	imgcopy.imageSubresource.mipLevel = 0;
+	imgcopy.imageSubresource.layerCount = 1;
+
+	imgcopy.imageOffset = { 0, 0, 0 };
+	imgcopy.imageExtent = { width, height, 1 };
+
+
+	vkCmdCopyBufferToImage(commandbuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imgcopy);
+
+
+	
+	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
 
 }
 

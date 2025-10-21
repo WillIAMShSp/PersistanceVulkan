@@ -154,6 +154,9 @@ private:
 
 		CleanUpSwapchain();
 
+		vkDestroyImage(m_device, m_textureimage, nullptr);
+		vkFreeMemory(m_device, m_textureimagemem, nullptr);
+
 		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
 
 		vkDestroyDescriptorSetLayout(m_device, m_descriptorsetlayout, nullptr);
@@ -362,7 +365,9 @@ private:
 
 	void UpdateUniformBuffer(const uint32_t& currentframe);
 
+	void TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue);
 
+	void CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width ,uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue);
 
 private:
 
