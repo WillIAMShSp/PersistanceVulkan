@@ -804,10 +804,11 @@ void Application::CreateTextureImage()
 		m_textureimage, m_textureimagemem, VK_SHARING_MODE_CONCURRENT);
 
 
-	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_presentqueue);
+	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
 
-	CopyBuffertoImage(stagingbuffer, m_textureimage, width, height, m_transfercommandpool, m_presentqueue);
+	CopyBuffertoImage(stagingbuffer, m_textureimage, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
 
+	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingmem, nullptr);
@@ -1486,6 +1487,7 @@ void Application::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const Vk
 	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitinfo.commandBufferCount = 1;
 	submitinfo.pCommandBuffers = &commandbuffer;
+	
 
 	vkQueueSubmit(submitqueue, 1, &submitinfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(submitqueue);
