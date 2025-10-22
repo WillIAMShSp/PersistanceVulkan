@@ -122,6 +122,8 @@ private:
 		CreateFramebuffers();
 		CreateCommandPools();
 		CreateTextureImage();
+		CreateTextureImageView();
+		CreateTextureSampler();
 		CreateVertexBuffers();
 		CreateIndexBuffers();
 		CreateUniformBuffer();
@@ -154,12 +156,16 @@ private:
 
 		CleanUpSwapchain();
 
+		vkDestroyImageView(m_device, m_teximageview, nullptr);
+
 		vkDestroyImage(m_device, m_textureimage, nullptr);
 		vkFreeMemory(m_device, m_textureimagemem, nullptr);
 
 		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
 
 		vkDestroyDescriptorSetLayout(m_device, m_descriptorsetlayout, nullptr);
+
+
 
 		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
 		{
@@ -311,6 +317,10 @@ private:
 
 	void CreateTextureImage();
 
+	void CreateTextureImageView();
+
+	void CreateTextureSampler();
+
 	bool CheckValidationLayers();
 
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -369,6 +379,8 @@ private:
 
 	void CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width ,uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue);
 
+	VkImageView CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect = VK_IMAGE_ASPECT_COLOR_BIT);
+
 private:
 
 	GLFWwindow* m_window = nullptr;
@@ -415,6 +427,10 @@ private:
 	//textures
 	VkImage m_textureimage;
 	VkDeviceMemory m_textureimagemem;
+
+	VkImageView m_teximageview;
+
+	VkSampler m_texsampler;
 
 
 

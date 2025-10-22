@@ -199,29 +199,8 @@ void Application::CreateImageViews()
 
 	for (int i = 0; i < m_swapchainimages.size(); i++)
 	{
-		VkImageViewCreateInfo createinfo{};
-		createinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createinfo.image = m_swapchainimages[i];
 		
-		createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createinfo.format = m_swapchainimageformat;
-
-		createinfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createinfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createinfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createinfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createinfo.subresourceRange.baseArrayLayer = 0;
-		createinfo.subresourceRange.layerCount = 1;
-		createinfo.subresourceRange.levelCount = 1;
-		createinfo.subresourceRange.baseMipLevel = 0;
-
-		if (vkCreateImageView(m_device, &createinfo, nullptr, &m_swapchainimageviews[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create Image View");
-
-		}
+		m_swapchainimageviews[i] = CreateImageView(m_swapchainimages[i], m_swapchainimageformat);
 
 
 
@@ -818,6 +797,62 @@ void Application::CreateTextureImage()
 
 }
 
+void Application::CreateTextureImageView()
+{
+
+	m_teximageview = CreateImageView(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB);
+
+
+
+
+
+}
+
+void Application::CreateTextureSampler()
+{
+
+	VkPhysicalDeviceProperties properties{};
+
+	vkGetPhysicalDeviceProperties(m_physicaldevice, &properties);
+
+
+
+	VkSamplerCreateInfo samplerinfo{};
+	samplerinfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+
+	samplerinfo.magFilter = VK_FILTER_LINEAR;
+	samplerinfo.minFilter = VK_FILTER_LINEAR;
+
+	samplerinfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerinfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerinfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+	samplerinfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+
+	samplerinfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerinfo.mipLodBias = 0.0f;
+	samplerinfo.minLod = 0.0f;
+	samplerinfo.maxLod = 0.0f;
+
+	samplerinfo.anisotropyEnable = VK_TRUE;
+	samplerinfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	
+
+
+	samplerinfo.unnormalizedCoordinates = VK_FALSE;
+	samplerinfo.compareEnable = VK_FALSE;
+	samplerinfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	if (vkCreateSampler(m_device, &samplerinfo, nullptr, &m_texsampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create sampler");
+
+	}
+
+		
+
+}
+
 bool Application::CheckValidationLayers()
 {
 
@@ -1237,6 +1272,18 @@ void Application::CreateLogicalDevice()
 	
 
 	VkPhysicalDeviceFeatures devicefeatures{};
+	//With this struct we can set which device features we want to use. 
+	//Perhaps it would be smart to be able to change that through 
+	//some level of abstraction so the user can simply and cleanly set whichever 
+	// device features they would like to use.
+
+	devicefeatures.samplerAnisotropy = VK_TRUE;
+	//in this case I'm only using this one ^ 
+
+	//We should add a check that allows or doesnt allow device features depending on what the hardware is capable of.
+	//Since this is designed to make games, however, it is safe to asume that most, if not all, devices running this
+	//program should at LEAST be able to use samplerAnisotropy. Still wouldnt be bad to include checks. 
+
 
 	VkDeviceCreateInfo devicecreateinfo{};
 
@@ -1917,6 +1964,34 @@ void Application::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t w
 	
 	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
 
+}
+
+VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect)
+{
+	VkImageView imageview;
+
+
+	VkImageViewCreateInfo viewinfo{};
+	viewinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewinfo.image = image;
+	viewinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewinfo.format = format;
+	viewinfo.subresourceRange.aspectMask = imageaspect;
+	viewinfo.subresourceRange.baseArrayLayer = 0;
+	viewinfo.subresourceRange.layerCount = 1;
+	viewinfo.subresourceRange.baseMipLevel = 0;
+	viewinfo.subresourceRange.levelCount = 1;
+
+
+	if (vkCreateImageView(m_device, &viewinfo, nullptr, &imageview) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create texture image view");
+
+	}
+
+
+
+	return imageview;
 }
 
 
