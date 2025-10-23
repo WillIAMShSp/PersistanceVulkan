@@ -271,18 +271,26 @@ void Application::CreateRenderPass()
 
 void Application::CreateDescriptorSetLayout()
 {
-	VkDescriptorSetLayoutBinding layoutbinding{};
-	layoutbinding.descriptorCount = 1;
-	layoutbinding.binding = 0;
-	layoutbinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	layoutbinding.pImmutableSamplers = nullptr;
-	layoutbinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	VkDescriptorSetLayoutBinding bindingMVP{};
+	bindingMVP.descriptorCount = 1;
+	bindingMVP.binding = 0;
+	bindingMVP.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	bindingMVP.pImmutableSamplers = nullptr;
+	bindingMVP.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+	VkDescriptorSetLayoutBinding bindingsampler{};
+	bindingsampler.descriptorCount = 1;
+	bindingsampler.binding = 1;
+	bindingsampler.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	bindingsampler.pImmutableSamplers = nullptr;
+	bindingsampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {bindingMVP, bindingsampler};
 
 	VkDescriptorSetLayoutCreateInfo layoutinfo{};
 	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutinfo.bindingCount = 1;
-	layoutinfo.pBindings = &layoutbinding;
+	layoutinfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutinfo.pBindings = bindings.data();
 	
 	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &m_descriptorsetlayout) != VK_SUCCESS)
 	{
@@ -317,18 +325,30 @@ void Application::CreateDescriptorSets()
 		bufferinfo.offset = 0;
 		bufferinfo.range = sizeof(ModelViewProjectionBuffer);
 
-		VkWriteDescriptorSet writedescriptor{};
-		writedescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writedescriptor.descriptorCount = 1;
-		writedescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writedescriptor.dstSet = m_descriptorsets[i];
-		writedescriptor.dstBinding = 0;
-		writedescriptor.dstArrayElement = 0;
-		writedescriptor.pBufferInfo = &bufferinfo;
-		writedescriptor.pImageInfo = nullptr;
-		writedescriptor.pTexelBufferView = nullptr;
+		VkDescriptorImageInfo imageinfo{};
+		imageinfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageinfo.imageView = m_teximageview;
+		imageinfo.sampler = m_texsampler;
 
-		vkUpdateDescriptorSets(m_device, 1, &writedescriptor, 0, nullptr);
+		std::array<VkWriteDescriptorSet, 2> writedescriptors{};
+		writedescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writedescriptors[0].dstSet = m_descriptorsets[i];
+		writedescriptors[0].dstArrayElement = 0;
+		writedescriptors[0].descriptorCount = 1;
+		writedescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writedescriptors[0].dstBinding = 0;
+		writedescriptors[0].pBufferInfo = &bufferinfo;
+
+		writedescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writedescriptors[1].dstSet = m_descriptorsets[i];
+		writedescriptors[1].dstArrayElement = 0;
+		writedescriptors[1].descriptorCount = 1;
+		writedescriptors[1].dstBinding = 1;
+		writedescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writedescriptors[1].pImageInfo = &imageinfo;
+	
+
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writedescriptors.size()), writedescriptors.data(), 0, nullptr);
 
 
 	}
@@ -608,14 +628,18 @@ void Application::CreateUniformBuffer()
 
 void Application::CreateDescriptorPool()
 {
-	VkDescriptorPoolSize poolsize{};
-	poolsize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolsize.descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+
+	std::array<VkDescriptorPoolSize, 2> poolsizes{};
+
+	poolsizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolsizes[0].descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	poolsizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolsizes[1].descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
 
 	VkDescriptorPoolCreateInfo poolinfo{};
 	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolinfo.poolSizeCount = 1;
-	poolinfo.pPoolSizes = &poolsize;
+	poolinfo.poolSizeCount = static_cast<uint32_t>(poolsizes.size());
+	poolinfo.pPoolSizes = poolsizes.data();
 	poolinfo.maxSets = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
 
 	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &m_descriptorpool) != VK_SUCCESS)
@@ -1229,9 +1253,6 @@ bool Application::DeviceExtensionSupport(VkPhysicalDevice& physicaldevice)
 void Application::CreateLogicalDevice()
 {
 
-
-	
-	
 
 	std::vector<VkDeviceQueueCreateInfo> queuecreateinfos;
 

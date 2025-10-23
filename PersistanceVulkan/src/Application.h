@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <vector>
+#include <array>
 #include <map>
 #include <optional>
 #include <set>
@@ -235,6 +236,7 @@ public:
 	{
 		glm::vec2 position;
 		glm::vec3 color;
+		glm::vec2 uv;
 
 		static VkVertexInputBindingDescription GetBindingDescription()
 		{
@@ -252,7 +254,7 @@ public:
 		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription()
 		{
 			std::vector<VkVertexInputAttributeDescription> attributedescription{};
-			attributedescription.resize(2);
+			attributedescription.resize(3);
 			
 			attributedescription[0].binding = 0;
 			attributedescription[0].location = 0;
@@ -263,6 +265,11 @@ public:
 			attributedescription[1].location = 1;
 			attributedescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 			attributedescription[1].offset = offsetof(Vertex, color);
+
+			attributedescription[2].binding = 0;
+			attributedescription[2].location = 2;
+			attributedescription[2].format = VK_FORMAT_R32G32_SFLOAT;
+			attributedescription[2].offset = offsetof(Vertex, uv);
 
 			return attributedescription;
 
@@ -448,12 +455,10 @@ private:
 
 
 	const std::vector<Vertex> vertices = {
-	
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-	
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
 	const std::vector<uint16_t> indices =
 	{
