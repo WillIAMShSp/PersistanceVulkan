@@ -19,7 +19,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
-#include <map>
+#include <unordered_map>
 #include <optional>
 #include <set>
 #include <algorithm>
@@ -110,6 +110,7 @@ private:
 
 	void InitVulkan()
 	{
+#pragma region InitFunc
 		CreateInstance();
 		SetUpDebugCallBack();
 		CreateSurface();
@@ -118,7 +119,22 @@ private:
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();
-		CreateDescriptorSetLayout();
+#pragma endregion
+
+#pragma region done
+		int handle;
+		handle = CreateDescriptorSetLayoutHandle();
+		AddDescriptorSetLayoutBinding(handle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		AddDescriptorSetLayoutBinding(handle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		
+		CreateDescriptorSetLayout(handle);
+
+		m_descriptorsetlayout = mh_descriptorsetlayouts.at(handle);
+
+#pragma endregion
+
+		//CreateDescriptorSetLayout();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPools();
@@ -222,6 +238,7 @@ private:
 
 	}
 
+
 public:
 
 	static void ResizeWindowCallback(GLFWwindow* window, int width, int height) 
@@ -270,6 +287,7 @@ public:
 			attributedescription[2].location = 2;
 			attributedescription[2].format = VK_FORMAT_R32G32_SFLOAT;
 			attributedescription[2].offset = offsetof(Vertex, uv);
+
 
 			return attributedescription;
 
@@ -438,6 +456,22 @@ private:
 	VkImageView m_teximageview;
 
 	VkSampler m_texsampler;
+
+
+	//Framework Vectors
+
+	std::vector<VkDescriptorSetLayout> m_descriptorsetlayouts;
+	std::unordered_map<uint32_t, VkDescriptorSetLayout> mh_descriptorsetlayouts;
+	//std::unordered_multimap<DescriptorSetLayoutHandle, VkDescriptorSetLayoutBinding> mh_descriptorsetlayoutbindings;
+	std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mh_descriptorsetlayoutbindings;
+
+	
+
+	uint8_t m_dslhandlecount = 0;
+	uint32_t CreateDescriptorSetLayoutHandle();
+	void AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding);
+	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
+	void CreateDescriptorSetLayout(uint32_t handle);
 
 
 

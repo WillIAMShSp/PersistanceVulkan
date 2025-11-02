@@ -77,7 +77,7 @@ void Application::CreateInstance()
 	createinfo.enabledExtensionCount = (uint32_t)requiredextensions.size();
 	createinfo.ppEnabledExtensionNames = requiredextensions.data();
 	
-	createinfo.enabledLayerCount = 0;
+
 
 	if (vkCreateInstance(&createinfo, nullptr, &m_instance) != VK_SUCCESS)
 	{
@@ -207,16 +207,13 @@ void Application::CreateImageViews()
 
 	}
 
-
-
-
 }
 
 void Application::CreateRenderPass()
 {
 	VkAttachmentDescription colorattachment{};
 	colorattachment.format = m_swapchainimageformat;
-	colorattachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorattachment.samples = (VkSampleCountFlagBits)1;
 	colorattachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorattachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
@@ -247,7 +244,7 @@ void Application::CreateRenderPass()
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 
-
+	
 	VkRenderPassCreateInfo renderpasscreateinfo{};
 	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderpasscreateinfo.attachmentCount = 1;
@@ -281,7 +278,7 @@ void Application::CreateDescriptorSetLayout()
 	VkDescriptorSetLayoutBinding bindingsampler{};
 	bindingsampler.descriptorCount = 1;
 	bindingsampler.binding = 1;
-	bindingsampler.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	bindingsampler.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	bindingsampler.pImmutableSamplers = nullptr;
 	bindingsampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -1021,22 +1018,6 @@ void Application::SelectPhysicalDevice()
 
 		}
 
-		
-		/*uint32_t devicescore = RateDevice(physicaldevices[i]);
-		
-		if (devicescore > 0 && devicescore > bestscore)
-		{
-			bestscore = devicescore;
-			
-			m_physicaldevice = physicaldevices[i];
-
-			
-		}*/
-
-
-
-		/*m_queuefamilyindices = FindQueueFamilies(m_physicaldevice);*/
-
 
 		if (m_physicaldevice == nullptr)
 		{
@@ -1145,9 +1126,6 @@ bool Application::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scoreha
 
 	}
 	
-
-
-
 
 	scorehandle = score;
 
@@ -1600,6 +1578,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 	
+	
 
 	VkViewport viewport{};
 	viewport.x = 0.f;
@@ -1757,12 +1736,31 @@ void Application::RecreateSwapchain()
 
 void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode)
 {
+	
+
 	VkBufferCreateInfo buffercreateinfo{};
 	buffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	buffercreateinfo.size = size;
 
 	buffercreateinfo.usage = usageflags;
 	buffercreateinfo.sharingMode = sharingmode;
+
+	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
+	{
+		std::array<uint32_t, 2> queuefamilyindices =
+		{
+			m_queuefamilyindices.graphicsfamily.value(),
+			m_queuefamilyindices.transferfamily.value()
+
+		};
+
+		buffercreateinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
+		buffercreateinfo.pQueueFamilyIndices = queuefamilyindices.data();
+
+
+
+	}
+
 
 	if (vkCreateBuffer(m_device, &buffercreateinfo, nullptr, &buffer) != VK_SUCCESS)
 	{
@@ -1807,6 +1805,23 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 	imageinfo.sharingMode = sharingmode;
 	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageinfo.flags = 0;
+
+	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
+	{
+		std::array<uint32_t, 2> queuefamilyindices =
+		{
+			m_queuefamilyindices.graphicsfamily.value(),
+			m_queuefamilyindices.transferfamily.value()
+
+		};
+
+		imageinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
+		imageinfo.pQueueFamilyIndices = queuefamilyindices.data();
+
+
+
+	}
+	
 
 	if (vkCreateImage(m_device, &imageinfo, nullptr, &image) != VK_SUCCESS)
 	{
@@ -2014,6 +2029,62 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 
 	return imageview;
 }
+
+uint32_t Application::CreateDescriptorSetLayoutHandle()
+{
+	uint32_t handle = m_dslhandlecount++;
+
+	
+
+	mh_descriptorsetlayouts.insert(std::make_pair(handle, nullptr));
+	mh_descriptorsetlayoutbindings.insert({ handle, std::vector<VkDescriptorSetLayoutBinding>(0) });
+
+	return handle;
+}
+
+void Application::AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding)
+{
+
+	mh_descriptorsetlayoutbindings.at(handle).push_back(binding);
+
+
+}
+
+void Application::AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
+{
+	VkDescriptorSetLayoutBinding binding{};
+	binding.binding = bindingidx;
+	binding.descriptorCount = 1;
+	binding.descriptorType = descriptortype;
+	binding.stageFlags = shaderstage;
+	binding.pImmutableSamplers = 0;
+	
+	mh_descriptorsetlayoutbindings.at(handle).push_back(binding);
+	
+
+}
+
+void Application::CreateDescriptorSetLayout(uint32_t handle)
+{
+
+	//VkDescriptorSetLayout layout;
+
+	VkDescriptorSetLayoutCreateInfo layoutinfo{};
+	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutinfo.bindingCount = static_cast<uint32_t>(mh_descriptorsetlayoutbindings.at(handle).size());
+	layoutinfo.pBindings = mh_descriptorsetlayoutbindings.at(handle).data();
+
+	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &mh_descriptorsetlayouts.at(handle)) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create descriptor set layout!");
+	}
+
+	//mh_descriptorsetlayouts.at(handle) = layout;
+	
+
+}
+
+
 
 
 
