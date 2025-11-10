@@ -22,11 +22,15 @@
 #include <unordered_map>
 #include <optional>
 #include <set>
+#include <string>
 #include <algorithm>
 #include <fstream>
 #include <chrono>
 
 #include "DebugUtilsMessengerEXT.h"
+
+
+#include "Objects/Shader.h"
 
 
 
@@ -122,6 +126,8 @@ private:
 #pragma endregion
 
 #pragma region done
+
+		//////// DescriptorSetLayouts
 		int handle;
 		handle = CreateDescriptorSetLayoutHandle();
 		AddDescriptorSetLayoutBinding(handle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
@@ -131,6 +137,13 @@ private:
 		CreateDescriptorSetLayout(handle);
 
 		m_descriptorsetlayout = mh_descriptorsetlayouts.at(handle);
+
+
+		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
+
+
+
+		////////////
 
 #pragma endregion
 
@@ -376,7 +389,7 @@ private:
 
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities);
 
-	static std::vector<char> ReadFile(const std::string& filepath);
+	static std::vector<char> ReadFile(const char* filepath);
 	
 	VkShaderModule CreateShaderModule(const std::vector<char>& shaderfile);
 
@@ -458,9 +471,8 @@ private:
 	VkSampler m_texsampler;
 
 
-	//Framework Vectors
+	//DescriptorSetLayout Modulation
 
-	std::vector<VkDescriptorSetLayout> m_descriptorsetlayouts;
 	std::unordered_map<uint32_t, VkDescriptorSetLayout> mh_descriptorsetlayouts;
 	//std::unordered_multimap<DescriptorSetLayoutHandle, VkDescriptorSetLayoutBinding> mh_descriptorsetlayoutbindings;
 	std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mh_descriptorsetlayoutbindings;
@@ -468,10 +480,29 @@ private:
 	
 
 	uint8_t m_dslhandlecount = 0;
-	uint32_t CreateDescriptorSetLayoutHandle();
-	void AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding);
+	uint32_t CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
+	void AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding); //The handle is used here to add bindings to the layout;
 	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
 	void CreateDescriptorSetLayout(uint32_t handle);
+	/////////////////////////////////////////////////////////////
+
+	//GraphicsPipeLineModulation
+	uint32_t m_pipelinecount = 0;
+	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
+	std::unordered_map<uint32_t, Shader> mh_shaders;
+	
+	
+	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
+	void CreatePipelineShader(uint32_t handle); //Creates a pipeline shader
+	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
+	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
+
+	
+
+
+
+
+
 
 
 

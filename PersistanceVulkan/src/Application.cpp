@@ -1445,7 +1445,7 @@ VkExtent2D Application::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surface
 
 }
 
-std::vector<char> Application::ReadFile(const std::string& filepath)
+std::vector<char> Application::ReadFile(const char* filepath)
 {
 	std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
@@ -2084,6 +2084,70 @@ void Application::CreateDescriptorSetLayout(uint32_t handle)
 
 }
 
+uint32_t Application::CreateGraphicsPipelineHandle()
+{
+	uint32_t handle = m_pipelinecount++;
+
+	mh_pipelines.insert({ handle, nullptr });
+
+
+
+	return handle;
+
+
+
+}
+
+void Application::CreatePipelineShader(uint32_t handle)
+{
+	mh_shaders.insert({ handle, Shader() });
+
+}
+
+void Application::AddVertexStage(uint32_t handle, const char* shaderpath)
+{
+
+	if (mh_shaders.find(handle) == mh_shaders.end())
+	{
+
+		throw std::runtime_error("Failed to find pipeline shader with handle " + std::to_string(handle));
+
+
+	}
+	else
+	{
+
+		const auto shaderfile = ReadFile(shaderpath);
+		VkShaderModule module = CreateShaderModule(shaderfile);
+
+		mh_shaders.at(handle).AddVertexShaderStage(module);
+
+		vkDestroyShaderModule(m_device, module, nullptr);
+
+
+
+	}
+
+
+}
+
+void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
+{
+	if (mh_shaders.find(handle) == mh_shaders.end())
+	{
+		throw std::runtime_error("Failed to find pipeline shader with handle " + std::to_string(handle));
+
+	}
+	else
+	{
+		const auto shaderfile = ReadFile(shaderpath);
+		VkShaderModule module = CreateShaderModule(shaderfile);
+
+		mh_shaders.at(handle).AddFragmentShaderStage(module);
+
+		vkDestroyShaderModule(m_device, module, nullptr);
+	}
+}
 
 
 
@@ -2091,16 +2155,6 @@ void Application::CreateDescriptorSetLayout(uint32_t handle)
 
 
 
-//bool Application::IsDeviceSuitable(VkPhysicalDevice& physicaldevice)
-//{
-//	VkPhysicalDeviceProperties properties;
-//	vkGetPhysicalDeviceProperties(physicaldevice, &properties);
-//
-//	VkPhysicalDeviceFeatures features;
-//	vkGetPhysicalDeviceFeatures(physicaldevice, &features);
-//
-//	return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader;
-//}
 
 
 
