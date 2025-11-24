@@ -2,7 +2,19 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include<iostream>
 #include <array>
+
+const static enum ShaderStages
+{
+
+	VERTEXSTAGE = 0,
+	FRAGMENTSTAGE = 1,
+	COMPUTESTAGE = 2
+
+
+};
+
 
 
 
@@ -13,12 +25,22 @@ public:
 
 	inline auto& GetModules()
 	{
+		if (!m_hasvertexstage && !m_hasfragmentstage)
+		{
+			throw std::runtime_error("WARNING: no vertex or fragment modules found");
+		}
+
 
 		return m_modules;
 	}
 
 	inline auto& GetStages()
 	{
+		if (!m_hasvertexstage && !m_hasfragmentstage)
+		{
+			throw std::runtime_error("WARNING: no vertex or fragment stages found");
+		}
+
 		return m_stages;
 
 	}

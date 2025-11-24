@@ -3,7 +3,7 @@
 
 void Shader::AddVertexShaderStage(VkShaderModule& module)
 {
-	m_modules[0] = module;
+	m_modules[ShaderStages::VERTEXSTAGE] = module;
 
 	VkPipelineShaderStageCreateInfo createinfo{};
 	createinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -11,7 +11,7 @@ void Shader::AddVertexShaderStage(VkShaderModule& module)
 	createinfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	createinfo.pName = "main";
 
-	m_stages[0] = createinfo;
+	m_stages[ShaderStages::VERTEXSTAGE] = createinfo;
 
 	if (!m_hasvertexstage)
 	{
@@ -26,7 +26,7 @@ void Shader::AddVertexShaderStage(VkShaderModule& module)
 
 void Shader::AddFragmentShaderStage(VkShaderModule& module)
 {
-	m_modules[1] = module;
+	m_modules[ShaderStages::FRAGMENTSTAGE] = module;
 
 	VkPipelineShaderStageCreateInfo createinfo{};
 	createinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -34,7 +34,7 @@ void Shader::AddFragmentShaderStage(VkShaderModule& module)
 	createinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	createinfo.pName = "main";
 
-	m_stages[0] = createinfo;
+	m_stages[ShaderStages::FRAGMENTSTAGE] = createinfo;
 
 	if (!m_hasfragmentstage)
 	{

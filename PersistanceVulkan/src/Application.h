@@ -484,19 +484,23 @@ private:
 	void AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding); //The handle is used here to add bindings to the layout;
 	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
 	void CreateDescriptorSetLayout(uint32_t handle);
+
+
 	/////////////////////////////////////////////////////////////
 
 	//GraphicsPipeLineModulation
 	uint32_t m_pipelinecount = 0;
 	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
 	std::unordered_map<uint32_t, Shader> mh_shaders;
-	
+	std::unordered_map<uint32_t, VkPipelineVertexInputStateCreateInfo> mh_vertexinputstate;
+
 	
 	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
 	void CreatePipelineShader(uint32_t handle); //Creates a pipeline shader
 	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
 	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
-
+	
+	
 	
 
 
@@ -528,6 +532,12 @@ private:
 	const std::vector<uint16_t> indices =
 	{
 		0, 1, 2, 2, 3, 0
+
+	};
+
+	struct VertexAttributeLayout
+	{
+
 
 	};
 	

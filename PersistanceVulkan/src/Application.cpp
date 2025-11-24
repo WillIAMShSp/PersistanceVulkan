@@ -396,12 +396,6 @@ void Application::CreateGraphicsPipeline()
 
 	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
 	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	
-	inputvertexcreateinfo.vertexBindingDescriptionCount = 0;
-	inputvertexcreateinfo.pVertexBindingDescriptions = nullptr;
-	
-	inputvertexcreateinfo.vertexAttributeDescriptionCount = 0;
-	inputvertexcreateinfo.pVertexAttributeDescriptions = nullptr;
 
 	auto bindingdescription = Vertex::GetBindingDescription();
 	auto attributedescription = Vertex::GetAttributeDescription();
