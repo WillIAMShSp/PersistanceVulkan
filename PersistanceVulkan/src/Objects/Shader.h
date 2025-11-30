@@ -54,7 +54,7 @@ public:
 
 private:
 
-	static const int MAXSTAGES = 3;
+	static const int MAXSTAGES = 2;
 	
 	std::array<VkShaderModule, MAXSTAGES> m_modules;
 	std::array<VkPipelineShaderStageCreateInfo, MAXSTAGES> m_stages;

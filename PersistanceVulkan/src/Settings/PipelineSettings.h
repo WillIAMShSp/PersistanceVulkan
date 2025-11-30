@@ -18,7 +18,7 @@ struct VertexInputStateLayout
 {
 
 
-	std::vector<VkVertexInputAttributeDescription> m_attributes;
+	std::vector<VertexInputState> m_attributes{};
 
 	uint32_t stride = 0;
 
@@ -59,11 +59,84 @@ struct VertexInputStateLayout
 
 
 
-struct PipelineSettings
+class PipelineSettings
 {
+public:
 	PipelineSettings() = default;
+	
+	void CreateVertexInputState(VertexInputStateLayout& layout);
+	void DefineInputAssemblyState(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 primitiverestart = VK_FALSE);
+	void CreateStaticViewPort();
+	void ConfigureRasterizationStage( 
+		VkPolygonMode polygonmode = VK_POLYGON_MODE_FILL, 
+		VkCullModeFlagBits cullmode = VK_CULL_MODE_BACK_BIT, 
+		VkFrontFace frontface = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+		VkBool32 enabledepthclamp = VK_FALSE,
+		float linewidth = 1.0f,
+		VkBool32 rasterizerdiscard = VK_FALSE
+	);
+	void ConfigureRasterizationDepthBias(VkBool32 depthbiasenable, VkBool32 depthbiasclamp, float depthbiasslopefactor, float depthbiasconstantfactor);
+	void ConfigureMultisample(
+		VkBool32 sampleshading = VK_FALSE,
+		VkSampleCountFlagBits rasterizationsamples = VK_SAMPLE_COUNT_1_BIT,
+		float minsampleshading = 1.0f,
+		VkSampleMask* samplemask = nullptr,
+		VkBool32 alphatocoverage = VK_FALSE,
+		VkBool32 alphatoone = VK_FALSE
+	);
+	void ConfigureColorBlend();
+	void ConfigureColorBlend(
+		VkColorComponentFlagBits colorcomponents, 
+		VkBool32 enableblend, 
+		VkBlendOp colorblend, 
+		VkBlendOp alphablend, 
+		VkBlendFactor srccolorblendfactor,
+		VkBlendFactor dstcolorblendfactor
+		);
 
+	void UseDynamicViewport(); 
+	
 
+public:
+	const VkPipelineVertexInputStateCreateInfo& GetVertexInputStateCreateInfo()
+	{
+		return m_vertexinputstatecreateinfo;
+	}
+	const VkPipelineInputAssemblyStateCreateInfo& GetInputAssemblyStateCreateInfo()
+	{
+		return m_inputassemblystatecreateinfo;
+	}
+	const VkPipelineViewportStateCreateInfo& Getviewportcreateinfo()
+	{
+		return m_viewportcreateinfo;
+	}
+	const VkPipelineRasterizationStateCreateInfo& GetRasterCreateInfo()
+	{
+		return m_rastercreateinfo;
+	}
+	const VkPipelineMultisampleStateCreateInfo& GetMultisampleCreateInfo()
+	{
+		return m_multisamplecreateinfo;
+	}
+	const VkPipelineColorBlendStateCreateInfo& GetColorBlendCreateInfo()
+	{
+		return m_colorblendcreateinfo;
+	}
+	const VkPipelineDynamicStateCreateInfo& GetDynamicStateCreateInfo()
+	{
+		return m_dynamicstatecreateinfo;
+	}
+	bool m_usedynamicstate = false;
 
+private:
+	VkPipelineVertexInputStateCreateInfo m_vertexinputstatecreateinfo{};
+	VkPipelineInputAssemblyStateCreateInfo m_inputassemblystatecreateinfo{};
+	VkPipelineViewportStateCreateInfo m_viewportcreateinfo{};
+	VkPipelineRasterizationStateCreateInfo m_rastercreateinfo{};
+	VkPipelineMultisampleStateCreateInfo m_multisamplecreateinfo{};
+	VkPipelineColorBlendAttachmentState m_colorblendattachment{};
+	VkPipelineColorBlendStateCreateInfo m_colorblendcreateinfo{};
+	VkPipelineDynamicStateCreateInfo m_dynamicstatecreateinfo{};
+	
 
 };

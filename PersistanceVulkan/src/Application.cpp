@@ -2143,6 +2143,111 @@ void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
 	}
 }
 
+void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding)
+{
+	mh_pipelinelayouts.insert({ graphicspipelinehandle, nullptr});
+
+	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
+	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelinelayoutcreateinfo.setLayoutCount = 1;
+	pipelinelayoutcreateinfo.pSetLayouts = &mh_descriptorsetlayouts.at(descriptorsetbinding);
+	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
+	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
+
+	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &mh_pipelinelayouts.at(graphicspipelinehandle)) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create pipeline layout!");
+	}
+}
+
+void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings)
+{
+	//////////////////////////////test
+
+	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
+	const auto fragmentshaderfile = ReadFile("res/Shaders/basicfrag.spv");
+
+	VkShaderModule vertexmodule = CreateShaderModule(vertexshaderfile);
+	VkShaderModule fragmentmodule = CreateShaderModule(fragmentshaderfile);
+
+	VkPipelineShaderStageCreateInfo vertcreateinfo{};
+	vertcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertcreateinfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertcreateinfo.module = vertexmodule;
+	vertcreateinfo.pName = "main";
+
+
+	VkPipelineShaderStageCreateInfo fragcreateinfo{};
+	fragcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragcreateinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragcreateinfo.module = fragmentmodule;
+	fragcreateinfo.pName = "main";
+
+
+	VkPipelineShaderStageCreateInfo shaderstages[] = { vertcreateinfo, fragcreateinfo };
+
+
+
+	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
+	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+	auto bindingdescription = Vertex::GetBindingDescription();
+	auto attributedescription = Vertex::GetAttributeDescription();
+
+
+	inputvertexcreateinfo.vertexBindingDescriptionCount = 1;
+	inputvertexcreateinfo.vertexAttributeDescriptionCount = attributedescription.size();
+
+	inputvertexcreateinfo.pVertexBindingDescriptions = &bindingdescription;
+	inputvertexcreateinfo.pVertexAttributeDescriptions = attributedescription.data();
+
+
+	//////////////////////////////////
+	VkGraphicsPipelineCreateInfo pipelinecreateinfo{};
+	Shader& shader = mh_shaders.at(handle);
+
+	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelinecreateinfo.stageCount = 2;
+	pipelinecreateinfo.pStages = shaderstages;
+
+
+	//pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
+	pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
+	pipelinecreateinfo.pInputAssemblyState = &settings.GetInputAssemblyStateCreateInfo();
+	pipelinecreateinfo.pViewportState = &settings.Getviewportcreateinfo();
+	pipelinecreateinfo.pRasterizationState = &settings.GetRasterCreateInfo();
+	pipelinecreateinfo.pMultisampleState = &settings.GetMultisampleCreateInfo();
+	pipelinecreateinfo.pColorBlendState = &settings.GetColorBlendCreateInfo();
+	pipelinecreateinfo.pDepthStencilState = nullptr;
+
+
+	pipelinecreateinfo.layout = mh_pipelinelayouts.at(handle);
+	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &settings.GetDynamicStateCreateInfo() : nullptr;
+	pipelinecreateinfo.renderPass = m_renderpass;
+	pipelinecreateinfo.subpass = 0;
+
+	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelinecreateinfo.basePipelineIndex = -1;
+
+
+	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_pipelines.at(handle)) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create the graphics pipeline");
+
+	}
+
+
+}
+
+void Application::DestroyShaders(uint32_t handle)
+{
+	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetModules()[ShaderStages::VERTEXSTAGE], nullptr);
+	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetModules()[ShaderStages::FRAGMENTSTAGE], nullptr);
+	// compute one goes here.
+
+
+}
+
 
 
 

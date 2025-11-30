@@ -27,6 +27,8 @@
 #include <fstream>
 #include <chrono>
 
+#include "../Settings/PipelineSettings.h"
+
 #include "DebugUtilsMessengerEXT.h"
 
 
@@ -128,15 +130,15 @@ private:
 #pragma region done
 
 		//////// DescriptorSetLayouts
-		int handle;
-		handle = CreateDescriptorSetLayoutHandle();
-		AddDescriptorSetLayoutBinding(handle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-		AddDescriptorSetLayoutBinding(handle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		int descriptorhandle;
+		descriptorhandle = CreateDescriptorSetLayoutHandle();
+		AddDescriptorSetLayoutBinding(descriptorhandle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		AddDescriptorSetLayoutBinding(descriptorhandle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		
-		CreateDescriptorSetLayout(handle);
+		CreateDescriptorSetLayout(descriptorhandle);
 
-		m_descriptorsetlayout = mh_descriptorsetlayouts.at(handle);
+		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorhandle);
 
 
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
@@ -149,6 +151,34 @@ private:
 
 		//CreateDescriptorSetLayout();
 		CreateGraphicsPipeline();
+///////////////////////////////////////////////////
+		uint32_t pipeline = CreateGraphicsPipelineHandle();
+		CreatePipelineShader(pipeline);
+		AddVertexStage(pipeline, "res/Shaders/basicvert.spv");
+		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv");
+		CreateGraphicsPipelineLayout(pipeline, descriptorhandle);
+		PipelineSettings settings;
+		VertexInputStateLayout vertexbufferlayout;
+		vertexbufferlayout.push<glm::vec2>();
+		vertexbufferlayout.push<glm::vec3>();
+		vertexbufferlayout.push<glm::vec2>();
+		//settings.CreateVertexInputState(vertexbufferlayout);
+		settings.DefineInputAssemblyState();
+		settings.CreateStaticViewPort();
+		settings.ConfigureRasterizationStage();
+		settings.ConfigureMultisample();
+		settings.ConfigureColorBlend();
+		settings.UseDynamicViewport();
+		CreateGraphicsPipeline(pipeline, settings);
+		DestroyShaders(pipeline);
+		//m_pipeline = mh_pipelines.at(pipeline);
+		
+
+		
+		m_pipeline = mh_pipelines.at(0);
+
+
+///////////////////////////////////////////////////
 		CreateFramebuffers();
 		CreateCommandPools();
 		CreateTextureImage();
@@ -491,6 +521,7 @@ private:
 	//GraphicsPipeLineModulation
 	uint32_t m_pipelinecount = 0;
 	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
+	std::unordered_map<uint32_t, VkPipelineLayout> mh_pipelinelayouts;
 	std::unordered_map<uint32_t, Shader> mh_shaders;
 	std::unordered_map<uint32_t, VkPipelineVertexInputStateCreateInfo> mh_vertexinputstate;
 
@@ -499,8 +530,9 @@ private:
 	void CreatePipelineShader(uint32_t handle); //Creates a pipeline shader
 	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
 	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
-	
-	
+	void CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding);
+	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings);
+	void DestroyShaders(uint32_t handle);
 	
 
 
