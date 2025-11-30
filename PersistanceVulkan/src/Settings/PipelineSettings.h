@@ -67,18 +67,20 @@ public:
 	void CreateVertexInputState(VertexInputStateLayout& layout);
 	void DefineInputAssemblyState(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 primitiverestart = VK_FALSE);
 	void CreateStaticViewPort();
+	void ConfigureRasterizationStage();
 	void ConfigureRasterizationStage( 
-		VkPolygonMode polygonmode = VK_POLYGON_MODE_FILL, 
-		VkCullModeFlagBits cullmode = VK_CULL_MODE_BACK_BIT, 
-		VkFrontFace frontface = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+		VkPolygonMode polygonmode, 
+		VkCullModeFlagBits cullmode, 
+		VkFrontFace frontface,
 		VkBool32 enabledepthclamp = VK_FALSE,
 		float linewidth = 1.0f,
 		VkBool32 rasterizerdiscard = VK_FALSE
 	);
 	void ConfigureRasterizationDepthBias(VkBool32 depthbiasenable, VkBool32 depthbiasclamp, float depthbiasslopefactor, float depthbiasconstantfactor);
+	void ConfigureMultisample();
 	void ConfigureMultisample(
-		VkBool32 sampleshading = VK_FALSE,
-		VkSampleCountFlagBits rasterizationsamples = VK_SAMPLE_COUNT_1_BIT,
+		VkBool32 sampleshading,
+		VkSampleCountFlagBits rasterizationsamples,
 		float minsampleshading = 1.0f,
 		VkSampleMask* samplemask = nullptr,
 		VkBool32 alphatocoverage = VK_FALSE,

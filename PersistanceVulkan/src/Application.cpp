@@ -2196,10 +2196,22 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 
 	inputvertexcreateinfo.vertexBindingDescriptionCount = 1;
-	inputvertexcreateinfo.vertexAttributeDescriptionCount = attributedescription.size();
+	inputvertexcreateinfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributedescription.size());
 
 	inputvertexcreateinfo.pVertexBindingDescriptions = &bindingdescription;
 	inputvertexcreateinfo.pVertexAttributeDescriptions = attributedescription.data();
+
+	std::vector<VkDynamicState> dynamicstates =
+	{
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicstatecreateinfo{};
+	dynamicstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicstatecreateinfo.dynamicStateCount = static_cast<uint32_t>(dynamicstates.size());
+	dynamicstatecreateinfo.pDynamicStates = dynamicstates.data();
 
 
 	//////////////////////////////////
@@ -2222,7 +2234,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 
 	pipelinecreateinfo.layout = mh_pipelinelayouts.at(handle);
-	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &settings.GetDynamicStateCreateInfo() : nullptr;
+	pipelinecreateinfo.pDynamicState = &dynamicstatecreateinfo;//(settings.m_usedynamicstate) ? &settings.GetDynamicStateCreateInfo() : nullptr;
 	pipelinecreateinfo.renderPass = m_renderpass;
 	pipelinecreateinfo.subpass = 0;
 
@@ -2235,6 +2247,10 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 		throw std::runtime_error("Failed to create the graphics pipeline");
 
 	}
+
+	DestroyShaders(handle);
+	vkDestroyShaderModule(m_device, vertexmodule, nullptr);
+	vkDestroyShaderModule(m_device, fragmentmodule, nullptr);
 
 
 }

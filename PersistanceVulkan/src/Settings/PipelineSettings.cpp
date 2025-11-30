@@ -26,7 +26,7 @@ void PipelineSettings::CreateVertexInputState(VertexInputStateLayout& layout)
 	m_vertexinputstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	m_vertexinputstatecreateinfo.pVertexAttributeDescriptions = attributedescriptions.data();
 	m_vertexinputstatecreateinfo.pVertexBindingDescriptions = &bindingdescription;
-	m_vertexinputstatecreateinfo.vertexAttributeDescriptionCount = attributedescriptions.size();
+	m_vertexinputstatecreateinfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributedescriptions.size());
 	m_vertexinputstatecreateinfo.vertexBindingDescriptionCount = 1;
 	
 
@@ -47,6 +47,22 @@ void PipelineSettings::CreateStaticViewPort()
 	m_viewportcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	m_viewportcreateinfo.viewportCount = 1;
 	m_viewportcreateinfo.scissorCount = 1;
+}
+
+void PipelineSettings::ConfigureRasterizationStage()
+{
+	m_rastercreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	m_rastercreateinfo.depthClampEnable = VK_FALSE;
+	m_rastercreateinfo.polygonMode = VK_POLYGON_MODE_FILL;
+	m_rastercreateinfo.lineWidth = 1.0f;
+	m_rastercreateinfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	m_rastercreateinfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	m_rastercreateinfo.rasterizerDiscardEnable = VK_FALSE;
+
+	m_rastercreateinfo.depthBiasClamp = VK_FALSE;
+	m_rastercreateinfo.depthBiasEnable = VK_FALSE;
+	m_rastercreateinfo.depthBiasSlopeFactor = 0.f;
+	m_rastercreateinfo.depthBiasConstantFactor = 0.f;
 }
 
 void PipelineSettings::ConfigureRasterizationStage(VkPolygonMode polygonmode, VkCullModeFlagBits cullmode, VkFrontFace frontface, VkBool32 enabledepthclamp, float linewidth, VkBool32 rasterizerdiscard)
@@ -73,6 +89,18 @@ void PipelineSettings::ConfigureRasterizationDepthBias(VkBool32 depthbiasenable,
 	m_rastercreateinfo.depthBiasEnable = depthbiasenable;
 	m_rastercreateinfo.depthBiasSlopeFactor = depthbiasslopefactor;
 	m_rastercreateinfo.depthBiasConstantFactor = depthbiasconstantfactor;
+
+}
+
+void PipelineSettings::ConfigureMultisample()
+{
+	m_multisamplecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	m_multisamplecreateinfo.sampleShadingEnable = VK_FALSE;
+	m_multisamplecreateinfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	m_multisamplecreateinfo.minSampleShading = 1.0f;
+	m_multisamplecreateinfo.pSampleMask = nullptr;
+	m_multisamplecreateinfo.alphaToCoverageEnable = VK_FALSE;
+	m_multisamplecreateinfo.alphaToOneEnable = VK_FALSE;
 
 }
 

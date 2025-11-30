@@ -162,7 +162,7 @@ private:
 		vertexbufferlayout.push<glm::vec2>();
 		vertexbufferlayout.push<glm::vec3>();
 		vertexbufferlayout.push<glm::vec2>();
-		//settings.CreateVertexInputState(vertexbufferlayout);
+//		settings.CreateVertexInputState(vertexbufferlayout);
 		settings.DefineInputAssemblyState();
 		settings.CreateStaticViewPort();
 		settings.ConfigureRasterizationStage();
@@ -171,11 +171,11 @@ private:
 		settings.UseDynamicViewport();
 		CreateGraphicsPipeline(pipeline, settings);
 		DestroyShaders(pipeline);
-		//m_pipeline = mh_pipelines.at(pipeline);
+		m_pipeline = mh_pipelines.at(pipeline);
 		
 
 		
-		m_pipeline = mh_pipelines.at(0);
+		
 
 
 ///////////////////////////////////////////////////
@@ -523,7 +523,7 @@ private:
 	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
 	std::unordered_map<uint32_t, VkPipelineLayout> mh_pipelinelayouts;
 	std::unordered_map<uint32_t, Shader> mh_shaders;
-	std::unordered_map<uint32_t, VkPipelineVertexInputStateCreateInfo> mh_vertexinputstate;
+	
 
 	
 	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
@@ -534,7 +534,7 @@ private:
 	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings);
 	void DestroyShaders(uint32_t handle);
 	
-
+	 
 
 
 
