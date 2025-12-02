@@ -162,7 +162,7 @@ private:
 		vertexbufferlayout.push<glm::vec2>();
 		vertexbufferlayout.push<glm::vec3>();
 		vertexbufferlayout.push<glm::vec2>();
-//		settings.CreateVertexInputState(vertexbufferlayout);
+		settings.CreateVertexInputState(vertexbufferlayout);
 		settings.DefineInputAssemblyState();
 		settings.CreateStaticViewPort();
 		settings.ConfigureRasterizationStage();
@@ -170,7 +170,6 @@ private:
 		settings.ConfigureColorBlend();
 		settings.UseDynamicViewport();
 		CreateGraphicsPipeline(pipeline, settings);
-		DestroyShaders(pipeline);
 		m_pipeline = mh_pipelines.at(pipeline);
 		
 

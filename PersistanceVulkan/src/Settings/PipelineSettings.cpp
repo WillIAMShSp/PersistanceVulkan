@@ -3,30 +3,29 @@
 void PipelineSettings::CreateVertexInputState(VertexInputStateLayout& layout)
 {
 
-	std::vector<VkVertexInputAttributeDescription> attributedescriptions;
-	attributedescriptions.resize(layout.m_attributes.size());
-
-	for (int i = 0; i < attributedescriptions.size(); i++)
+	
+	m_attributedescription.resize(layout.m_attributes.size());
+	for (int i = 0; i < m_attributedescription.size(); i++)
 	{
 		VertexInputState attribute = layout.m_attributes[i];
 
-		attributedescriptions[i].binding = 0;
-		attributedescriptions[i].location = i;
-		attributedescriptions[i].format = attribute.format;
-		attributedescriptions[i].offset = attribute.offset;
+		m_attributedescription[i].binding = 0;
+		m_attributedescription[i].location = i;
+		m_attributedescription[i].format = attribute.format;
+		m_attributedescription[i].offset = attribute.offset;
 
 	}
 	
-	VkVertexInputBindingDescription bindingdescription{};
-	bindingdescription.binding = 0;
-	bindingdescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	bindingdescription.stride = layout.stride;
+	
+	m_bindingdescription.binding = 0;
+	m_bindingdescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	m_bindingdescription.stride = layout.stride;
 
 
 	m_vertexinputstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	m_vertexinputstatecreateinfo.pVertexAttributeDescriptions = attributedescriptions.data();
-	m_vertexinputstatecreateinfo.pVertexBindingDescriptions = &bindingdescription;
-	m_vertexinputstatecreateinfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributedescriptions.size());
+	m_vertexinputstatecreateinfo.pVertexAttributeDescriptions = m_attributedescription.data();
+	m_vertexinputstatecreateinfo.pVertexBindingDescriptions = &m_bindingdescription;
+	m_vertexinputstatecreateinfo.vertexAttributeDescriptionCount = m_attributedescription.size();
 	m_vertexinputstatecreateinfo.vertexBindingDescriptionCount = 1;
 	
 
@@ -178,19 +177,7 @@ void PipelineSettings::ConfigureColorBlend(VkColorComponentFlagBits colorcompone
 
 void PipelineSettings::UseDynamicViewport()
 {
-	std::vector<VkDynamicState> dynamicstates =
-	{
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-
-	};
-
-
-	m_dynamicstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	m_dynamicstatecreateinfo.dynamicStateCount = static_cast<uint32_t>(dynamicstates.size());
-	m_dynamicstatecreateinfo.pDynamicStates = dynamicstates.data();
 	m_usedynamicstate = true;
-
 }
 
 

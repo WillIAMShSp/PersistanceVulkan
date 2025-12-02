@@ -124,13 +124,12 @@ public:
 	{
 		return m_colorblendcreateinfo;
 	}
-	const VkPipelineDynamicStateCreateInfo& GetDynamicStateCreateInfo()
-	{
-		return m_dynamicstatecreateinfo;
-	}
+	
 	bool m_usedynamicstate = false;
 
 private:
+	std::vector<VkVertexInputAttributeDescription> m_attributedescription{};
+	VkVertexInputBindingDescription m_bindingdescription{};
 	VkPipelineVertexInputStateCreateInfo m_vertexinputstatecreateinfo{};
 	VkPipelineInputAssemblyStateCreateInfo m_inputassemblystatecreateinfo{};
 	VkPipelineViewportStateCreateInfo m_viewportcreateinfo{};
@@ -138,7 +137,6 @@ private:
 	VkPipelineMultisampleStateCreateInfo m_multisamplecreateinfo{};
 	VkPipelineColorBlendAttachmentState m_colorblendattachment{};
 	VkPipelineColorBlendStateCreateInfo m_colorblendcreateinfo{};
-	VkPipelineDynamicStateCreateInfo m_dynamicstatecreateinfo{};
 	
 
 };

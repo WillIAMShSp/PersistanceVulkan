@@ -5,6 +5,7 @@
 #include<iostream>
 #include <array>
 
+
 const static enum ShaderStages
 {
 
@@ -23,18 +24,8 @@ class Shader
 public:
 	Shader() = default;
 
-	inline auto& GetModules()
-	{
-		if (!m_hasvertexstage && !m_hasfragmentstage)
-		{
-			throw std::runtime_error("WARNING: no vertex or fragment modules found");
-		}
 
-
-		return m_modules;
-	}
-
-	inline auto& GetStages()
+	inline auto GetStages()
 	{
 		if (!m_hasvertexstage && !m_hasfragmentstage)
 		{
@@ -45,18 +36,31 @@ public:
 
 	}
 
-	void AddVertexShaderStage(VkShaderModule& module);   //this piece of code adds a shader stage to the member array allowing the engine to access the modules and stages to use them or destroy them.
-	void AddFragmentShaderStage(VkShaderModule& module);
-	
+	void AddVertexShaderStage();   //this piece of code adds a shader stage to the member array allowing the engine to access the modules and stages to use them or destroy them.
+	void AddFragmentShaderStage();
+
 	//void AddComputeShaderStage();
 
+
+	VkShaderModule& GetVertexModule()
+	{
+		return m_vertexmodule;
+	}
+	VkShaderModule& GetFragmentModule()
+	{
+		return m_fragmentmodule;
+	}
+	
 
 
 private:
 
 	static const int MAXSTAGES = 2;
 	
-	std::array<VkShaderModule, MAXSTAGES> m_modules;
+	
+	VkShaderModule m_vertexmodule;
+	VkShaderModule m_fragmentmodule;
+
 	std::array<VkPipelineShaderStageCreateInfo, MAXSTAGES> m_stages;
 
 	bool m_hasvertexstage = false;

@@ -2112,12 +2112,11 @@ void Application::AddVertexStage(uint32_t handle, const char* shaderpath)
 	{
 
 		const auto shaderfile = ReadFile(shaderpath);
-		VkShaderModule module = CreateShaderModule(shaderfile);
+		mh_shaders.at(handle).GetVertexModule() = CreateShaderModule(shaderfile);
+		mh_shaders.at(handle).AddVertexShaderStage();
 
-		mh_shaders.at(handle).AddVertexShaderStage(module);
 
-		vkDestroyShaderModule(m_device, module, nullptr);
-
+	
 
 
 	}
@@ -2135,11 +2134,11 @@ void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
 	else
 	{
 		const auto shaderfile = ReadFile(shaderpath);
-		VkShaderModule module = CreateShaderModule(shaderfile);
+	
 
-		mh_shaders.at(handle).AddFragmentShaderStage(module);
-
-		vkDestroyShaderModule(m_device, module, nullptr);
+		mh_shaders.at(handle).GetFragmentModule() = CreateShaderModule(shaderfile);
+		mh_shaders.at(handle).AddFragmentShaderStage();
+		
 	}
 }
 
@@ -2188,18 +2187,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 
 
-	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
-	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-	auto bindingdescription = Vertex::GetBindingDescription();
-	auto attributedescription = Vertex::GetAttributeDescription();
-
-
-	inputvertexcreateinfo.vertexBindingDescriptionCount = 1;
-	inputvertexcreateinfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributedescription.size());
-
-	inputvertexcreateinfo.pVertexBindingDescriptions = &bindingdescription;
-	inputvertexcreateinfo.pVertexAttributeDescriptions = attributedescription.data();
+	
 
 	std::vector<VkDynamicState> dynamicstates =
 	{
@@ -2216,15 +2204,15 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 	//////////////////////////////////
 	VkGraphicsPipelineCreateInfo pipelinecreateinfo{};
-	Shader& shader = mh_shaders.at(handle);
+	
 
 	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelinecreateinfo.stageCount = 2;
-	pipelinecreateinfo.pStages = shaderstages;
+	pipelinecreateinfo.stageCount = static_cast<uint32_t>(mh_shaders.at(handle).GetStages().size());
+	pipelinecreateinfo.pStages = mh_shaders.at(handle).GetStages().data();
 
 
-	//pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
-	pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
+	pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
+	//pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
 	pipelinecreateinfo.pInputAssemblyState = &settings.GetInputAssemblyStateCreateInfo();
 	pipelinecreateinfo.pViewportState = &settings.Getviewportcreateinfo();
 	pipelinecreateinfo.pRasterizationState = &settings.GetRasterCreateInfo();
@@ -2234,7 +2222,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 
 	pipelinecreateinfo.layout = mh_pipelinelayouts.at(handle);
-	pipelinecreateinfo.pDynamicState = &dynamicstatecreateinfo;//(settings.m_usedynamicstate) ? &settings.GetDynamicStateCreateInfo() : nullptr;
+	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &dynamicstatecreateinfo : nullptr;
 	pipelinecreateinfo.renderPass = m_renderpass;
 	pipelinecreateinfo.subpass = 0;
 
@@ -2249,16 +2237,17 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 	}
 
 	DestroyShaders(handle);
-	vkDestroyShaderModule(m_device, vertexmodule, nullptr);
-	vkDestroyShaderModule(m_device, fragmentmodule, nullptr);
+	
 
 
 }
 
 void Application::DestroyShaders(uint32_t handle)
 {
-	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetModules()[ShaderStages::VERTEXSTAGE], nullptr);
-	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetModules()[ShaderStages::FRAGMENTSTAGE], nullptr);
+	
+	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetVertexModule(), nullptr);
+	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetFragmentModule(), nullptr);
+
 	// compute one goes here.
 
 
