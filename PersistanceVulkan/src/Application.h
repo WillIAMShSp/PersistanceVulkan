@@ -34,9 +34,14 @@
 
 #include "Objects/Shader.h"
 
+#ifndef NDEBUG
 
+#ifdef _WIN32
+#define ASSERT(x) if(!x) __debugbreak();
+#endif
+#endif
 
-
+typedef uint32_t FrameBufferHandle;
 #define BREAK __debugbreak();
 
 const uint32_t screenwidth = 800;
@@ -76,6 +81,15 @@ struct ModelViewProjectionBuffer
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 projection;
 
+};
+
+struct Texture
+{
+	VkImage image;
+	VkDeviceMemory memory;
+	VkImageView imageview;
+	int width;
+	int height;
 };
 
 
@@ -125,6 +139,7 @@ private:
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();
+		CreateCommandPools();
 #pragma endregion
 
 #pragma region done
@@ -147,21 +162,21 @@ private:
 
 		////////////
 
-#pragma endregion
+
 
 		//CreateDescriptorSetLayout();
-		CreateGraphicsPipeline();
+		//CreateGraphicsPipeline();
 ///////////////////////////////////////////////////
 		uint32_t pipeline = CreateGraphicsPipelineHandle();
-		CreatePipelineShader(pipeline);
-		AddVertexStage(pipeline, "res/Shaders/basicvert.spv");
-		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv");
+		CreatePipelineShader(pipeline); //
+		AddVertexStage(pipeline, "res/Shaders/basicvert.spv"); /*Create shaders*/
+		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv"); //
 		CreateGraphicsPipelineLayout(pipeline, descriptorhandle);
 		PipelineSettings settings;
 		VertexInputStateLayout vertexbufferlayout;
-		vertexbufferlayout.push<glm::vec2>();
-		vertexbufferlayout.push<glm::vec3>();
-		vertexbufferlayout.push<glm::vec2>();
+		vertexbufferlayout.push<glm::vec2>();/*Configure vertex array layout*/
+		vertexbufferlayout.push<glm::vec3>();//
+		vertexbufferlayout.push<glm::vec2>();//
 		settings.CreateVertexInputState(vertexbufferlayout);
 		settings.DefineInputAssemblyState();
 		settings.CreateStaticViewPort();
@@ -171,18 +186,27 @@ private:
 		settings.UseDynamicViewport();
 		CreateGraphicsPipeline(pipeline, settings);
 		m_pipeline = mh_pipelines.at(pipeline);
-		
-
-		
-		
+		m_pipelinelayout = mh_pipelinelayouts.at(pipeline);
 
 
-///////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+#pragma endregion
 		CreateFramebuffers();
-		CreateCommandPools();
-		CreateTextureImage();
-		CreateTextureImageView();
+		FrameBufferHandle frmbffrhndl = CreateFrameBuffersHandle();
+		CreateFramebufferImage(frmbffrhndl);
+		CreateFramebufferImageViews(frmbffrhndl);
+		CreateFramebuffers(frmbffrhndl);
+
+//////////////////////////////////////////////////
+
 		CreateTextureSampler();
+		uint32_t texturehandle = CreateTextureHandle();
+		CreateTextureImage(texturehandle, "res/Textures/Placeholder.png");
+		CreateTextureImageView(texturehandle);
+		
+
+//////////////////////////////////////////////////
 		CreateVertexBuffers();
 		CreateIndexBuffers();
 		CreateUniformBuffer();
@@ -499,7 +523,7 @@ private:
 
 	VkSampler m_texsampler;
 
-
+	public:
 	//DescriptorSetLayout Modulation
 
 	std::unordered_map<uint32_t, VkDescriptorSetLayout> mh_descriptorsetlayouts;
@@ -534,10 +558,36 @@ private:
 	void DestroyShaders(uint32_t handle);
 	
 	 
+	//FrameBufferModulation
+	
+
+	uint32_t m_framebuffercount = 0;
+	std::unordered_map<FrameBufferHandle, std::vector<VkFramebuffer>> mh_framebuffers;
+	std::unordered_map<FrameBufferHandle, std::vector<VkImageView>> mh_imageviews;
+	std::unordered_map<FrameBufferHandle, std::vector<VkImage>> mh_images;
+	std::unordered_map<FrameBufferHandle, std::vector<VkDeviceMemory>> mh_imagememory;
 
 
+	FrameBufferHandle CreateFrameBuffersHandle();
+
+	void CreateFramebufferImage(FrameBufferHandle handle);
+	void CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties);
+	void CreateFramebufferImageViews(FrameBufferHandle handle);
+	void CreateFramebuffers(FrameBufferHandle handle);
+	
+	//Texture Modulation
 
 
+	std::unordered_map<uint32_t, Texture> mh_textures;
+
+
+	uint32_t m_texturecount = 0;
+
+	uint32_t CreateTextureHandle();
+	void CreateTextureImage(uint32_t handle, int width, int height);
+	void CreateTextureImage(uint32_t handle, const char* imagesrc);
+	void CreateTextureImageView(uint32_t handle);
+	void AddImageToTexture(uint32_t handle, const char* imagesrc);
 
 
 
@@ -566,11 +616,6 @@ private:
 
 	};
 
-	struct VertexAttributeLayout
-	{
-
-
-	};
 	
 
 	

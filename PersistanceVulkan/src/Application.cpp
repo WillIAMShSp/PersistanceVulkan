@@ -2,39 +2,29 @@
 
 void Application::SetUpDebugCallBack()
 {
-
 	if (!enablevalidationlayers)
 	{
 		return;
 	}
-	
+
 	VkDebugUtilsMessengerCreateInfoEXT createinfo;
 	SetDebugCreateInfoStructVariables(createinfo);
 
-	/*if (CreateDebugUtilsMessengerEXT(m_instance, &createinfo, nullptr, &debugmessenger) != VK_SUCCESS) {
-		throw std::runtime_error("failed to set up debug messenger!");
-	}*/
 	if (DebugUtilsMessengerEXT::Create(m_instance, &createinfo, nullptr, &debugmessenger) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to set up debug messenger");
 
 	}
 
-
-
-
 }
 
 void Application::CreateInstance()
 {
-
 	if (enablevalidationlayers && !CheckValidationLayers())
 	{
 		std::cout << "Tried Getting Validation Layers and Failed. \n";
 		BREAK;
 	}
-
-
 
 	//application info struct
 	VkApplicationInfo appinfo{};
@@ -199,14 +189,8 @@ void Application::CreateImageViews()
 
 	for (int i = 0; i < m_swapchainimages.size(); i++)
 	{
-		
 		m_swapchainimageviews[i] = CreateImageView(m_swapchainimages[i], m_swapchainimageformat);
-
-
-
-
 	}
-
 }
 
 void Application::CreateRenderPass()
@@ -324,7 +308,7 @@ void Application::CreateDescriptorSets()
 
 		VkDescriptorImageInfo imageinfo{};
 		imageinfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageinfo.imageView = m_teximageview;
+		imageinfo.imageView = mh_textures.at(0).imageview;
 		imageinfo.sampler = m_texsampler;
 
 		std::array<VkWriteDescriptorSet, 2> writedescriptors{};
@@ -529,12 +513,12 @@ void Application::CreateGraphicsPipeline()
 void Application::CreateFramebuffers()
 {
 	m_swapchainframebuffers.resize(m_swapchainimageviews.size());
-
+	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
 
 	for (int i = 0; i < m_swapchainimageviews.size(); i++)
 	{
 
-		VkImageView attachments[] = { m_swapchainimageviews[i] };
+		VkImageView attachments[] = { m_swapchainimageviews[i] }; //separate this into another map
 
 		VkFramebufferCreateInfo framebufferinfo{};
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -563,37 +547,35 @@ void Application::CreateCommandPools()
 	
 	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
 
-
-	VkCommandPoolCreateInfo graphicspoolinfo{};
-	graphicspoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily.value();
-	graphicspoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-	if (vkCreateCommandPool(m_device, &graphicspoolinfo,  nullptr, &m_graphicscommandpool) != VK_SUCCESS)
+	if (indices.graphicsfamily.has_value())
 	{
-		throw std::runtime_error("Failed to create the graphics command pool!");
+		VkCommandPoolCreateInfo graphicspoolinfo{};
+		graphicspoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily.value();
+		graphicspoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+		if (vkCreateCommandPool(m_device, &graphicspoolinfo, nullptr, &m_graphicscommandpool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create the graphics command pool!");
+
+		}
+
+	}
+
+	if (indices.transferfamily.has_value())
+	{
+		VkCommandPoolCreateInfo transferpoolinfo{};
+		transferpoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		transferpoolinfo.queueFamilyIndex = indices.transferfamily.value();
+		transferpoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+		if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transfercommandpool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create the transfer command pool!");
+		}
 
 	}
 	
-	VkCommandPoolCreateInfo transferpoolinfo{};
-	transferpoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	transferpoolinfo.queueFamilyIndex = indices.transferfamily.value();
-	transferpoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-	if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transfercommandpool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create the transfer command pool!");
-
-	}
-
-
-
-
-
-
-
-
-
 }
 
 void Application::CreateUniformBuffer()
@@ -612,8 +594,6 @@ void Application::CreateUniformBuffer()
 		vkMapMemory(m_device, m_uniformbuffermem[i], 0, buffersize, 0, &m_uniformbuffersmapped[i]);
 
 	}
-
-
 
 }
 
@@ -1798,7 +1778,8 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 	imageinfo.usage = usage;
 	imageinfo.sharingMode = sharingmode;
 	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageinfo.flags = 0;
+	imageinfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; //temporary solution, This means that the framebuffer image can have the same format as a texture, but change to that of the swapchain
+														  // so I can also write to it, or thats my theory at least, lets give it a go for now.
 
 	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
 	{
@@ -1819,7 +1800,7 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 
 	if (vkCreateImage(m_device, &imageinfo, nullptr, &image) != VK_SUCCESS)
 	{
-		throw std::runtime_error("There is always gonna be someone who's better than you at something, that doesnt make you any less. I AM THAT I AM, I want to see who dares oppose that! also your image couldnt be created :( !");
+		throw std::runtime_error("There is always gonna be someone who's better than you at something, that doesnt make you any less. I AM THAT I AM, I want to see who dares oppose that! also your image couldnt be created womp womp :( !");
 
 	}
 
@@ -1956,13 +1937,15 @@ void Application::TransitionImageLayout(VkImage& image, const VkFormat& format, 
 	
 
 
-	vkCmdPipelineBarrier(commandbuffer,
+	vkCmdPipelineBarrier(
+		commandbuffer,
 		srcstage, //todo
 		dststage, //todo
 		0, 0,
 		nullptr, 0,
 		nullptr, 1,
-		&membarrier);
+		&membarrier
+	);
 
 	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
 
@@ -1972,7 +1955,7 @@ void Application::TransitionImageLayout(VkImage& image, const VkFormat& format, 
 void Application::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue)
 {
 	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
-
+	
 	
 	VkBufferImageCopy imgcopy{};
 	imgcopy.bufferOffset = 0;
@@ -2000,7 +1983,6 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 {
 	VkImageView imageview;
 
-
 	VkImageViewCreateInfo viewinfo{};
 	viewinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewinfo.image = image;
@@ -2012,14 +1994,11 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 	viewinfo.subresourceRange.baseMipLevel = 0;
 	viewinfo.subresourceRange.levelCount = 1;
 
-
 	if (vkCreateImageView(m_device, &viewinfo, nullptr, &imageview) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create texture image view");
 
 	}
-
-
 
 	return imageview;
 }
@@ -2161,34 +2140,6 @@ void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, 
 
 void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings)
 {
-	//////////////////////////////test
-
-	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
-	const auto fragmentshaderfile = ReadFile("res/Shaders/basicfrag.spv");
-
-	VkShaderModule vertexmodule = CreateShaderModule(vertexshaderfile);
-	VkShaderModule fragmentmodule = CreateShaderModule(fragmentshaderfile);
-
-	VkPipelineShaderStageCreateInfo vertcreateinfo{};
-	vertcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertcreateinfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertcreateinfo.module = vertexmodule;
-	vertcreateinfo.pName = "main";
-
-
-	VkPipelineShaderStageCreateInfo fragcreateinfo{};
-	fragcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragcreateinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragcreateinfo.module = fragmentmodule;
-	fragcreateinfo.pName = "main";
-
-
-	VkPipelineShaderStageCreateInfo shaderstages[] = { vertcreateinfo, fragcreateinfo };
-
-
-
-	
-
 	std::vector<VkDynamicState> dynamicstates =
 	{
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -2212,7 +2163,6 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 
 	pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
-	//pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
 	pipelinecreateinfo.pInputAssemblyState = &settings.GetInputAssemblyStateCreateInfo();
 	pipelinecreateinfo.pViewportState = &settings.Getviewportcreateinfo();
 	pipelinecreateinfo.pRasterizationState = &settings.GetRasterCreateInfo();
@@ -2252,6 +2202,199 @@ void Application::DestroyShaders(uint32_t handle)
 
 
 }
+
+FrameBufferHandle Application::CreateFrameBuffersHandle()
+{
+	
+	mh_framebuffers.insert({ m_framebuffercount, std::vector<VkFramebuffer>() });
+	mh_images.insert({ m_framebuffercount, std::vector<VkImage>() });
+	mh_imagememory.insert({ m_framebuffercount, std::vector<VkDeviceMemory>() });
+	mh_imageviews.insert({ m_framebuffercount, std::vector<VkImageView>() });
+
+	return m_framebuffercount++;
+
+}
+
+void Application::CreateFramebufferImage(FrameBufferHandle handle)
+{
+	uint32_t imageidx = 0;
+	int width = m_swapchainextent.width;
+	int height = m_swapchainextent.height;
+	VkFormat format = VK_FORMAT_R8G8B8A8_SRGB; //could cause problems since its not the same as the swapchain one.
+	VkImageTiling tiling; tiling = VK_IMAGE_TILING_OPTIMAL;
+	VkImageUsageFlags usageflags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	VkMemoryPropertyFlags memoryproperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+
+	mh_images.at(handle).resize(1 + mh_images.at(handle).size());
+	mh_imagememory.at(handle).resize(1 + mh_imagememory.at(handle).size());
+
+
+	imageidx = mh_images.at(handle).size() - 1;
+
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_images.at(handle)[imageidx], mh_imagememory.at(handle)[imageidx], VK_SHARING_MODE_CONCURRENT);
+
+}
+
+void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
+{
+	uint32_t imageidx = 0;
+	mh_images.at(handle).resize(1 + mh_images.at(handle).size());
+	mh_imagememory.at(handle).resize(1 + mh_imagememory.at(handle).size());
+
+
+	imageidx = mh_images.at(handle).size() - 1;
+
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_images.at(handle)[imageidx], mh_imagememory.at(handle)[imageidx], VK_SHARING_MODE_CONCURRENT);
+
+}
+
+void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
+{
+	mh_imageviews.at(handle).resize(mh_images.at(handle).size());
+
+	for (int i = 0; i < mh_images.size(); i++)
+	{
+		mh_imageviews.at(handle)[i] = CreateImageView(mh_images.at(handle)[i], m_swapchainimageformat);
+
+	}
+
+
+}
+void Application::CreateFramebuffers(FrameBufferHandle handle)
+{
+	mh_framebuffers.at(handle).resize(mh_imageviews.at(handle).size());
+	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
+
+	for (int i = 0; i < mh_imageviews.at(handle).size(); i++)
+	{
+
+		VkImageView attachments[] = { mh_imageviews.at(handle)[i] }; //separate this into another map
+
+		VkFramebufferCreateInfo framebufferinfo{};
+		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferinfo.renderPass = m_renderpass;
+		framebufferinfo.layers = 1;
+		framebufferinfo.attachmentCount = 1;
+		framebufferinfo.pAttachments = attachments;
+		framebufferinfo.width = m_swapchainextent.width;
+		framebufferinfo.height = m_swapchainextent.height;
+
+		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &mh_framebuffers.at(handle)[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create framebuffer");
+
+		}
+	}
+}
+
+uint32_t Application::CreateTextureHandle()
+{
+	uint32_t handle = m_texturecount++;
+
+	mh_textures.insert({handle, Texture()});
+
+	return handle;
+
+}
+
+void Application::CreateTextureImage(uint32_t handle, int width, int height)
+{
+	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		mh_textures.at(handle).image, mh_textures.at(handle).memory, VK_SHARING_MODE_CONCURRENT);
+
+	mh_textures.at(handle).width = width;
+	mh_textures.at(handle).height = height;
+
+}
+
+void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
+{
+
+	int width, height, bpp;
+
+	stbi_uc* pixels = stbi_load(imagesrc, &width, &height, &bpp, STBI_rgb_alpha);
+	VkDeviceSize buffersize = width * height * 4;
+
+	if (!pixels)
+	{
+		throw std::runtime_error("Didnt find the texture!");
+	}
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingmem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+
+	void* data;
+	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vkUnmapMemory(m_device, stagingmem);
+
+	stbi_image_free(pixels);
+
+	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		mh_textures.at(handle).image, mh_textures.at(handle).memory, VK_SHARING_MODE_CONCURRENT);
+
+
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
+
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
+
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingmem, nullptr);
+	
+}
+
+void Application::CreateTextureImageView(uint32_t handle)
+{
+	mh_textures.at(handle).imageview = CreateImageView(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
+void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
+{
+	int width, height, bpp;
+
+	stbi_uc* pixels = stbi_load(imagesrc, &width, &height, &bpp, STBI_rgb_alpha);
+	VkDeviceSize buffersize = width * height * 4;
+
+	if (!pixels)
+	{
+		throw std::runtime_error("Didnt find the texture!");
+	}
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingmem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+
+	void* data;
+	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vkUnmapMemory(m_device, stagingmem);
+
+	stbi_image_free(pixels);
+
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
+
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
+
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingmem, nullptr);
+
+}
+
+
+
+
+
+
 
 
 
