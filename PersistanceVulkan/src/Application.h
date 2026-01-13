@@ -16,6 +16,7 @@
 #include "stb_image.h"
 
 
+
 #include <iostream>
 #include <vector>
 #include <array>
@@ -33,6 +34,7 @@
 
 
 #include "Objects/Shader.h"
+
 
 #ifndef NDEBUG
 
@@ -159,9 +161,7 @@ private:
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
 
 
-
-		////////////
-
+		
 
 
 		//CreateDescriptorSetLayout();
@@ -209,6 +209,16 @@ private:
 //////////////////////////////////////////////////
 		CreateVertexBuffers();
 		CreateIndexBuffers();
+		///////////////////////////
+		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
+		CreateVertexBuffer(vertexbufferhndl, (void*)vertices.data(), sizeof(vertices[0]), vertices.size());
+
+		uint32_t indexbufferhndl = CreateIndexBufferHandle();
+		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), indices.size());
+
+		///////////////////////////
+
+		
 		CreateUniformBuffer();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
@@ -590,6 +600,23 @@ private:
 	void AddImageToTexture(uint32_t handle, const char* imagesrc);
 
 
+	//vertex buffer modulation
+
+	std::unordered_map<uint32_t, VkBuffer> mh_vertexbuffers;
+	std::unordered_map<uint32_t, VkDeviceMemory> mh_vertexbuffermem;
+
+	uint32_t m_vertexbuffercount = 0;
+	uint32_t CreateVertexBufferHandle();
+	void CreateVertexBuffer(uint32_t handle, void* buffer, size_t elementsize, uint32_t elementcount);
+
+	//index buffer modulation
+	std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
+	std::unordered_map<uint32_t, VkDeviceMemory> mh_indexbuffermem;
+
+	uint32_t m_indexbuffercount = 0;
+	uint32_t CreateIndexBufferHandle();
+	void CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount);
+
 
 	const std::vector<const char*> m_deviceextensions
 	{
@@ -610,14 +637,14 @@ private:
 	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
-	const std::vector<uint16_t> indices =
+	const std::vector<uint32_t> indices =
 	{
 		0, 1, 2, 2, 3, 0
 
 	};
 
 	
-
+	
 	
 
 

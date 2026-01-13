@@ -1,5 +1,9 @@
 #include "Application.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
 void Application::SetUpDebugCallBack()
 {
 	if (!enablevalidationlayers)
@@ -632,7 +636,6 @@ void Application::CreateVertexBuffers()
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
 	
-
 	void* data;
 
 	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
@@ -2343,7 +2346,7 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 
 	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingmem, nullptr);
@@ -2383,14 +2386,83 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingmem, nullptr);
 
 }
 
+uint32_t Application::CreateVertexBufferHandle()
+{
+	uint32_t handle = m_vertexbuffercount++;
 
+	mh_vertexbuffers.insert({ handle, nullptr });
+	mh_vertexbuffermem.insert({ handle, nullptr });
+
+	return handle;
+}
+
+void Application::CreateVertexBuffer(uint32_t handle, void* buffer, size_t elementsize, uint32_t elementcount)
+{
+	VkDeviceSize buffersize = elementsize * elementcount;
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingbuffermem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+
+	void* data;
+
+	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
+
+	memcpy(data, buffer, (size_t)buffersize);
+
+	vkUnmapMemory(m_device, stagingbuffermem);
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle), mh_vertexbuffermem.at(handle), VK_SHARING_MODE_CONCURRENT);
+
+	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle), buffersize, m_transfercommandpool, m_transferqueue);
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingbuffermem, nullptr);
+
+}
+
+uint32_t Application::CreateIndexBufferHandle()
+{
+	uint32_t handle = m_indexbuffercount++;
+
+	mh_indexbuffers.insert({ handle, nullptr });
+	mh_indexbuffermem.insert({ handle, nullptr });
+
+	return handle;
+}
+
+void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount)
+{
+	VkDeviceSize buffersize = sizeof(uint32_t) * indexcount;
+
+	VkBuffer stagingbuffer;
+	VkDeviceMemory stagingbuffermem;
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+
+	void* data;
+
+	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
+
+	memcpy(data, buffer, buffersize);
+
+	vkUnmapMemory(m_device, stagingbuffermem);
+
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle), mh_indexbuffermem.at(handle), VK_SHARING_MODE_CONCURRENT);
+
+	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle), buffersize, m_transfercommandpool, m_transferqueue);
+
+	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vkFreeMemory(m_device, stagingbuffermem, nullptr);
+}
 
 
 

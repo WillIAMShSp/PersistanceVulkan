@@ -140,6 +140,7 @@
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\DebugUtilsMessengerEXT.h" />
     <ClInclude Include="src\Objects\Shader.h" />
+    <ClInclude Include="src\Objects\Vertex.h" />
     <ClInclude Include="src\Settings\PipelineSettings.h" />
     <ClInclude Include="src\Vendor\stb_image.h" />
   </ItemGroup>
