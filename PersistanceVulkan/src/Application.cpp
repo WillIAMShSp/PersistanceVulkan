@@ -592,7 +592,6 @@ void Application::CreateUniformBuffer()
 
 	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
 	{
-
 		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformbuffers[i], m_uniformbuffermem[i], VK_SHARING_MODE_CONCURRENT);
 
 		vkMapMemory(m_device, m_uniformbuffermem[i], 0, buffersize, 0, &m_uniformbuffersmapped[i]);
@@ -1551,7 +1550,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
-	VkBuffer buffers[] = {m_vertexbuffer};
+	VkBuffer buffers[] = { mh_vertexbuffers.at(0) };//{m_vertexbuffer};
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 	
@@ -1571,7 +1570,8 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
-	vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT16);
+	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0), 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
 
@@ -2463,6 +2463,27 @@ void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t inde
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingbuffermem, nullptr);
 }
+
+uint32_t Application::CreateUniformBufferHandle()
+{
+	uint32_t handle = m_uniformbuffercount++;
+	mh_uniformbuffers.insert({handle, UniformBuffer()});
+	return handle;
+}
+
+void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
+{
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+		UniformBuffer& buffer = mh_uniformbuffers.at(handle);
+
+		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.memory[i], VK_SHARING_MODE_CONCURRENT);
+		vkMapMemory(m_device, buffer.memory[i], 0, buffersize, 0, &buffer.memorymaps[i]);
+
+	}
+
+}
+
 
 
 

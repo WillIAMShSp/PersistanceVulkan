@@ -46,6 +46,8 @@
 typedef uint32_t FrameBufferHandle;
 #define BREAK __debugbreak();
 
+const static uint32_t MAXFRAMESINFLIGHT = 2;
+
 const uint32_t screenwidth = 800;
 const uint32_t screenheight = 600;
 
@@ -92,6 +94,20 @@ struct Texture
 	VkImageView imageview;
 	int width;
 	int height;
+};
+struct UniformBuffer
+{
+	UniformBuffer()
+	{
+		buffers.resize(MAXFRAMESINFLIGHT);
+		memory.resize(MAXFRAMESINFLIGHT);
+		memorymaps.resize(MAXFRAMESINFLIGHT);
+	}
+
+	std::vector<VkBuffer> buffers;
+	std::vector<VkDeviceMemory> memory;
+	std::vector<void*> memorymaps;
+
 };
 
 
@@ -216,10 +232,17 @@ private:
 		uint32_t indexbufferhndl = CreateIndexBufferHandle();
 		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), indices.size());
 
-		///////////////////////////
+////////////////////////////////////
 
 		
 		CreateUniformBuffer();
+
+		////////////////////////
+
+
+
+
+////////////////////////////////////
 		CreateDescriptorPool();
 		CreateDescriptorSets();
 		CreateCommandBuffer();
@@ -617,6 +640,13 @@ private:
 	uint32_t CreateIndexBufferHandle();
 	void CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount);
 
+	//uniform buffer
+	std::unordered_map<uint32_t, UniformBuffer> mh_uniformbuffers;
+
+	uint32_t m_uniformbuffercount = 0;
+
+	uint32_t CreateUniformBufferHandle();
+	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
 
 	const std::vector<const char*> m_deviceextensions
 	{
@@ -626,7 +656,7 @@ private:
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
 	
-	const uint32_t MAXFRAMESINFLIGHT = 2;
+	
 	uint32_t m_currentframe = 0;
 
 
