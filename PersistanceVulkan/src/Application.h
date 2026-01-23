@@ -109,7 +109,11 @@ struct UniformBuffer
 	std::vector<void*> memorymaps;
 
 };
-
+struct DescriptorPool
+{
+	std::vector<VkDescriptorPoolSize> poolsizes;
+	VkDescriptorPool pool;
+};
 
 
 class Application
@@ -557,13 +561,11 @@ private:
 	VkSampler m_texsampler;
 
 	public:
-	//DescriptorSetLayout Modulation
+	//Descriptor set layout modulation
 
 	std::unordered_map<uint32_t, VkDescriptorSetLayout> mh_descriptorsetlayouts;
 	//std::unordered_multimap<DescriptorSetLayoutHandle, VkDescriptorSetLayoutBinding> mh_descriptorsetlayoutbindings;
 	std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mh_descriptorsetlayoutbindings;
-
-	
 
 	uint8_t m_dslhandlecount = 0;
 	uint32_t CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
@@ -571,10 +573,7 @@ private:
 	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
 	void CreateDescriptorSetLayout(uint32_t handle);
 
-
-	/////////////////////////////////////////////////////////////
-
-	//GraphicsPipeLineModulation
+	//Graphics pipeline modulation
 	uint32_t m_pipelinecount = 0;
 	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
 	std::unordered_map<uint32_t, VkPipelineLayout> mh_pipelinelayouts;
@@ -591,7 +590,7 @@ private:
 	void DestroyShaders(uint32_t handle);
 	
 	 
-	//FrameBufferModulation
+	//Framebuffer modulation
 	
 
 	uint32_t m_framebuffercount = 0;
@@ -608,7 +607,7 @@ private:
 	void CreateFramebufferImageViews(FrameBufferHandle handle);
 	void CreateFramebuffers(FrameBufferHandle handle);
 	
-	//Texture Modulation
+	//Texture modulation
 
 
 	std::unordered_map<uint32_t, Texture> mh_textures;
@@ -623,7 +622,7 @@ private:
 	void AddImageToTexture(uint32_t handle, const char* imagesrc);
 
 
-	//vertex buffer modulation
+	//Vertex buffer modulation
 
 	std::unordered_map<uint32_t, VkBuffer> mh_vertexbuffers;
 	std::unordered_map<uint32_t, VkDeviceMemory> mh_vertexbuffermem;
@@ -632,7 +631,7 @@ private:
 	uint32_t CreateVertexBufferHandle();
 	void CreateVertexBuffer(uint32_t handle, void* buffer, size_t elementsize, uint32_t elementcount);
 
-	//index buffer modulation
+	//Index buffer modulation
 	std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
 	std::unordered_map<uint32_t, VkDeviceMemory> mh_indexbuffermem;
 
@@ -640,13 +639,22 @@ private:
 	uint32_t CreateIndexBufferHandle();
 	void CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount);
 
-	//uniform buffer
+	//Uniform buffer modulation
 	std::unordered_map<uint32_t, UniformBuffer> mh_uniformbuffers;
 
 	uint32_t m_uniformbuffercount = 0;
 
 	uint32_t CreateUniformBufferHandle();
 	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
+
+	//Descriptor pool modulation
+	uint32_t m_descriptorpoolcount = 0;
+	std::unordered_map<uint32_t, DescriptorPool> mh_descriptorpools;
+
+
+	uint32_t CreateDescriptorPoolHandle();
+	void AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type);
+	void CreateDescriptorPool(uint32_t handle);
 
 	const std::vector<const char*> m_deviceextensions
 	{

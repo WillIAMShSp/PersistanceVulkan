@@ -600,6 +600,24 @@ void Application::CreateUniformBuffer()
 
 }
 
+uint32_t Application::CreateDescriptorPoolHandle()
+{
+	uint32_t handle = m_descriptorpoolcount++;
+	mh_descriptorpools.emplace(handle, DescriptorPool());
+
+	return handle;
+}
+
+void Application::AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type)
+{
+	VkDescriptorPoolSize size;
+	size.descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	size.type = type;
+
+	mh_descriptorpools.at(handle).poolsizes.push_back(size);
+
+}
+
 void Application::CreateDescriptorPool()
 {
 
@@ -2076,7 +2094,7 @@ uint32_t Application::CreateGraphicsPipelineHandle()
 
 void Application::CreatePipelineShader(uint32_t handle)
 {
-	mh_shaders.insert({ handle, Shader() });
+	mh_shaders.emplace( handle, Shader() );
 
 }
 
@@ -2126,7 +2144,7 @@ void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
 
 void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding)
 {
-	mh_pipelinelayouts.insert({ graphicspipelinehandle, nullptr});
+	mh_pipelinelayouts.emplace( graphicspipelinehandle, nullptr);
 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
 	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -2209,10 +2227,10 @@ void Application::DestroyShaders(uint32_t handle)
 FrameBufferHandle Application::CreateFrameBuffersHandle()
 {
 	
-	mh_framebuffers.insert({ m_framebuffercount, std::vector<VkFramebuffer>() });
-	mh_images.insert({ m_framebuffercount, std::vector<VkImage>() });
-	mh_imagememory.insert({ m_framebuffercount, std::vector<VkDeviceMemory>() });
-	mh_imageviews.insert({ m_framebuffercount, std::vector<VkImageView>() });
+	mh_framebuffers.emplace( m_framebuffercount, std::vector<VkFramebuffer>() );
+	mh_images.emplace( m_framebuffercount, std::vector<VkImage>() );
+	mh_imagememory.emplace( m_framebuffercount, std::vector<VkDeviceMemory>() );
+	mh_imageviews.emplace( m_framebuffercount, std::vector<VkImageView>() );
 
 	return m_framebuffercount++;
 
@@ -2295,7 +2313,7 @@ uint32_t Application::CreateTextureHandle()
 {
 	uint32_t handle = m_texturecount++;
 
-	mh_textures.insert({handle, Texture()});
+	mh_textures.emplace(handle, Texture());
 
 	return handle;
 
@@ -2397,8 +2415,8 @@ uint32_t Application::CreateVertexBufferHandle()
 {
 	uint32_t handle = m_vertexbuffercount++;
 
-	mh_vertexbuffers.insert({ handle, nullptr });
-	mh_vertexbuffermem.insert({ handle, nullptr });
+	mh_vertexbuffers.emplace( handle, nullptr );
+	mh_vertexbuffermem.emplace( handle, nullptr );
 
 	return handle;
 }
@@ -2433,8 +2451,8 @@ uint32_t Application::CreateIndexBufferHandle()
 {
 	uint32_t handle = m_indexbuffercount++;
 
-	mh_indexbuffers.insert({ handle, nullptr });
-	mh_indexbuffermem.insert({ handle, nullptr });
+	mh_indexbuffers.emplace ( handle, nullptr );
+	mh_indexbuffermem.emplace( handle, nullptr );
 
 	return handle;
 }
@@ -2467,7 +2485,7 @@ void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t inde
 uint32_t Application::CreateUniformBufferHandle()
 {
 	uint32_t handle = m_uniformbuffercount++;
-	mh_uniformbuffers.insert({handle, UniformBuffer()});
+	mh_uniformbuffers.emplace(handle, UniformBuffer());
 	return handle;
 }
 
@@ -2479,9 +2497,7 @@ void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 
 		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.memory[i], VK_SHARING_MODE_CONCURRENT);
 		vkMapMemory(m_device, buffer.memory[i], 0, buffersize, 0, &buffer.memorymaps[i]);
-
 	}
-
 }
 
 
