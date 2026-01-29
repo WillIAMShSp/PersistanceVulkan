@@ -618,6 +618,88 @@ void Application::AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type)
 
 }
 
+void Application::CreateDescriptorPool(uint32_t handle)
+{
+	std::vector<VkDescriptorPoolSize>& poolsizes = mh_descriptorpools.at(handle).poolsizes;
+
+	VkDescriptorPoolCreateInfo poolinfo{};
+	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolinfo.poolSizeCount = static_cast<uint32_t>(poolsizes.size());
+	poolinfo.pPoolSizes = poolsizes.data();
+	poolinfo.maxSets = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+
+	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &mh_descriptorpools.at(handle).pool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create descriptor pool!");
+
+	}
+
+
+}
+
+uint32_t Application::CreateDescriptorSetHandle()
+{
+	uint32_t handle = m_descriptorsetcount++;
+	mh_descriptorsets.emplace(handle, DescriptorSet());
+
+	return handle;
+}
+
+void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle)
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAXFRAMESINFLIGHT, mh_descriptorsetlayouts.at(layouthandle));
+	VkDescriptorSetAllocateInfo allocateinfo{};
+	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateinfo.descriptorPool = mh_descriptorpools.at(poolhandle).pool;
+	allocateinfo.descriptorSetCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	allocateinfo.pSetLayouts = layouts.data();
+
+	mh_descriptorsets.at(handle).descriptorsets.resize(MAXFRAMESINFLIGHT);
+
+	if (vkAllocateDescriptorSets(m_device, &allocateinfo, mh_descriptorsets.at(handle).descriptorsets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate descriptor set");
+	}
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+		
+	}
+	
+
+}
+
+void Application::AddBufferInfoToDescriptorSet(uint32_t handle, uint32_t uniformbufferhandle, size_t offset, size_t range)
+{
+	mh_descriptorsets.at(handle).bufferinfos.resize(MAXFRAMESINFLIGHT);
+
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+		VkDescriptorBufferInfo info;
+		info.buffer = mh_uniformbuffers.at(handle).buffers[i];
+		info.offset = offset;
+		info.range = range;
+
+		mh_descriptorsets.at(handle).bufferinfos.emplace_back(info);
+	}
+
+}
+
+void Application::AddImageInfoToDescriptorSet(uint32_t handle, uint32_t texturehandle, VkImageLayout imagelayout)
+{
+	mh_descriptorsets.at(handle).imageinfos.resize(MAXFRAMESINFLIGHT);
+	
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	{
+		VkDescriptorImageInfo info;
+		info.imageLayout = imagelayout;
+		info.imageView = mh_textures.at(handle).imageview;
+		info.sampler = m_texsampler; //TODO: incorporate modular texture samplers.
+	}
+
+
+}
+
+
 void Application::CreateDescriptorPool()
 {
 
@@ -2491,12 +2573,13 @@ uint32_t Application::CreateUniformBufferHandle()
 
 void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 {
+	mh_uniformbuffers.at(handle).size = buffersize;
 	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
 	{
 		UniformBuffer& buffer = mh_uniformbuffers.at(handle);
 
-		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.memory[i], VK_SHARING_MODE_CONCURRENT);
-		vkMapMemory(m_device, buffer.memory[i], 0, buffersize, 0, &buffer.memorymaps[i]);
+		CreateBuffer(buffer.size , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.memory[i], VK_SHARING_MODE_CONCURRENT);
+		vkMapMemory(m_device, buffer.memory[i], 0, buffer.size, 0, &buffer.memorymaps[i]);
 	}
 }
 

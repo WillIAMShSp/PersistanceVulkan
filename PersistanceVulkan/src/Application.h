@@ -107,12 +107,19 @@ struct UniformBuffer
 	std::vector<VkBuffer> buffers;
 	std::vector<VkDeviceMemory> memory;
 	std::vector<void*> memorymaps;
+	size_t size;
 
 };
 struct DescriptorPool
 {
 	std::vector<VkDescriptorPoolSize> poolsizes;
 	VkDescriptorPool pool;
+};
+struct DescriptorSet
+{
+	std::vector<VkDescriptorSet>descriptorsets;
+	std::vector<VkDescriptorBufferInfo>bufferinfos;
+	std::vector<VkDescriptorImageInfo>imageinfos;
 };
 
 
@@ -243,12 +250,32 @@ private:
 
 		////////////////////////
 
+		uint32_t uniformbufferhandle = CreateUniformBufferHandle();
+		CreateUniformBuffer(uniformbufferhandle, 200);
+
 
 
 
 ////////////////////////////////////
+		
 		CreateDescriptorPool();
+
+		////////////////////////
+
+		uint32_t descriptorpoolhandle = CreateDescriptorPoolHandle();
+		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		CreateDescriptorPool(descriptorpoolhandle);
+
+		
+
+////////////////////////////////////
 		CreateDescriptorSets();
+		////////////////////////
+		uint32_t descriptorsethandle = CreateDescriptorSetHandle();
+
+
+////////////////////////////////////
 		CreateCommandBuffer();
 		CreateSyncObjects();
 
@@ -611,7 +638,7 @@ private:
 
 
 	std::unordered_map<uint32_t, Texture> mh_textures;
-
+	std::unordered_map<uint32_t, VkSampler> mh_texturesamplers;
 
 	uint32_t m_texturecount = 0;
 
@@ -655,6 +682,17 @@ private:
 	uint32_t CreateDescriptorPoolHandle();
 	void AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type);
 	void CreateDescriptorPool(uint32_t handle);
+
+	//Descriptor set modulation
+	uint32_t m_descriptorsetcount = 0;
+	std::unordered_map<uint32_t, DescriptorSet>mh_descriptorsets;
+	
+
+	uint32_t CreateDescriptorSetHandle();
+	void CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle);
+	void AddBufferInfoToDescriptorSet(uint32_t handle, uint32_t uniformbufferhandle, size_t offset = 0, size_t range = 0);
+	void AddImageInfoToDescriptorSet(uint32_t handle, uint32_t texturehandle, VkImageLayout imagelayout);
+
 
 	const std::vector<const char*> m_deviceextensions
 	{
