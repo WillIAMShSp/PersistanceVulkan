@@ -115,11 +115,35 @@ struct DescriptorPool
 	std::vector<VkDescriptorPoolSize> poolsizes;
 	VkDescriptorPool pool;
 };
+struct DescriptorBufferInfo
+{
+	uint32_t uniformbufferhandle;
+	size_t offset;
+	size_t range;
+
+};
+struct DescriptorImageInfo
+{
+	VkImageLayout imagelayout;
+	VkImageView imageview;
+	VkSampler sampler;
+
+};
+
+struct WriteDescriptorSet
+{
+	uint32_t arrayelement;
+	uint32_t descriptorcount;
+	uint32_t bindingidx;
+	VkDescriptorType descriptorType;
+	std::vector<DescriptorBufferInfo> bufferinfo;
+	std::vector<DescriptorImageInfo> imageinfo;
+};
 struct DescriptorSet
 {
-	std::vector<VkDescriptorSet>descriptorsets;
-	std::vector<VkDescriptorBufferInfo>bufferinfos;
-	std::vector<VkDescriptorImageInfo>imageinfos;
+	std::vector<VkDescriptorSet> descriptorsets;
+	std::vector<WriteDescriptorSet> writedescriptorsets;
+	
 };
 
 
@@ -174,15 +198,16 @@ private:
 #pragma region done
 
 		//////// DescriptorSetLayouts
-		int descriptorhandle;
-		descriptorhandle = CreateDescriptorSetLayoutHandle();
-		AddDescriptorSetLayoutBinding(descriptorhandle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-		AddDescriptorSetLayoutBinding(descriptorhandle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+		
+		int descriptorsetlayouthandle;
+		descriptorsetlayouthandle = CreateDescriptorSetLayoutHandle();
+		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		
-		CreateDescriptorSetLayout(descriptorhandle);
+		CreateDescriptorSetLayout(descriptorsetlayouthandle);
 
-		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorhandle);
+		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorsetlayouthandle);
 
 
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
@@ -198,7 +223,7 @@ private:
 		CreatePipelineShader(pipeline); //
 		AddVertexStage(pipeline, "res/Shaders/basicvert.spv"); /*Create shaders*/
 		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv"); //
-		CreateGraphicsPipelineLayout(pipeline, descriptorhandle);
+		CreateGraphicsPipelineLayout(pipeline, descriptorsetlayouthandle);
 		PipelineSettings settings;
 		VertexInputStateLayout vertexbufferlayout;
 		vertexbufferlayout.push<glm::vec2>();/*Configure vertex array layout*/
@@ -251,8 +276,9 @@ private:
 		////////////////////////
 
 		uint32_t uniformbufferhandle = CreateUniformBufferHandle();
-		CreateUniformBuffer(uniformbufferhandle, 200);
+		CreateUniformBuffer(uniformbufferhandle, sizeof(ModelViewProjectionBuffer));
 
+		
 
 
 
@@ -273,7 +299,13 @@ private:
 		CreateDescriptorSets();
 		////////////////////////
 		uint32_t descriptorsethandle = CreateDescriptorSetHandle();
-
+		uint32_t uniformbufferwritedescriptor;
+		uint32_t texturewritedescriptor;
+		CreateWriteDescriptorSet(descriptorsethandle, 1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &uniformbufferwritedescriptor);
+		AddDescriptorBufferInfoToWriteDescriptorSet(descriptorsethandle, uniformbufferwritedescriptor, uniformbufferhandle, 0, sizeof(ModelViewProjectionBuffer));
+		CreateWriteDescriptorSet(descriptorsethandle, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &texturewritedescriptor);
+		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mh_textures.at(texturehandle).imageview, m_texsampler);
+		CreateDescriptorSets(descriptorsethandle, descriptorsetlayouthandle, descriptorpoolhandle);
 
 ////////////////////////////////////
 		CreateCommandBuffer();
@@ -673,6 +705,12 @@ private:
 
 	uint32_t CreateUniformBufferHandle();
 	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
+	void UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe);
+
+	// TEST FUNCTION
+	ModelViewProjectionBuffer MVPBuffer();
+
+
 
 	//Descriptor pool modulation
 	uint32_t m_descriptorpoolcount = 0;
@@ -690,9 +728,9 @@ private:
 
 	uint32_t CreateDescriptorSetHandle();
 	void CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle);
-	void AddBufferInfoToDescriptorSet(uint32_t handle, uint32_t uniformbufferhandle, size_t offset = 0, size_t range = 0);
-	void AddImageInfoToDescriptorSet(uint32_t handle, uint32_t texturehandle, VkImageLayout imagelayout);
-
+	WriteDescriptorSet* CreateWriteDescriptorSet(uint32_t handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
+	void AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
+	void AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex,VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
 
 	const std::vector<const char*> m_deviceextensions
 	{

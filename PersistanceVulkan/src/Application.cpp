@@ -647,6 +647,8 @@ uint32_t Application::CreateDescriptorSetHandle()
 
 void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle)
 {
+	// first we allocate descriptorsets for every possible frame in flight. 
+
 	std::vector<VkDescriptorSetLayout> layouts(MAXFRAMESINFLIGHT, mh_descriptorsetlayouts.at(layouthandle));
 	VkDescriptorSetAllocateInfo allocateinfo{};
 	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -654,48 +656,114 @@ void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, u
 	allocateinfo.descriptorSetCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
 	allocateinfo.pSetLayouts = layouts.data();
 
+	// this is done by indexing into the unordered map of descriptorsetlayouts with the layouthandle variable
+
 	mh_descriptorsets.at(handle).descriptorsets.resize(MAXFRAMESINFLIGHT);
 
 	if (vkAllocateDescriptorSets(m_device, &allocateinfo, mh_descriptorsets.at(handle).descriptorsets.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate descriptor set");
 	}
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+
+	// Here's where things get tricky!
+	// This for loop will set the writedescriptorsets for the descriptorsets we're creating. 
+	// writedescriptorsets need bufferinfos, imageinfos or texelbufferinfos to work.
+	// as of now we're only using bufferinfos and imageinfos.
+	for (int i = 0; i < MAXFRAMESINFLIGHT; i++) 
 	{
+		std::vector<WriteDescriptorSet>& set = mh_descriptorsets.at(handle).writedescriptorsets;
+
+		std::vector<VkWriteDescriptorSet> writedescriptors{};
+		writedescriptors.resize(set.size());
+		std::vector<VkDescriptorBufferInfo> bufferinfos{}; //we create all bufferinfos and imageinfos we need.
+		std::vector<VkDescriptorImageInfo> imageinfos{};
+
+		for (int w = 0; w < set.size(); w++) //for all write descriptors in our descriptorset
+		{
+			writedescriptors[w].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writedescriptors[w].dstSet = mh_descriptorsets.at(handle).descriptorsets[i];
+			writedescriptors[w].dstArrayElement = set[w].arrayelement;
+			writedescriptors[w].descriptorCount = set[w].descriptorcount;
+			writedescriptors[w].descriptorType = set[w].descriptorType;
+			writedescriptors[w].dstBinding = set[w].bindingidx;
+			if (set[w].bufferinfo.size() > 0) // if we're using a bufferinfo instead of an image info
+			{
+				bufferinfos.resize(set[w].descriptorcount);
+				for (int z = 0; z < bufferinfos.size(); z++) // for all bufferinfos specified in the descriptorCount variable
+				{
+					bufferinfos[z].buffer = mh_uniformbuffers.at(set[w].bufferinfo[z].uniformbufferhandle).buffers[i]; // we set the values stored in the bufferinfo structs inside writedescriptor struct
+					bufferinfos[z].offset = set[w].bufferinfo[z].offset;
+					bufferinfos[z].range = set[w].bufferinfo[z].range;
+				}
+				writedescriptors[w].pBufferInfo = bufferinfos.data(); // we set the pBufferInfo variable to all bufferinfos created
+			}
+			else if (set[w].imageinfo.size() > 0) // if we're using imageinfos instead of bufferinfos
+			{
+				imageinfos.resize(set[w].descriptorcount);
+				for (int z = 0; z < imageinfos.size(); z++)
+				{
+					imageinfos[z].imageLayout = set[w].imageinfo[z].imagelayout;
+					imageinfos[z].imageView = set[w].imageinfo[z].imageview;
+					imageinfos[z].sampler = set[w].imageinfo[z].sampler;
+				}
+				writedescriptors[w].pImageInfo = imageinfos.data();
+			}
+
+			
+		}
+
+		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writedescriptors.size()), writedescriptors.data(), 0, nullptr);
 		
+
 	}
 	
 
 }
 
-void Application::AddBufferInfoToDescriptorSet(uint32_t handle, uint32_t uniformbufferhandle, size_t offset, size_t range)
+WriteDescriptorSet* Application::CreateWriteDescriptorSet(uint32_t handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
 {
-	mh_descriptorsets.at(handle).bufferinfos.resize(MAXFRAMESINFLIGHT);
+	uint32_t idx = mh_descriptorsets.at(handle).writedescriptorsets.size();
+	mh_descriptorsets.at(handle).writedescriptorsets.push_back(WriteDescriptorSet());
+	WriteDescriptorSet* set = &mh_descriptorsets.at(handle).writedescriptorsets[idx];
+	set->bindingidx = bindingidx;
+	set->descriptorcount = descriptorcount;
+	set->descriptorType = descriptortype;
 
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	*writedescriptorindex = idx;
+
+	return set;
+}
+
+void Application::AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
+{
+
+	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.size() > 0)
 	{
-		VkDescriptorBufferInfo info;
-		info.buffer = mh_uniformbuffers.at(handle).buffers[i];
-		info.offset = offset;
-		info.range = range;
-
-		mh_descriptorsets.at(handle).bufferinfos.emplace_back(info);
+		throw std::runtime_error("You already have an image info in this writedescriptorset");
 	}
+
+	DescriptorBufferInfo info;
+	info.offset = offset;
+	info.range = range;
+	info.uniformbufferhandle = uniformbufferhandle;
+
+	mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.push_back(info);
 
 }
 
-void Application::AddImageInfoToDescriptorSet(uint32_t handle, uint32_t texturehandle, VkImageLayout imagelayout)
+void Application::AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
 {
-	mh_descriptorsets.at(handle).imageinfos.resize(MAXFRAMESINFLIGHT);
-	
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
 	{
-		VkDescriptorImageInfo info;
-		info.imageLayout = imagelayout;
-		info.imageView = mh_textures.at(handle).imageview;
-		info.sampler = m_texsampler; //TODO: incorporate modular texture samplers.
+		throw std::runtime_error("You already have a buffer info in this writedescriptorset");
 	}
 
+	DescriptorImageInfo info;
+	info.imagelayout = imagelayout;
+	info.imageview = imageview;
+	info.sampler = sampler;
+
+	mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.push_back(info);
 
 }
 
@@ -1673,7 +1741,8 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0), 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
+	//vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(0).descriptorsets[m_currentframe], 0, nullptr);
 
 	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
 
@@ -1719,6 +1788,8 @@ void Application::DrawFrame()
 
 
 	UpdateUniformBuffer(m_currentframe);
+	auto mvp = MVPBuffer();
+	UpdateUniformBuffer(0, &mvp, m_currentframe);
 
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
@@ -2582,6 +2653,36 @@ void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 		vkMapMemory(m_device, buffer.memory[i], 0, buffer.size, 0, &buffer.memorymaps[i]);
 	}
 }
+
+void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe)
+{
+	UniformBuffer& uniformbuffer = mh_uniformbuffers.at(handle);
+
+	memcpy(uniformbuffer.memorymaps[currentframe], &buffer, uniformbuffer.size);
+
+}
+
+ModelViewProjectionBuffer Application::MVPBuffer()
+{
+	static auto starttime = std::chrono::high_resolution_clock::now();
+
+	auto currenttime = std::chrono::high_resolution_clock::now();
+
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
+
+	ModelViewProjectionBuffer mvp;
+
+	mvp.model = glm::mat4(1.0);
+	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+	mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
+
+	mvp.projection[1][1] *= -1;
+
+	return mvp;
+}
+
+
+
 
 
 
