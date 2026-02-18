@@ -1,7 +1,6 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "PersistanceLib.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -34,6 +33,17 @@
 
 
 #include "Objects/Shader.h"
+#include "Structures/Texture.h"
+#include "Structures/UniformBuffer.h"
+#include "Structures/DescriptorPool.h"
+#include "Structures/DescriptorBufferInfo.h"
+#include "Structures/DescriptorImageInfo.h"
+#include "Structures/WriteDesciptorSet.h"
+#include "Structures/DescriptorSetLayout.h"
+
+
+
+
 
 
 #ifndef NDEBUG
@@ -46,7 +56,7 @@
 typedef uint32_t FrameBufferHandle;
 #define BREAK __debugbreak();
 
-const static uint32_t MAXFRAMESINFLIGHT = 2;
+
 
 const uint32_t screenwidth = 800;
 const uint32_t screenheight = 600;
@@ -87,58 +97,12 @@ struct ModelViewProjectionBuffer
 
 };
 
-struct Texture
-{
-	VkImage image;
-	VkDeviceMemory memory;
-	VkImageView imageview;
-	int width;
-	int height;
-};
-struct UniformBuffer
-{
-	UniformBuffer()
-	{
-		buffers.resize(MAXFRAMESINFLIGHT);
-		memory.resize(MAXFRAMESINFLIGHT);
-		memorymaps.resize(MAXFRAMESINFLIGHT);
-	}
 
-	std::vector<VkBuffer> buffers;
-	std::vector<VkDeviceMemory> memory;
-	std::vector<void*> memorymaps;
-	size_t size;
 
-};
-struct DescriptorPool
-{
-	std::vector<VkDescriptorPoolSize> poolsizes;
-	VkDescriptorPool pool;
-};
-struct DescriptorBufferInfo
-{
-	uint32_t uniformbufferhandle;
-	size_t offset;
-	size_t range;
 
-};
-struct DescriptorImageInfo
-{
-	VkImageLayout imagelayout;
-	VkImageView imageview;
-	VkSampler sampler;
 
-};
 
-struct WriteDescriptorSet
-{
-	uint32_t arrayelement;
-	uint32_t descriptorcount;
-	uint32_t bindingidx;
-	VkDescriptorType descriptorType;
-	std::vector<DescriptorBufferInfo> bufferinfo;
-	std::vector<DescriptorImageInfo> imageinfo;
-};
+
 struct DescriptorSet
 {
 	std::vector<VkDescriptorSet> descriptorsets;
@@ -207,7 +171,7 @@ private:
 		
 		CreateDescriptorSetLayout(descriptorsetlayouthandle);
 
-		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorsetlayouthandle);
+		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorsetlayouthandle).layout;
 
 
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
@@ -346,7 +310,7 @@ private:
 
 
 
-		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+		for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 		{
 			vkDestroyBuffer(m_device, m_uniformbuffers[i], nullptr);
 			vkFreeMemory(m_device, m_uniformbuffermem[i], nullptr);
@@ -360,7 +324,7 @@ private:
 		vkFreeMemory(m_device, m_indexbuffermemory, nullptr);
 
 
-		for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+		for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 		{
 			vkDestroySemaphore(m_device, s_imageavailable[i], nullptr);
 			vkDestroySemaphore(m_device, s_renderfinished[i], nullptr);
@@ -622,9 +586,7 @@ private:
 	public:
 	//Descriptor set layout modulation
 
-	std::unordered_map<uint32_t, VkDescriptorSetLayout> mh_descriptorsetlayouts;
-	//std::unordered_multimap<DescriptorSetLayoutHandle, VkDescriptorSetLayoutBinding> mh_descriptorsetlayoutbindings;
-	std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> mh_descriptorsetlayoutbindings;
+	std::unordered_map<descriptorSetLayoutHandle, DescriptorSetLayout> mh_descriptorsetlayouts;
 
 	uint8_t m_dslhandlecount = 0;
 	uint32_t CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
@@ -706,11 +668,27 @@ private:
 	uint32_t CreateUniformBufferHandle();
 	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
 	void UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe);
+	//test 
+	ModelViewProjectionBuffer buf;
+	void MVP()
+	{
+		static auto starttime = std::chrono::high_resolution_clock::now();
 
-	// TEST FUNCTION
-	ModelViewProjectionBuffer MVPBuffer();
+		auto currenttime = std::chrono::high_resolution_clock::now();
 
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
 
+		ModelViewProjectionBuffer mvp;
+
+		mvp.model = glm::mat4(1.0);
+		mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+		mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
+
+		mvp.projection[1][1] *= -1;
+		buf = mvp;
+	}
+	//test\\\
+	
 
 	//Descriptor pool modulation
 	uint32_t m_descriptorpoolcount = 0;

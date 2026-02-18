@@ -288,22 +288,22 @@ void Application::CreateDescriptorSetLayout()
 
 void Application::CreateDescriptorSets()
 {
-	std::vector<VkDescriptorSetLayout> layouts(MAXFRAMESINFLIGHT, m_descriptorsetlayout);
+	std::vector<VkDescriptorSetLayout> layouts(PersistanceLib::MAXFRAMESINFLIGHT, m_descriptorsetlayout);
 	VkDescriptorSetAllocateInfo allocateinfo{};
 	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateinfo.descriptorPool = m_descriptorpool;
-	allocateinfo.descriptorSetCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	allocateinfo.descriptorSetCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	allocateinfo.pSetLayouts = layouts.data();
 
 
-	m_descriptorsets.resize(MAXFRAMESINFLIGHT);
+	m_descriptorsets.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	
 	if (vkAllocateDescriptorSets(m_device, &allocateinfo, m_descriptorsets.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate descriptor sets!");
 	}
 
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		VkDescriptorBufferInfo bufferinfo{};
 		bufferinfo.buffer = m_uniformbuffers[i];
@@ -584,13 +584,13 @@ void Application::CreateCommandPools()
 
 void Application::CreateUniformBuffer()
 {
-	m_uniformbuffers.resize(MAXFRAMESINFLIGHT);
-	m_uniformbuffermem.resize(MAXFRAMESINFLIGHT);
-	m_uniformbuffersmapped.resize(MAXFRAMESINFLIGHT);
+	m_uniformbuffers.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	m_uniformbuffermem.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	m_uniformbuffersmapped.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	VkDeviceSize buffersize = sizeof(ModelViewProjectionBuffer);
 
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformbuffers[i], m_uniformbuffermem[i], VK_SHARING_MODE_CONCURRENT);
 
@@ -611,7 +611,7 @@ uint32_t Application::CreateDescriptorPoolHandle()
 void Application::AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type)
 {
 	VkDescriptorPoolSize size;
-	size.descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	size.descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	size.type = type;
 
 	mh_descriptorpools.at(handle).poolsizes.push_back(size);
@@ -626,7 +626,7 @@ void Application::CreateDescriptorPool(uint32_t handle)
 	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolinfo.poolSizeCount = static_cast<uint32_t>(poolsizes.size());
 	poolinfo.pPoolSizes = poolsizes.data();
-	poolinfo.maxSets = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	poolinfo.maxSets = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &mh_descriptorpools.at(handle).pool) != VK_SUCCESS)
 	{
@@ -648,17 +648,16 @@ uint32_t Application::CreateDescriptorSetHandle()
 void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle)
 {
 	// first we allocate descriptorsets for every possible frame in flight. 
-
-	std::vector<VkDescriptorSetLayout> layouts(MAXFRAMESINFLIGHT, mh_descriptorsetlayouts.at(layouthandle));
+	std::vector<VkDescriptorSetLayout> layouts(static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT), mh_descriptorsetlayouts.at(layouthandle).layout);
 	VkDescriptorSetAllocateInfo allocateinfo{};
 	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateinfo.descriptorPool = mh_descriptorpools.at(poolhandle).pool;
-	allocateinfo.descriptorSetCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	allocateinfo.descriptorSetCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	allocateinfo.pSetLayouts = layouts.data();
 
 	// this is done by indexing into the unordered map of descriptorsetlayouts with the layouthandle variable
 
-	mh_descriptorsets.at(handle).descriptorsets.resize(MAXFRAMESINFLIGHT);
+	mh_descriptorsets.at(handle).descriptorsets.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	if (vkAllocateDescriptorSets(m_device, &allocateinfo, mh_descriptorsets.at(handle).descriptorsets.data()) != VK_SUCCESS)
 	{
@@ -669,7 +668,7 @@ void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, u
 	// This for loop will set the writedescriptorsets for the descriptorsets we're creating. 
 	// writedescriptorsets need bufferinfos, imageinfos or texelbufferinfos to work.
 	// as of now we're only using bufferinfos and imageinfos.
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++) 
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
 	{
 		std::vector<WriteDescriptorSet>& set = mh_descriptorsets.at(handle).writedescriptorsets;
 
@@ -774,15 +773,15 @@ void Application::CreateDescriptorPool()
 	std::array<VkDescriptorPoolSize, 2> poolsizes{};
 
 	poolsizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolsizes[0].descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	poolsizes[0].descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	poolsizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolsizes[1].descriptorCount = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	poolsizes[1].descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	VkDescriptorPoolCreateInfo poolinfo{};
 	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolinfo.poolSizeCount = static_cast<uint32_t>(poolsizes.size());
 	poolinfo.pPoolSizes = poolsizes.data();
-	poolinfo.maxSets = static_cast<uint32_t>(MAXFRAMESINFLIGHT);
+	poolinfo.maxSets = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &m_descriptorpool) != VK_SUCCESS)
 	{
@@ -850,7 +849,7 @@ void Application::CreateIndexBuffers()
 
 void Application::CreateCommandBuffer()
 {
-	m_commandbuffers.resize(MAXFRAMESINFLIGHT);
+	m_commandbuffers.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	VkCommandBufferAllocateInfo cmdbufferinfo{};
 	cmdbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -881,14 +880,14 @@ void Application::CreateSyncObjects()
 	fencecreateinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fencecreateinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	s_imageavailable.resize(MAXFRAMESINFLIGHT);
-	s_renderfinished.resize(MAXFRAMESINFLIGHT);
-	f_inflightfence.resize(MAXFRAMESINFLIGHT);
+	s_imageavailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	s_renderfinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	f_inflightfence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 
 
 
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageavailable[i]) != VK_SUCCESS || vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_renderfinished[i]) != VK_SUCCESS || vkCreateFence(m_device, &fencecreateinfo, nullptr, &f_inflightfence[i]) != VK_SUCCESS)
 		{
@@ -1787,9 +1786,13 @@ void Application::DrawFrame()
 	
 
 
-	UpdateUniformBuffer(m_currentframe);
-	auto mvp = MVPBuffer();
-	UpdateUniformBuffer(0, &mvp, m_currentframe);
+	
+
+	//UpdateUniformBuffer(m_currentframe);
+	
+	MVP();
+
+	UpdateUniformBuffer(0, &buf, m_currentframe);
 
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
@@ -1848,7 +1851,7 @@ void Application::DrawFrame()
 	}
 
 
-	m_currentframe = (m_currentframe + 1) % MAXFRAMESINFLIGHT;
+	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
 
 }
 
@@ -2183,8 +2186,7 @@ uint32_t Application::CreateDescriptorSetLayoutHandle()
 
 	
 
-	mh_descriptorsetlayouts.insert(std::make_pair(handle, nullptr));
-	mh_descriptorsetlayoutbindings.insert({ handle, std::vector<VkDescriptorSetLayoutBinding>(0) });
+	mh_descriptorsetlayouts.emplace(handle,  DescriptorSetLayout());
 
 	return handle;
 }
@@ -2192,7 +2194,7 @@ uint32_t Application::CreateDescriptorSetLayoutHandle()
 void Application::AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding)
 {
 
-	mh_descriptorsetlayoutbindings.at(handle).push_back(binding);
+	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
 
 
 }
@@ -2206,7 +2208,7 @@ void Application::AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindin
 	binding.stageFlags = shaderstage;
 	binding.pImmutableSamplers = 0;
 	
-	mh_descriptorsetlayoutbindings.at(handle).push_back(binding);
+	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
 	
 
 }
@@ -2218,10 +2220,10 @@ void Application::CreateDescriptorSetLayout(uint32_t handle)
 
 	VkDescriptorSetLayoutCreateInfo layoutinfo{};
 	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutinfo.bindingCount = static_cast<uint32_t>(mh_descriptorsetlayoutbindings.at(handle).size());
-	layoutinfo.pBindings = mh_descriptorsetlayoutbindings.at(handle).data();
+	layoutinfo.bindingCount = static_cast<uint32_t>(mh_descriptorsetlayouts.at(handle).bindings.size());
+	layoutinfo.pBindings = mh_descriptorsetlayouts.at(handle).bindings.data();
 
-	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &mh_descriptorsetlayouts.at(handle)) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &mh_descriptorsetlayouts.at(handle).layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create descriptor set layout!");
 	}
@@ -2302,7 +2304,7 @@ void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
 	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelinelayoutcreateinfo.setLayoutCount = 1;
-	pipelinelayoutcreateinfo.pSetLayouts = &mh_descriptorsetlayouts.at(descriptorsetbinding);
+	pipelinelayoutcreateinfo.pSetLayouts = &mh_descriptorsetlayouts.at(descriptorsetbinding).layout;
 	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
 	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
 
@@ -2645,7 +2647,7 @@ uint32_t Application::CreateUniformBufferHandle()
 void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 {
 	mh_uniformbuffers.at(handle).size = buffersize;
-	for (int i = 0; i < MAXFRAMESINFLIGHT; i++)
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		UniformBuffer& buffer = mh_uniformbuffers.at(handle);
 
@@ -2656,30 +2658,14 @@ void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 
 void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe)
 {
+
 	UniformBuffer& uniformbuffer = mh_uniformbuffers.at(handle);
+	
 
-	memcpy(uniformbuffer.memorymaps[currentframe], &buffer, uniformbuffer.size);
+	memcpy(uniformbuffer.memorymaps[currentframe], buffer, uniformbuffer.size);
 
 }
 
-ModelViewProjectionBuffer Application::MVPBuffer()
-{
-	static auto starttime = std::chrono::high_resolution_clock::now();
-
-	auto currenttime = std::chrono::high_resolution_clock::now();
-
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
-
-	ModelViewProjectionBuffer mvp;
-
-	mvp.model = glm::mat4(1.0);
-	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
-
-	mvp.projection[1][1] *= -1;
-
-	return mvp;
-}
 
 
 

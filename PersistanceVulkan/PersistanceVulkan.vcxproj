@@ -141,7 +141,15 @@
     <ClInclude Include="src\DebugUtilsMessengerEXT.h" />
     <ClInclude Include="src\Objects\Shader.h" />
     <ClInclude Include="src\Objects\Vertex.h" />
+    <ClInclude Include="src\PersistanceLib.h" />
     <ClInclude Include="src\Settings\PipelineSettings.h" />
+    <ClInclude Include="src\Structures\DescriptorBufferInfo.h" />
+    <ClInclude Include="src\Structures\DescriptorImageInfo.h" />
+    <ClInclude Include="src\Structures\DescriptorPool.h" />
+    <ClInclude Include="src\Structures\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Structures\Texture.h" />
+    <ClInclude Include="src\Structures\UniformBuffer.h" />
+    <ClInclude Include="src\Structures\WriteDesciptorSet.h" />
     <ClInclude Include="src\Vendor\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
