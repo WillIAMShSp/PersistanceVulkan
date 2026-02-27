@@ -766,6 +766,104 @@ void Application::AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, ui
 
 }
 
+uint32_t Application::CreateCommandBufferHandle()
+{
+	uint32_t handle = m_commandbuffercount++;
+	mh_commandbuffers.emplace(handle, std::vector<VkCommandBuffer>());
+
+	return handle;
+}
+
+void Application::CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+{
+
+	mh_commandbuffers.at(handle).resize(PersistanceLib::MAXFRAMESINFLIGHT);
+
+	VkCommandBufferAllocateInfo cmdbufferinfo{};
+	cmdbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdbufferinfo.commandBufferCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
+	cmdbufferinfo.commandPool = commandpool;
+	cmdbufferinfo.level = level;
+
+	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, m_commandbuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create command buffer");
+
+
+	}
+
+
+}
+
+void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle,  const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle)
+{
+	VkCommandBufferBeginInfo cmdbufferbegininfo{};
+	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmdbufferbegininfo.flags = 0;
+	cmdbufferbegininfo.pInheritanceInfo = nullptr;
+
+	if (vkBeginCommandBuffer(commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to begin command buffer!");
+
+	}
+
+	VkRenderPassBeginInfo renderpassbegininfo{};
+	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
+	renderpassbegininfo.renderPass = m_renderpass;
+
+	renderpassbegininfo.renderArea.offset = { 0,0 };
+	renderpassbegininfo.renderArea.extent = m_swapchainextent;
+
+	VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
+	renderpassbegininfo.clearValueCount = 1;
+	renderpassbegininfo.pClearValues = &clearcolor;
+
+
+	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
+
+
+	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_pipelines.at(graphicspipelinehandle));
+
+	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle) };//{m_vertexbuffer};
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
+
+
+
+	VkViewport viewport{};
+	viewport.x = 0.f;
+	viewport.y = 0.f;
+	viewport.minDepth = 0.f;
+	viewport.maxDepth = 1.f;
+	viewport.width = (float)m_swapchainextent.width;
+	viewport.height = (float)m_swapchainextent.height;
+	vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0,0 };
+	scissor.extent = m_swapchainextent;
+	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
+
+	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle), 0, VK_INDEX_TYPE_UINT32);
+
+	//vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(descriptorsethandle).descriptorsets[m_currentframe], 0, nullptr);
+
+	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
+
+
+	vkCmdEndRenderPass(commandbuffer);
+
+	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to record command buffer");
+
+	}
+}
+
 
 void Application::CreateDescriptorPool()
 {
@@ -1797,7 +1895,9 @@ void Application::DrawFrame()
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
 
-	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
+	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
+
+	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
 
 	VkSemaphore waitsemaphores[] = {s_imageavailable[m_currentframe]};
 	VkSemaphore signalsemaphores[] = {s_renderfinished[m_currentframe]};
@@ -2183,8 +2283,6 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 uint32_t Application::CreateDescriptorSetLayoutHandle()
 {
 	uint32_t handle = m_dslhandlecount++;
-
-	
 
 	mh_descriptorsetlayouts.emplace(handle,  DescriptorSetLayout());
 

@@ -273,6 +273,13 @@ private:
 
 ////////////////////////////////////
 		CreateCommandBuffer();
+		//////////////////////
+		uint32_t commandbufferhandle = CreateCommandBufferHandle();
+		CreateCommandBuffer(commandbufferhandle, m_graphicscommandpool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+
+
+
 		CreateSyncObjects();
 
 	}
@@ -709,6 +716,26 @@ private:
 	WriteDescriptorSet* CreateWriteDescriptorSet(uint32_t handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
 	void AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
 	void AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex,VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
+
+
+
+	/// <Command Buffer Modulation>
+	
+	uint32_t m_commandbuffercount = 0;
+	std::unordered_map<uint32_t, std::vector<VkCommandBuffer>> mh_commandbuffers;
+	
+	uint32_t CreateCommandBufferHandle();
+	void CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
+
+
+	//Record Command Buffer implementation
+
+	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle);
+
+	
+
+	
+
 
 	const std::vector<const char*> m_deviceextensions
 	{
