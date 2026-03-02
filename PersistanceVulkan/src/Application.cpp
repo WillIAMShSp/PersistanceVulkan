@@ -799,7 +799,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
 	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdbufferbegininfo.flags = 0;
+	cmdbufferbegininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	cmdbufferbegininfo.pInheritanceInfo = nullptr;
 
 	if (vkBeginCommandBuffer(commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
@@ -1815,11 +1815,11 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
-	VkBuffer buffers[] = { mh_vertexbuffers.at(0) };//{m_vertexbuffer};
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
-	
-	
+	VkBuffer buffers[] = { mh_vertexbuffers.at(0), mh_vertexbuffers.at(1)};//{m_vertexbuffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(commandbuffer, 0, 2, buffers, offsets);
+
+
 
 	VkViewport viewport{};
 	viewport.x = 0.f;
@@ -1843,7 +1843,8 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
 
-
+	/////////////////////TEST
+	/////////////////////TEST
 	vkCmdEndRenderPass(commandbuffer);
 
 	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)
@@ -1865,7 +1866,7 @@ void Application::DrawFrame()
 
 	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
 	
-
+	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
 
 	uint32_t imageindex;
 	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], f_inflightfence[m_currentframe], &imageindex);
@@ -1880,10 +1881,7 @@ void Application::DrawFrame()
 
 	}
 	
-	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
 	
-
-
 	
 
 	//UpdateUniformBuffer(m_currentframe);
@@ -1895,9 +1893,9 @@ void Application::DrawFrame()
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
 
-	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
+	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
 
-	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
+	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
 
 	VkSemaphore waitsemaphores[] = {s_imageavailable[m_currentframe]};
 	VkSemaphore signalsemaphores[] = {s_renderfinished[m_currentframe]};
@@ -2674,7 +2672,7 @@ uint32_t Application::CreateVertexBufferHandle()
 	return handle;
 }
 
-void Application::CreateVertexBuffer(uint32_t handle, void* buffer, size_t elementsize, uint32_t elementcount)
+void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t elementsize, uint32_t elementcount)
 {
 	VkDeviceSize buffersize = elementsize * elementcount;
 

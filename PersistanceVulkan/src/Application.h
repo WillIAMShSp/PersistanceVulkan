@@ -227,7 +227,13 @@ private:
 		CreateIndexBuffers();
 		///////////////////////////
 		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
-		CreateVertexBuffer(vertexbufferhndl, (void*)vertices.data(), sizeof(vertices[0]), vertices.size());
+		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), vertices.size());
+
+		/////TESTVB/////
+		uint32_t testvbhandl = CreateVertexBufferHandle();
+		CreateVertexBuffer(testvbhandl, TESTvertices.data(), sizeof(TESTvertices[0]), TESTvertices.size());
+		////////////////
+
 
 		uint32_t indexbufferhndl = CreateIndexBufferHandle();
 		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), indices.size());
@@ -657,7 +663,7 @@ private:
 
 	uint32_t m_vertexbuffercount = 0;
 	uint32_t CreateVertexBufferHandle();
-	void CreateVertexBuffer(uint32_t handle, void* buffer, size_t elementsize, uint32_t elementcount);
+	void CreateVertexBuffer(uint32_t handle, const void* buffer, size_t elementsize, uint32_t elementcount);
 
 	//Index buffer modulation
 	std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
@@ -760,6 +766,14 @@ private:
 	{
 		0, 1, 2, 2, 3, 0
 
+	};
+
+
+	const std::vector<Vertex> TESTvertices = {
+	{{-0.1f, -0.1f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.1f, -0.1f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.1f, 0.1f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.1f, 0.1f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
 
 	
