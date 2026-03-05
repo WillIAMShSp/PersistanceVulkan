@@ -1869,7 +1869,7 @@ void Application::DrawFrame()
 	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
 
 	uint32_t imageindex;
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], f_inflightfence[m_currentframe], &imageindex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], nullptr, &imageindex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -1893,9 +1893,9 @@ void Application::DrawFrame()
 
 	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
 
-	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
+	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
 
-	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
+	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
 
 	VkSemaphore waitsemaphores[] = {s_imageavailable[m_currentframe]};
 	VkSemaphore signalsemaphores[] = {s_renderfinished[m_currentframe]};
@@ -1913,6 +1913,8 @@ void Application::DrawFrame()
 	submitinfo.signalSemaphoreCount = 1;
 	submitinfo.pSignalSemaphores = signalsemaphores;
 	
+	
+
 	if (vkQueueSubmit(m_graphicsqueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to submit graphics queue!");
@@ -1925,7 +1927,7 @@ void Application::DrawFrame()
 	presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentinfo.waitSemaphoreCount = 1;
-	presentinfo.pWaitSemaphores = waitsemaphores;
+	presentinfo.pWaitSemaphores = signalsemaphores;
 
 	presentinfo.swapchainCount = 1;
 	presentinfo.pSwapchains = swapchains;
