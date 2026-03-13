@@ -40,6 +40,7 @@
 #include "Structures/DescriptorImageInfo.h"
 #include "Structures/WriteDesciptorSet.h"
 #include "Structures/DescriptorSetLayout.h"
+#include "Structures/RenderPass.h"
 
 
 
@@ -578,6 +579,7 @@ private:
 	std::vector<VkSemaphore> s_imageavailable;
 	std::vector<VkSemaphore> s_renderfinished;
 	std::vector<VkFence> f_inflightfence;
+	std::vector<VkFence> f_imagesinflight;
 	bool m_windowresized = false;
 
 	VkBuffer m_vertexbuffer;
@@ -597,6 +599,25 @@ private:
 	VkSampler m_texsampler;
 
 	public:
+	
+	//RenderPass modulation	
+		
+	uint32_t m_renderpasscount = 0;
+	
+	std::unordered_map<uint32_t, RenderPass> mh_renderpasses;
+
+	uint32_t CreateRenderPassHandle();
+	void CreateRenderPassAttachment(uint32_t handle,
+		VkFormat format,
+		VkSampleCountFlags sample,
+		VkAttachmentLoadOp loadop,
+		VkAttachmentStoreOp storeop,
+		VkImageLayout initiallayout,
+		VkImageLayout finallayout
+	);
+	
+	
+		
 	//Descriptor set layout modulation
 
 	std::unordered_map<descriptorSetLayoutHandle, DescriptorSetLayout> mh_descriptorsetlayouts;

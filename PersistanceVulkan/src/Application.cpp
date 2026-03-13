@@ -219,6 +219,8 @@ void Application::CreateRenderPass()
 	VkSubpassDescription subpass{};
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorattachmentref;
+	
+	
 
 
 	VkSubpassDependency dependency{};
@@ -981,7 +983,7 @@ void Application::CreateSyncObjects()
 	s_imageavailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	s_renderfinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	f_inflightfence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-
+	f_imagesinflight.resize(m_swapchainimages.size(), VK_NULL_HANDLE);
 
 
 
@@ -1866,7 +1868,7 @@ void Application::DrawFrame()
 
 	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
 	
-	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
+	
 
 	uint32_t imageindex;
 	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], nullptr, &imageindex);
@@ -1880,8 +1882,14 @@ void Application::DrawFrame()
 		throw std::runtime_error("Failed to aquire swapchain image!");
 
 	}
+
+	if (f_imagesinflight[imageindex] != VK_NULL_HANDLE) 
+	{
+		vkWaitForFences(m_device, 1, &f_imagesinflight[imageindex], true, UINT64_MAX);
+	}
 	
-	
+	f_imagesinflight[imageindex] = f_inflightfence[m_currentframe];
+	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
 	
 
 	//UpdateUniformBuffer(m_currentframe);
@@ -2280,6 +2288,25 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 	return imageview;
 }
 
+uint32_t Application::CreateRenderPassHandle()
+{
+	uint32_t handle = m_renderpasscount++;
+
+	mh_renderpasses.emplace(handle, nullptr);
+
+	return handle;
+}
+
+void Application::CreateRenderPassAttachment(uint32_t handle, VkFormat format, VkSampleCountFlags sample, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initiallayout, VkImageLayout finallayout)
+{
+	mh_renderpasses.at(handle).attachments.emplace_back(RenderPassAttachment());
+	RenderPassAttachment& attachment = mh_renderpasses.at(handle).attachments[mh_renderpasses.size()-1];
+	attachment.description.
+
+
+
+}
+
 uint32_t Application::CreateDescriptorSetLayoutHandle()
 {
 	uint32_t handle = m_dslhandlecount++;
@@ -2453,6 +2480,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelinecreateinfo.basePipelineIndex = -1;
 
+	pipelinecreateinfo.pNext = nullptr;
 
 	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_pipelines.at(handle)) != VK_SUCCESS)
 	{

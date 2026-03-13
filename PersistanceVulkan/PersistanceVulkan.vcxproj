@@ -147,6 +147,8 @@
     <ClInclude Include="src\Structures\DescriptorImageInfo.h" />
     <ClInclude Include="src\Structures\DescriptorPool.h" />
     <ClInclude Include="src\Structures\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Structures\RenderPass.h" />
+    <ClInclude Include="src\Structures\RenderPassAttachment.h" />
     <ClInclude Include="src\Structures\Texture.h" />
     <ClInclude Include="src\Structures\UniformBuffer.h" />
     <ClInclude Include="src\Structures\WriteDesciptorSet.h" />
