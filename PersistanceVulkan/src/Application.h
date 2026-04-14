@@ -38,6 +38,7 @@
 #include "Structures/DescriptorPool.h"
 #include "Structures/DescriptorBufferInfo.h"
 #include "Structures/DescriptorImageInfo.h"
+#include "Structures/DescriptorSet.h"
 #include "Structures/WriteDesciptorSet.h"
 #include "Structures/DescriptorSetLayout.h"
 #include "Structures/RenderPass.h"
@@ -68,7 +69,7 @@ const std::vector<const char*> m_validationlayers = {
 
 
 #ifdef NDEBUG
-const bool enablevalidationlayers = false;
+const bool enablevalidationlayers = true;
 #else
 const bool enablevalidationlayers = true;
 #endif
@@ -104,12 +105,7 @@ struct ModelViewProjectionBuffer
 
 
 
-struct DescriptorSet
-{
-	std::vector<VkDescriptorSet> descriptorsets;
-	std::vector<WriteDescriptorSet> writedescriptorsets;
-	
-};
+
 
 
 class Application
@@ -159,6 +155,28 @@ private:
 		CreateRenderPass();
 		CreateCommandPools();
 #pragma endregion
+
+		//CreateRenderPass();
+		uint32_t renderpasshandle = CreateRenderPassHandle();
+		uint32_t colorattachment = CreateRenderPassColorAttachment(
+			renderpasshandle, 
+			m_swapchainimageformat, 
+			VK_SAMPLE_COUNT_1_BIT, 
+			VK_ATTACHMENT_LOAD_OP_CLEAR, 
+			VK_ATTACHMENT_STORE_OP_STORE, 
+			VK_IMAGE_LAYOUT_UNDEFINED, 
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		uint32_t subpassdescription = CreateSubpassDescription(renderpasshandle, &colorattachment, 1);
+		uint32_t subpassdependency = CreateSubpassDependency(
+			renderpasshandle, 
+			VK_SUBPASS_EXTERNAL, 
+			0, 
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
+			0, 
+			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+		CreateRenderPass(renderpasshandle, &colorattachment, 1, &subpassdescription, 1, &subpassdependency, 1);
+
 
 #pragma region done
 
@@ -606,14 +624,82 @@ private:
 	
 	std::unordered_map<uint32_t, RenderPass> mh_renderpasses;
 
-	uint32_t CreateRenderPassHandle();
-	void CreateRenderPassAttachment(uint32_t handle,
+	uint32_t CreateRenderPassHandle(); 
+	
+	
+	uint32_t CreateRenderPassColorAttachment(
+		uint32_t handle,
 		VkFormat format,
-		VkSampleCountFlags sample,
+		VkSampleCountFlagBits imagesamples,
 		VkAttachmentLoadOp loadop,
 		VkAttachmentStoreOp storeop,
-		VkImageLayout initiallayout,
-		VkImageLayout finallayout
+		VkImageLayout initialimagelayout,
+		VkImageLayout finalimagelayout
+		);
+	uint32_t CreateRenderPassDepthStencilAttachment(
+		uint32_t handle,
+		VkFormat format,
+		VkSampleCountFlagBits imagesamples,
+		VkAttachmentLoadOp loadop,
+		VkAttachmentStoreOp storeop,
+		VkAttachmentLoadOp depthstencilloadop,
+		VkAttachmentStoreOp depthstencilstoreop,
+		VkImageLayout initialimagelayout,
+		VkImageLayout finalimagelayout
+	);
+
+	uint32_t CreateRenderPassInputAttachment(
+		uint32_t handle,
+		VkFormat format,
+		VkSampleCountFlagBits imagesamples,
+		VkAttachmentLoadOp loadop,
+		VkAttachmentStoreOp storeop,
+		VkAttachmentLoadOp depthstencilloadop,
+		VkAttachmentStoreOp depthstencilstoreop,
+		VkImageLayout initialimagelayout,
+		VkImageLayout finalimagelayout
+	);
+
+	uint32_t CreateRenderpassAttachment(
+		uint32_t handle, 
+		VkImageLayout attachmentlayout, 
+		VkFormat format, 
+		VkSampleCountFlagBits imagesamples, 
+		VkAttachmentLoadOp loadop, 
+		VkAttachmentStoreOp storeop, 
+		VkImageLayout initialimagelayout, 
+		VkImageLayout finalimagelayout
+	);
+
+	uint32_t CreateSubpassDescription(
+		uint32_t handle,
+		const uint32_t* colorattachmentindices = nullptr,
+		size_t colorattachmentcount = 0,
+		const uint32_t depthandstencilattachmentindex =  UINT32_MAX,
+		const uint32_t* inputattachmentindices = nullptr,
+		const uint32_t inputattachmentcount = 0,
+		const uint32_t* preserveattachmentindices = nullptr,
+		const uint32_t preservedattachmentcount = 0
+	);
+
+	uint32_t CreateSubpassDependency(
+		uint32_t handle,
+		uint32_t srcsubpass, 
+		uint32_t dstsubpass, 
+		VkPipelineStageFlags srcstagemask, 
+		VkPipelineStageFlags dststagemask, 
+		VkAccessFlags srcaccessmask, 
+		VkAccessFlags dstaccessmask
+	);
+
+	void CreateRenderPass(
+		uint32_t handle, 
+		const uint32_t* attachmentindicies, 
+		uint32_t attachmentcount, 
+		const uint32_t* subpassdescriptionindicies, 
+		uint32_t subpassdescriptioncount, 
+		const uint32_t* subpassdependencyindices, 
+		uint32_t subpassdependencycount
 	);
 	
 	

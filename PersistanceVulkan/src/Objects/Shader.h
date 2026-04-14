@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include<iostream>
-#include <array>
+#include <vector>
 
 
 const static enum ShaderStages
@@ -55,13 +55,13 @@ public:
 
 private:
 
-	static const int MAXSTAGES = 2;
+
 	
 	
 	VkShaderModule m_vertexmodule;
 	VkShaderModule m_fragmentmodule;
 
-	std::array<VkPipelineShaderStageCreateInfo, MAXSTAGES> m_stages;
+	std::vector<VkPipelineShaderStageCreateInfo> m_stages;
 
 	bool m_hasvertexstage = false;
 	bool m_hasfragmentstage = false;

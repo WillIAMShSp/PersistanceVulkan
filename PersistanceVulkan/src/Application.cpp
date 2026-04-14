@@ -2292,20 +2292,217 @@ uint32_t Application::CreateRenderPassHandle()
 {
 	uint32_t handle = m_renderpasscount++;
 
-	mh_renderpasses.emplace(handle, nullptr);
+	mh_renderpasses.emplace(handle, RenderPass());
 
 	return handle;
 }
 
-void Application::CreateRenderPassAttachment(uint32_t handle, VkFormat format, VkSampleCountFlags sample, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initiallayout, VkImageLayout finallayout)
+uint32_t Application::CreateRenderPassColorAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
-	mh_renderpasses.at(handle).attachments.emplace_back(RenderPassAttachment());
-	RenderPassAttachment& attachment = mh_renderpasses.at(handle).attachments[mh_renderpasses.size()-1];
-	attachment.description.
+	int index = mh_renderpasses.at(handle).colorattachments.size();
+	mh_renderpasses.at(handle).colorattachments.push_back(RenderPassAttachment());
+
+	RenderPassAttachment& attachment = mh_renderpasses.at(handle).colorattachments[index];
+
+	attachment.reference.attachment = index;
+	attachment.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	attachment.description.format = format;
+	attachment.description.samples = imagesamples;
+	attachment.description.loadOp = loadop;
+	attachment.description.storeOp = storeop;
+	attachment.description.initialLayout = initialimagelayout;
+	attachment.description.finalLayout = finalimagelayout;
+
+	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	return index;
+
+}
+
+uint32_t Application::CreateRenderPassDepthStencilAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+{
+	int index = mh_renderpasses.at(handle).depthstencilattachments.size();
+	mh_renderpasses.at(handle).depthstencilattachments.push_back(RenderPassAttachment());
+
+	RenderPassAttachment& attachment = mh_renderpasses.at(handle).depthstencilattachments[index];
+
+	attachment.reference.attachment = index;
+	attachment.reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	attachment.description.format = format;
+	attachment.description.samples = imagesamples;
+	attachment.description.loadOp = loadop;
+	attachment.description.storeOp = storeop;
+	attachment.description.initialLayout = initialimagelayout;
+	attachment.description.finalLayout = finalimagelayout;
+
+	attachment.description.stencilLoadOp = depthstencilloadop;
+	attachment.description.stencilStoreOp = depthstencilstoreop;
+
+	return index;
+}
+
+uint32_t Application::CreateRenderPassInputAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+{
+	int index = mh_renderpasses.at(handle).inputattachments.size();
+	mh_renderpasses.at(handle).inputattachments.push_back(RenderPassAttachment());
+
+	RenderPassAttachment& attachment = mh_renderpasses.at(handle).inputattachments[index];
+
+	attachment.reference.attachment = index;
+	attachment.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	attachment.description.format = format;
+	attachment.description.samples = imagesamples;
+	attachment.description.loadOp = loadop;
+	attachment.description.storeOp = storeop;
+	attachment.description.initialLayout = initialimagelayout;
+	attachment.description.finalLayout = finalimagelayout;
+
+	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	return index;
+}
+
+
+
+uint32_t Application::CreateRenderpassAttachment(uint32_t handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+{
+	int index = mh_renderpasses.at(handle).attachments.size();
+	mh_renderpasses.at(handle).attachments.push_back(RenderPassAttachment());
+
+	RenderPassAttachment& attachment = mh_renderpasses.at(handle).attachments[index];
+	
+	attachment.reference.attachment = index;
+	attachment.reference.layout = attachmentlayout;
+	
+	attachment.description.format = format;
+	attachment.description.samples = imagesamples;
+	attachment.description.loadOp = loadop;
+	attachment.description.storeOp = storeop;
+	attachment.description.initialLayout = initialimagelayout;
+	attachment.description.finalLayout = finalimagelayout;
+
+	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	return index;
+
+}
+
+uint32_t Application::CreateSubpassDescription(uint32_t handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
+{
+	uint32_t descriptionindex = mh_renderpasses.at(handle).subpassdescription.size();
+	mh_renderpasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
+	VkSubpassDescription& description = mh_renderpasses.at(handle).subpassdescription.at(descriptionindex);
+
+	auto& attachments = mh_renderpasses.at(handle).attachments;
+
+
+
+	if (depthandstencilattachmentindex != UINT32_MAX) {
+		description.pDepthStencilAttachment = &attachments[depthandstencilattachmentindex].reference;
+	}
+
+	
+	// Setting up attachment vectors
+	std::vector<VkAttachmentReference> colorattachments;
+	colorattachments.reserve(colorattachmentcount);
+	std::vector<VkAttachmentReference> inputattachments;
+	inputattachments.reserve(inputattachmentcount);
+	
+
+
+	
+	// Assign attachment references to designated vectors
+	/*for (int i = 0; i < colorattachmentcount; i++) 
+	{
+		VkAttachmentReference& attachmentref = attachments[colorattachmentindices[i]].reference;
+		colorattachments.push_back(attachmentref);
+		
+	}
+	for (int i = 0; i < inputattachmentcount; i++) 
+	{
+		VkAttachmentReference& attachmentref = attachments[inputattachmentindices[i]].reference;
+		inputattachments.push_back(attachmentref);
+	
+	}*/
+
+	//assigning attachments to the subpass description
+	description.colorAttachmentCount = mh_renderpasses.at(handle).colorattachments.size();
+	description.pColorAttachments = &mh_renderpasses.at(handle).colorattachments[0].reference;
+	description.inputAttachmentCount = inputattachmentcount;
+	description.pInputAttachments = inputattachments.data();
+	description.preserveAttachmentCount = preservedattachmentcount;
+	description.pPreserveAttachments = preserveattachmentindices;
+
+
+	
+
+	return descriptionindex;
+
+
+}
+
+uint32_t Application::CreateSubpassDependency(uint32_t handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
+{
+	uint32_t dependencyindex = mh_renderpasses.at(handle).subpassdependencies.size();
+	mh_renderpasses.at(handle).subpassdependencies.push_back(VkSubpassDependency());
+	VkSubpassDependency& dependency = mh_renderpasses.at(handle).subpassdependencies.at(dependencyindex);
+
+
+	dependency.srcSubpass = srcsubpass;
+	dependency.srcStageMask = srcstagemask;
+	dependency.srcAccessMask = srcaccessmask;
+
+	dependency.dstSubpass = dstsubpass;
+	dependency.dstStageMask = dststagemask;
+	dependency.dstAccessMask = dstaccessmask;
+
+
+
+	return dependencyindex;
+
+}
+
+void Application::CreateRenderPass(uint32_t handle, const uint32_t* attachmentindicies, uint32_t attachmentcount, const uint32_t* subpassdescriptionindicies, uint32_t subpassdescriptioncount, const uint32_t* subpassdependencyindices, uint32_t subpassdependencycount)
+{
+	std::vector<VkAttachmentDescription> attachments;
+	attachments.reserve(attachmentcount);
+
+	for (int i = 0; i < attachmentcount; i++) 
+	{
+		attachments.emplace_back(mh_renderpasses.at(handle).colorattachments[attachmentindicies[i]].description);
+
+	}
+
+
+
+	VkRenderPassCreateInfo renderpasscreateinfo{};
+	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderpasscreateinfo.attachmentCount = attachmentcount;
+	renderpasscreateinfo.pAttachments = attachments.data();
+	renderpasscreateinfo.subpassCount = mh_renderpasses.at(handle).subpassdescription.size();
+	renderpasscreateinfo.pSubpasses = mh_renderpasses.at(handle).subpassdescription.data();
+
+	renderpasscreateinfo.dependencyCount = mh_renderpasses.at(handle).subpassdependencies.size();
+	renderpasscreateinfo.pDependencies = mh_renderpasses.at(handle).subpassdependencies.data();
+
+
+	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &m_renderpass) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create render pass!");
+
+	}
+
 
 
 
 }
+
 
 uint32_t Application::CreateDescriptorSetLayoutHandle()
 {
@@ -2318,10 +2515,7 @@ uint32_t Application::CreateDescriptorSetLayoutHandle()
 
 void Application::AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding)
 {
-
 	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
-
-
 }
 
 void Application::AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
