@@ -25,7 +25,7 @@ public:
 	Shader() = default;
 
 
-	inline auto GetStages()
+	std::vector<VkPipelineShaderStageCreateInfo>& GetStages()
 	{
 		if (!m_hasvertexstage && !m_hasfragmentstage)
 		{

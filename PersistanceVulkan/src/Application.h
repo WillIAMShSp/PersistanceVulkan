@@ -69,7 +69,7 @@ const std::vector<const char*> m_validationlayers = {
 
 
 #ifdef NDEBUG
-const bool enablevalidationlayers = true;
+const bool enablevalidationlayers = false;
 #else
 const bool enablevalidationlayers = true;
 #endif
