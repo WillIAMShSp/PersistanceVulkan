@@ -130,7 +130,7 @@ void Application::CreateSwapChain()
 	
 	uint32_t queuefamilyindices[] =
 	{
-		indices.graphicsfamily.value(), indices.presentfamily.value()
+		indices.graphicsfamily, indices.presentfamily
 	};
 
 	if (indices.graphicsfamily != indices.presentfamily)
@@ -553,11 +553,11 @@ void Application::CreateCommandPools()
 	
 	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
 
-	if (indices.graphicsfamily.has_value())
+	if (indices.graphicsfamily != -1)
 	{
 		VkCommandPoolCreateInfo graphicspoolinfo{};
 		graphicspoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily.value();
+		graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily;
 		graphicspoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(m_device, &graphicspoolinfo, nullptr, &m_graphicscommandpool) != VK_SUCCESS)
@@ -568,11 +568,11 @@ void Application::CreateCommandPools()
 
 	}
 
-	if (indices.transferfamily.has_value())
+	if (indices.transferfamily != -1)
 	{
 		VkCommandPoolCreateInfo transferpoolinfo{};
 		transferpoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		transferpoolinfo.queueFamilyIndex = indices.transferfamily.value();
+		transferpoolinfo.queueFamilyIndex = indices.transferfamily;
 		transferpoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transfercommandpool) != VK_SUCCESS)
@@ -1317,27 +1317,27 @@ bool Application::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scoreha
 	
 	const bool& requiredextensionsupport = DeviceExtensionSupport(physicaldevice);
 
-	if (indices.graphicsfamily.has_value())
+	if (indices.graphicsfamily != -1)
 	{
 		score += 100;
 
 
 	}
 
-	if (indices.presentfamily.has_value())
+	if (indices.presentfamily != -1)
 	{
 		score += 100;
 		presentfamily = true;
 	}
 
-	if (indices.computefamily.has_value())
+	if (indices.computefamily != -1)
 	{
 		score += 100;
 
 
 	}
 
-	if (indices.transferfamily.has_value())
+	if (indices.transferfamily != -1)
 	{
 		score += 100;
 
@@ -1479,9 +1479,9 @@ void Application::CreateLogicalDevice()
 
 	std::set<uint32_t>uniquequeuefamilies =
 	{
-		m_queuefamilyindices.graphicsfamily.value(),
-		m_queuefamilyindices.presentfamily.value(),
-		m_queuefamilyindices.transferfamily.value()
+		m_queuefamilyindices.graphicsfamily,
+		m_queuefamilyindices.presentfamily,
+		m_queuefamilyindices.transferfamily
 
 	};
 	queuecreateinfos.reserve(uniquequeuefamilies.size());
@@ -1506,11 +1506,6 @@ void Application::CreateLogicalDevice()
 
 
 	}
-
-
-
-
-
 	
 
 	VkPhysicalDeviceFeatures devicefeatures{};
@@ -1558,9 +1553,9 @@ void Application::CreateLogicalDevice()
 
 	}
 
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.graphicsfamily.value(), 0, &m_graphicsqueue);
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.presentfamily.value(), 0, &m_presentqueue);
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.transferfamily.value(), 0, &m_transferqueue);
+	vkGetDeviceQueue(m_device, m_queuefamilyindices.graphicsfamily, 0, &m_graphicsqueue);
+	vkGetDeviceQueue(m_device, m_queuefamilyindices.presentfamily, 0, &m_presentqueue);
+	vkGetDeviceQueue(m_device, m_queuefamilyindices.transferfamily, 0, &m_transferqueue);
 
 }
 
@@ -2003,13 +1998,13 @@ void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usag
 
 	buffercreateinfo.usage = usageflags;
 	buffercreateinfo.sharingMode = sharingmode;
-
+	std::array<uint32_t, 2> queuefamilyindices;
 	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
 	{
-		std::array<uint32_t, 2> queuefamilyindices =
+		queuefamilyindices =
 		{
-			m_queuefamilyindices.graphicsfamily.value(),
-			m_queuefamilyindices.transferfamily.value()
+			m_queuefamilyindices.graphicsfamily,
+			m_queuefamilyindices.transferfamily
 
 		};
 
@@ -2064,14 +2059,15 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 	imageinfo.sharingMode = sharingmode;
 	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageinfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; //temporary solution, This means that the framebuffer image can have the same format as a texture, but change to that of the swapchain
-														  // so I can also write to it, or thats my theory at least, lets give it a go for now.
+	
+	std::array<uint32_t, 2> queuefamilyindices;									  // so I can also write to it, or thats my theory at least, lets give it a go for now.
 
 	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
 	{
-		std::array<uint32_t, 2> queuefamilyindices =
+		 queuefamilyindices =
 		{
-			m_queuefamilyindices.graphicsfamily.value(),
-			m_queuefamilyindices.transferfamily.value()
+			m_queuefamilyindices.graphicsfamily,
+			m_queuefamilyindices.transferfamily
 
 		};
 
@@ -2080,6 +2076,11 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 
 
 
+	}
+	else 
+	{
+		imageinfo.queueFamilyIndexCount = 1;
+		imageinfo.pQueueFamilyIndices = &m_queuefamilyindices.graphicsfamily;
 	}
 	
 

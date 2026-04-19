@@ -69,17 +69,17 @@ const std::vector<const char*> m_validationlayers = {
 
 
 #ifdef NDEBUG
-const bool enablevalidationlayers = false;
+const bool enablevalidationlayers = true;
 #else
 const bool enablevalidationlayers = true;
 #endif
 
 struct QueueFamilyIndices
 {
-	std::optional<uint32_t> graphicsfamily;
-	std::optional<uint32_t> presentfamily;
-	std::optional<uint32_t> computefamily;
-	std::optional<uint32_t> transferfamily;
+	uint32_t graphicsfamily = -1;
+	uint32_t presentfamily= -1;
+	uint32_t computefamily= -1;
+	uint32_t transferfamily = -1;
 	
 
 };
