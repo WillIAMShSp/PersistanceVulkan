@@ -1832,16 +1832,12 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
-	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0), 0, VK_INDEX_TYPE_UINT32);
 
-	//vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
 	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(0).descriptorsets[m_currentframe], 0, nullptr);
 
 	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
 
-	/////////////////////TEST
-	/////////////////////TEST
 	vkCmdEndRenderPass(commandbuffer);
 
 	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)

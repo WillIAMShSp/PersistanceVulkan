@@ -145,11 +145,14 @@ private:
 	void InitVulkan()
 	{
 #pragma region InitFunc
+		volkInitialize();
 		CreateInstance();
+		volkLoadInstance(m_instance);
 		SetUpDebugCallBack();
 		CreateSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
+		volkLoadDevice(m_device);
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();

@@ -27,6 +27,9 @@
     <ClCompile Include="src\Settings\PipelineSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Vendor\volk\volk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\DebugUtilsMessengerEXT.h">
@@ -78,6 +81,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Structures\DescriptorSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vendor\volk\volk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
