@@ -42,6 +42,9 @@
 #include "Structures/WriteDesciptorSet.h"
 #include "Structures/DescriptorSetLayout.h"
 #include "Structures/RenderPass.h"
+#include "Structures/Buffer.h"
+#include "Structures/GraphicsPipeline.h"
+#include "Structures/Framebuffer.h"
 
 
 
@@ -69,7 +72,7 @@ const std::vector<const char*> m_validationlayers = {
 
 
 #ifdef NDEBUG
-const bool enablevalidationlayers = true;
+const bool enablevalidationlayers = false;
 #else
 const bool enablevalidationlayers = true;
 #endif
@@ -155,11 +158,8 @@ private:
 		volkLoadDevice(m_device);
 		CreateSwapChain();
 		CreateImageViews();
-		CreateRenderPass();
 		CreateCommandPools();
 #pragma endregion
-
-		//CreateRenderPass();
 		uint32_t renderpasshandle = CreateRenderPassHandle();
 		uint32_t colorattachment = CreateRenderPassColorAttachment(
 			renderpasshandle, 
@@ -193,7 +193,7 @@ private:
 		
 		CreateDescriptorSetLayout(descriptorsetlayouthandle);
 
-		m_descriptorsetlayout = mh_descriptorsetlayouts.at(descriptorsetlayouthandle).layout;
+		
 
 
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
@@ -206,7 +206,7 @@ private:
 		//CreateGraphicsPipeline();
 ///////////////////////////////////////////////////
 		uint32_t pipeline = CreateGraphicsPipelineHandle();
-		CreatePipelineShader(pipeline); //
+		 
 		AddVertexStage(pipeline, "res/Shaders/basicvert.spv"); /*Create shaders*/
 		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv"); //
 		CreateGraphicsPipelineLayout(pipeline, descriptorsetlayouthandle);
@@ -223,8 +223,8 @@ private:
 		settings.ConfigureColorBlend();
 		settings.UseDynamicViewport();
 		CreateGraphicsPipeline(pipeline, settings);
-		m_pipeline = mh_pipelines.at(pipeline);
-		m_pipelinelayout = mh_pipelinelayouts.at(pipeline);
+		m_pipeline = mh_graphicspipelines.at(pipeline).pipeline;
+		m_pipelinelayout = mh_graphicspipelines.at(pipeline).layout;
 
 
 
@@ -263,7 +263,7 @@ private:
 ////////////////////////////////////
 
 		
-		CreateUniformBuffer();
+		//CreateUniformBuffer();
 
 		////////////////////////
 
@@ -276,7 +276,7 @@ private:
 
 ////////////////////////////////////
 		
-		CreateDescriptorPool();
+		//CreateDescriptorPool();
 
 		////////////////////////
 
@@ -288,7 +288,7 @@ private:
 		
 
 ////////////////////////////////////
-		CreateDescriptorSets();
+		//CreateDescriptorSets();
 		////////////////////////
 		uint32_t descriptorsethandle = CreateDescriptorSetHandle();
 		uint32_t uniformbufferwritedescriptor;
@@ -333,25 +333,41 @@ private:
 
 
 		CleanUpSwapchain();
+		
+		//Textures
+
+		CleanTextures();
+		vkDestroySampler(m_device, m_texsampler, nullptr);
 
 		vkDestroyImageView(m_device, m_teximageview, nullptr);
-
+		
 		vkDestroyImage(m_device, m_textureimage, nullptr);
 		vkFreeMemory(m_device, m_textureimagemem, nullptr);
 
+		//Descriptor Pools
+
+		CleanDescriptorPools();
+		CleanDescriptorSetLayout();
+
 		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
 
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorsetlayout, nullptr);
+		//Uniform Buffers
 
-
-
-		for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
+		/*for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 		{
 			vkDestroyBuffer(m_device, m_uniformbuffers[i], nullptr);
 			vkFreeMemory(m_device, m_uniformbuffermem[i], nullptr);
 
-		}
+		}*/
 
+		CleanUniformBuffers();
+
+		CleanVertexBuffers();
+		CleanIndexBuffers();
+
+		CleanFramebuffers();
+
+		//Buffers
 		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
 		vkFreeMemory(m_device, m_vertexbuffermemory, nullptr);
 
@@ -367,24 +383,21 @@ private:
 
 		}
 
-		
-		
+		CleanRenderPass();
+		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
+		//Command Pools
 		vkDestroyCommandPool(m_device, m_graphicscommandpool, nullptr);
 		vkDestroyCommandPool(m_device, m_transfercommandpool, nullptr);
 
-		vkDestroyPipeline(m_device, m_pipeline, nullptr);
-		vkDestroyPipelineLayout(m_device, m_pipelinelayout, nullptr);
-		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
+		//m_pipeline
 
-		
+		CleanGraphicsPipelines();
 
-		
 
 		vkDestroyDevice(m_device, nullptr);
 
 		if (enablevalidationlayers) 
 		{
-		
 			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
 		}
 
@@ -625,7 +638,7 @@ private:
 		
 	uint32_t m_renderpasscount = 0;
 	
-	std::unordered_map<uint32_t, RenderPass> mh_renderpasses;
+	std::vector<RenderPass> mh_renderpasses;
 
 	uint32_t CreateRenderPassHandle(); 
 	
@@ -705,11 +718,11 @@ private:
 		uint32_t subpassdependencycount
 	);
 	
-	
+	void CleanRenderPass();
 		
 	//Descriptor set layout modulation
 
-	std::unordered_map<descriptorSetLayoutHandle, DescriptorSetLayout> mh_descriptorsetlayouts;
+	std::vector<DescriptorSetLayout> mh_descriptorsetlayouts;
 
 	uint8_t m_dslhandlecount = 0;
 	uint32_t CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
@@ -717,31 +730,33 @@ private:
 	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
 	void CreateDescriptorSetLayout(uint32_t handle);
 
+	void CleanDescriptorSetLayout();
+
 	//Graphics pipeline modulation
 	uint32_t m_pipelinecount = 0;
-	std::unordered_map<uint32_t, VkPipeline> mh_pipelines;
-	std::unordered_map<uint32_t, VkPipelineLayout> mh_pipelinelayouts;
-	std::unordered_map<uint32_t, Shader> mh_shaders;
+	/*std::vector<VkPipeline> mh_pipelines;
+	std::vector<VkPipelineLayout> mh_pipelinelayouts;
+	std::vector<Shader> mh_shaders;*/
 	
+	std::vector<GraphicsPipeline> mh_graphicspipelines;
+
 
 	
 	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
-	void CreatePipelineShader(uint32_t handle); //Creates a pipeline shader
 	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
 	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
+
 	void CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding);
 	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings);
 	void DestroyShaders(uint32_t handle);
-	
+	void CleanGraphicsPipelines();
 	 
 	//Framebuffer modulation
 	
 
 	uint32_t m_framebuffercount = 0;
-	std::unordered_map<FrameBufferHandle, std::vector<VkFramebuffer>> mh_framebuffers;
-	std::unordered_map<FrameBufferHandle, std::vector<VkImageView>> mh_imageviews;
-	std::unordered_map<FrameBufferHandle, std::vector<VkImage>> mh_images;
-	std::unordered_map<FrameBufferHandle, std::vector<VkDeviceMemory>> mh_imagememory;
+
+	std::vector<Framebuffer> mh_framebuffers;
 
 
 	FrameBufferHandle CreateFrameBuffersHandle();
@@ -751,10 +766,12 @@ private:
 	void CreateFramebufferImageViews(FrameBufferHandle handle);
 	void CreateFramebuffers(FrameBufferHandle handle);
 	
+	void CleanFramebuffers();
+
 	//Texture modulation
 
 
-	std::unordered_map<uint32_t, Texture> mh_textures;
+	std::vector<Texture> mh_textures;
 	std::unordered_map<uint32_t, VkSampler> mh_texturesamplers;
 
 	uint32_t m_texturecount = 0;
@@ -765,32 +782,43 @@ private:
 	void CreateTextureImageView(uint32_t handle);
 	void AddImageToTexture(uint32_t handle, const char* imagesrc);
 
+	void CleanTextures();
+
 
 	//Vertex buffer modulation
 
-	std::unordered_map<uint32_t, VkBuffer> mh_vertexbuffers;
-	std::unordered_map<uint32_t, VkDeviceMemory> mh_vertexbuffermem;
+	//std::unordered_map<uint32_t, VkBuffer> mh_vertexbuffers;
+	//std::unordered_map<uint32_t, VkDeviceMemory> mh_vertexbuffermem;
+
+	std::vector<Buffer> mh_vertexbuffers;
 
 	uint32_t m_vertexbuffercount = 0;
 	uint32_t CreateVertexBufferHandle();
 	void CreateVertexBuffer(uint32_t handle, const void* buffer, size_t elementsize, uint32_t elementcount);
+	void CleanVertexBuffers();
 
 	//Index buffer modulation
-	std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
-	std::unordered_map<uint32_t, VkDeviceMemory> mh_indexbuffermem;
+	/*std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
+	std::unordered_map<uint32_t, VkDeviceMemory> mh_indexbuffermem;*/
+
+	std::vector<Buffer> mh_indexbuffers;
 
 	uint32_t m_indexbuffercount = 0;
 	uint32_t CreateIndexBufferHandle();
 	void CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount);
 
+	void CleanIndexBuffers();
+
 	//Uniform buffer modulation
-	std::unordered_map<uint32_t, UniformBuffer> mh_uniformbuffers;
+	std::vector<UniformBuffer> mh_uniformbuffers;
 
 	uint32_t m_uniformbuffercount = 0;
 
 	uint32_t CreateUniformBufferHandle();
 	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
 	void UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe);
+
+	void CleanUniformBuffers();
 	//test 
 	ModelViewProjectionBuffer buf;
 	void MVP()
@@ -815,12 +843,14 @@ private:
 
 	//Descriptor pool modulation
 	uint32_t m_descriptorpoolcount = 0;
-	std::unordered_map<uint32_t, DescriptorPool> mh_descriptorpools;
+	std::vector<DescriptorPool> mh_descriptorpools;
 
 
 	uint32_t CreateDescriptorPoolHandle();
 	void AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type);
 	void CreateDescriptorPool(uint32_t handle);
+
+	void CleanDescriptorPools();
 
 	//Descriptor set modulation
 	uint32_t m_descriptorsetcount = 0;

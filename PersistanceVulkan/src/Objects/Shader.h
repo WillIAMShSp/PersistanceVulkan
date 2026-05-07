@@ -6,19 +6,6 @@
 #include <vector>
 
 
-const static enum ShaderStages
-{
-
-	VERTEXSTAGE = 0,
-	FRAGMENTSTAGE = 1,
-	COMPUTESTAGE = 2
-
-
-};
-
-
-
-
 class Shader
 {
 public:

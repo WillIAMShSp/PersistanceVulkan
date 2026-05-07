@@ -605,7 +605,7 @@ void Application::CreateUniformBuffer()
 uint32_t Application::CreateDescriptorPoolHandle()
 {
 	uint32_t handle = m_descriptorpoolcount++;
-	mh_descriptorpools.emplace(handle, DescriptorPool());
+	mh_descriptorpools.emplace_back(DescriptorPool());
 
 	return handle;
 }
@@ -637,6 +637,15 @@ void Application::CreateDescriptorPool(uint32_t handle)
 	}
 
 
+}
+
+void Application::CleanDescriptorPools()
+{
+	for (int i = 0; i < mh_descriptorpools.size(); i++) 
+	{
+		vkDestroyDescriptorPool(m_device, mh_descriptorpools[i].pool, nullptr);
+
+	}
 }
 
 uint32_t Application::CreateDescriptorSetHandle()
@@ -826,9 +835,9 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
 
 
-	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_pipelines.at(graphicspipelinehandle));
+	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).pipeline);
 
-	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle) };//{m_vertexbuffer};
+	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle).buffer };//{m_vertexbuffer};
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 
@@ -849,7 +858,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
 	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle).buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	//vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
 	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(descriptorsethandle).descriptorsets[m_currentframe], 0, nullptr);
@@ -1812,7 +1821,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 
 	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
-	VkBuffer buffers[] = { mh_vertexbuffers.at(0), mh_vertexbuffers.at(1)};//{m_vertexbuffer};
+	VkBuffer buffers[] = { mh_vertexbuffers.at(0).buffer, mh_vertexbuffers.at(1).buffer};//{m_vertexbuffer};
 	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(commandbuffer, 0, 2, buffers, offsets);
 
@@ -1832,7 +1841,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
-	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0).buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(0).descriptorsets[m_currentframe], 0, nullptr);
 
@@ -2289,7 +2298,7 @@ uint32_t Application::CreateRenderPassHandle()
 {
 	uint32_t handle = m_renderpasscount++;
 
-	mh_renderpasses.emplace(handle, RenderPass());
+	mh_renderpasses.emplace_back(RenderPass());
 
 	return handle;
 }
@@ -2500,12 +2509,21 @@ void Application::CreateRenderPass(uint32_t handle, const uint32_t* attachmentin
 
 }
 
+void Application::CleanRenderPass()
+{
+	for (RenderPass pass : mh_renderpasses) 
+	{
+		vkDestroyRenderPass(m_device, pass.renderpass, nullptr);
+	}
+
+}
+
 
 uint32_t Application::CreateDescriptorSetLayoutHandle()
 {
 	uint32_t handle = m_dslhandlecount++;
 
-	mh_descriptorsetlayouts.emplace(handle,  DescriptorSetLayout());
+	mh_descriptorsetlayouts.emplace_back(DescriptorSetLayout());
 
 	return handle;
 }
@@ -2549,11 +2567,19 @@ void Application::CreateDescriptorSetLayout(uint32_t handle)
 
 }
 
+void Application::CleanDescriptorSetLayout()
+{
+	for (int i = 0; i < mh_descriptorsetlayouts.size(); i++)
+	{
+		vkDestroyDescriptorSetLayout(m_device, mh_descriptorsetlayouts[i].layout, nullptr);
+	}
+}
+
 uint32_t Application::CreateGraphicsPipelineHandle()
 {
 	uint32_t handle = m_pipelinecount++;
 
-	mh_pipelines.insert({ handle, nullptr });
+	mh_graphicspipelines.emplace_back(GraphicsPipeline());
 
 
 
@@ -2563,59 +2589,24 @@ uint32_t Application::CreateGraphicsPipelineHandle()
 
 }
 
-void Application::CreatePipelineShader(uint32_t handle)
-{
-	mh_shaders.emplace( handle, Shader() );
 
-}
 
 void Application::AddVertexStage(uint32_t handle, const char* shaderpath)
 {
-
-	if (mh_shaders.find(handle) == mh_shaders.end())
-	{
-
-		throw std::runtime_error("Failed to find pipeline shader with handle " + std::to_string(handle));
-
-
-	}
-	else
-	{
-
-		const auto shaderfile = ReadFile(shaderpath);
-		mh_shaders.at(handle).GetVertexModule() = CreateShaderModule(shaderfile);
-		mh_shaders.at(handle).AddVertexShaderStage();
-
-
-	
-
-
-	}
-
-
+	const auto shaderfile = ReadFile(shaderpath);
+	mh_graphicspipelines.at(handle).shader.GetVertexModule() = CreateShaderModule(shaderfile);
+	mh_graphicspipelines.at(handle).shader.AddVertexShaderStage();
 }
 
 void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
 {
-	if (mh_shaders.find(handle) == mh_shaders.end())
-	{
-		throw std::runtime_error("Failed to find pipeline shader with handle " + std::to_string(handle));
-
-	}
-	else
-	{
-		const auto shaderfile = ReadFile(shaderpath);
-	
-
-		mh_shaders.at(handle).GetFragmentModule() = CreateShaderModule(shaderfile);
-		mh_shaders.at(handle).AddFragmentShaderStage();
-		
-	}
+	const auto shaderfile = ReadFile(shaderpath);
+	mh_graphicspipelines.at(handle).shader.GetFragmentModule() = CreateShaderModule(shaderfile);
+	mh_graphicspipelines.at(handle).shader.AddFragmentShaderStage();
 }
 
 void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding)
 {
-	mh_pipelinelayouts.emplace( graphicspipelinehandle, nullptr);
 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
 	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -2624,7 +2615,7 @@ void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, 
 	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
 	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
 
-	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &mh_pipelinelayouts.at(graphicspipelinehandle)) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &mh_graphicspipelines.at(graphicspipelinehandle).layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
@@ -2650,8 +2641,8 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 	
 
 	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelinecreateinfo.stageCount = static_cast<uint32_t>(mh_shaders.at(handle).GetStages().size());
-	pipelinecreateinfo.pStages = mh_shaders.at(handle).GetStages().data();
+	pipelinecreateinfo.stageCount = static_cast<uint32_t>(mh_graphicspipelines.at(handle).shader.GetStages().size());
+	pipelinecreateinfo.pStages = mh_graphicspipelines.at(handle).shader.GetStages().data();
 
 
 	pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
@@ -2663,7 +2654,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 	pipelinecreateinfo.pDepthStencilState = nullptr;
 
 
-	pipelinecreateinfo.layout = mh_pipelinelayouts.at(handle);
+	pipelinecreateinfo.layout = mh_graphicspipelines.at(handle).layout;
 	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &dynamicstatecreateinfo : nullptr;
 	pipelinecreateinfo.renderPass = m_renderpass;
 	pipelinecreateinfo.subpass = 0;
@@ -2673,7 +2664,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 	pipelinecreateinfo.pNext = nullptr;
 
-	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_pipelines.at(handle)) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_graphicspipelines.at(handle).pipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create the graphics pipeline");
 
@@ -2688,10 +2679,19 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 void Application::DestroyShaders(uint32_t handle)
 {
 	
-	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetVertexModule(), nullptr);
-	vkDestroyShaderModule(m_device, mh_shaders.at(handle).GetFragmentModule(), nullptr);
+	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetVertexModule(), nullptr);
+	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetFragmentModule(), nullptr);
 
 	// compute one goes here.
+}
+
+void Application::CleanGraphicsPipelines()
+{
+	for (GraphicsPipeline pipeline : mh_graphicspipelines) 
+	{
+		vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
+		vkDestroyPipelineLayout(m_device, pipeline.layout, nullptr);
+	}
 
 
 }
@@ -2699,11 +2699,8 @@ void Application::DestroyShaders(uint32_t handle)
 FrameBufferHandle Application::CreateFrameBuffersHandle()
 {
 	
-	mh_framebuffers.emplace( m_framebuffercount, std::vector<VkFramebuffer>() );
-	mh_images.emplace( m_framebuffercount, std::vector<VkImage>() );
-	mh_imagememory.emplace( m_framebuffercount, std::vector<VkDeviceMemory>() );
-	mh_imageviews.emplace( m_framebuffercount, std::vector<VkImageView>() );
-
+	mh_framebuffers.emplace_back(Framebuffer());
+	
 	return m_framebuffercount++;
 
 }
@@ -2719,36 +2716,38 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle)
 	VkMemoryPropertyFlags memoryproperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 
-	mh_images.at(handle).resize(1 + mh_images.at(handle).size());
-	mh_imagememory.at(handle).resize(1 + mh_imagememory.at(handle).size());
+	mh_framebuffers.at(handle).images.push_back(VkImage());
+	mh_framebuffers.at(handle).imagememory.push_back(VkDeviceMemory());
 
 
-	imageidx = mh_images.at(handle).size() - 1;
+	imageidx = mh_framebuffers.at(handle).images.size() - 1;
 
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_images.at(handle)[imageidx], mh_imagememory.at(handle)[imageidx], VK_SHARING_MODE_CONCURRENT);
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).imagememory[imageidx], VK_SHARING_MODE_CONCURRENT);
 
 }
 
 void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
 {
 	uint32_t imageidx = 0;
-	mh_images.at(handle).resize(1 + mh_images.at(handle).size());
-	mh_imagememory.at(handle).resize(1 + mh_imagememory.at(handle).size());
+	mh_framebuffers.at(handle).images.push_back(VkImage());
+	mh_framebuffers.at(handle).imagememory.push_back(VkDeviceMemory());
 
 
-	imageidx = mh_images.at(handle).size() - 1;
+	imageidx = mh_framebuffers.at(handle).images.size() - 1;
 
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_images.at(handle)[imageidx], mh_imagememory.at(handle)[imageidx], VK_SHARING_MODE_CONCURRENT);
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).imagememory[imageidx], VK_SHARING_MODE_CONCURRENT);
 
 }
 
 void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
 {
-	mh_imageviews.at(handle).resize(mh_images.at(handle).size());
+	size_t imagecount = mh_framebuffers.at(handle).images.size();
 
-	for (int i = 0; i < mh_images.size(); i++)
+	mh_framebuffers.at(handle).imageviews.resize(imagecount);
+
+	for (int i = 0; i < imagecount; i++)
 	{
-		mh_imageviews.at(handle)[i] = CreateImageView(mh_images.at(handle)[i], m_swapchainimageformat);
+		mh_framebuffers.at(handle).imageviews[i] = CreateImageView(mh_framebuffers.at(handle).images[i], m_swapchainimageformat);
 
 	}
 
@@ -2756,13 +2755,14 @@ void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
 }
 void Application::CreateFramebuffers(FrameBufferHandle handle)
 {
-	mh_framebuffers.at(handle).resize(mh_imageviews.at(handle).size());
+	size_t imageviewcount = mh_framebuffers.at(handle).imageviews.size();
+	mh_framebuffers.at(handle).framebuffers.resize(imageviewcount);
 	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
 
-	for (int i = 0; i < mh_imageviews.at(handle).size(); i++)
+	for (int i = 0; i < imageviewcount; i++)
 	{
 
-		VkImageView attachments[] = { mh_imageviews.at(handle)[i] }; //separate this into another map
+		VkImageView attachments[] = { mh_framebuffers.at(handle).imageviews[i] }; //separate this into another map
 
 		VkFramebufferCreateInfo framebufferinfo{};
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -2773,7 +2773,7 @@ void Application::CreateFramebuffers(FrameBufferHandle handle)
 		framebufferinfo.width = m_swapchainextent.width;
 		framebufferinfo.height = m_swapchainextent.height;
 
-		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &mh_framebuffers.at(handle)[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &mh_framebuffers.at(handle).framebuffers[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create framebuffer");
 
@@ -2781,11 +2781,38 @@ void Application::CreateFramebuffers(FrameBufferHandle handle)
 	}
 }
 
+void Application::CleanFramebuffers()
+{
+	for (Framebuffer buffer : mh_framebuffers) 
+	{
+		for (int i = 0; i < buffer.framebuffers.size(); i++)
+		{
+			vkDestroyFramebuffer(m_device, buffer.framebuffers[i], nullptr);
+		}
+
+		for (int i = 0; i < buffer.imageviews.size(); i++)
+		{
+			vkDestroyImageView(m_device, buffer.imageviews[i], nullptr);
+		}
+		
+		for (int i = 0; i < buffer.images.size(); i++) 
+		{
+			vkDestroyImage(m_device, buffer.images[i], nullptr);
+			vkFreeMemory(m_device, buffer.imagememory[i], nullptr);
+		}
+		/*The reason as to why imageviews and images are deleted sepperately is because the developer
+		might not create an imageview for every image.*/
+
+		
+	}
+
+}
+
 uint32_t Application::CreateTextureHandle()
 {
 	uint32_t handle = m_texturecount++;
 
-	mh_textures.emplace(handle, Texture());
+	mh_textures.emplace_back(Texture());
 
 	return handle;
 
@@ -2883,12 +2910,21 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 }
 
+void Application::CleanTextures()
+{
+	for (int i = 0; i < mh_textures.size(); i++) {
+		vkDestroyImageView(m_device, mh_textures[i].imageview, nullptr);
+		vkDestroyImage(m_device, mh_textures[i].image, nullptr);
+		vkFreeMemory(m_device, mh_textures[i].memory, nullptr);
+	}
+	
+}
+
 uint32_t Application::CreateVertexBufferHandle()
 {
 	uint32_t handle = m_vertexbuffercount++;
 
-	mh_vertexbuffers.emplace( handle, nullptr );
-	mh_vertexbuffermem.emplace( handle, nullptr );
+	mh_vertexbuffers.emplace_back(Buffer());
 
 	return handle;
 }
@@ -2910,22 +2946,30 @@ void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t
 
 	vkUnmapMemory(m_device, stagingbuffermem);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle), mh_vertexbuffermem.at(handle), VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
 
-	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle), buffersize, m_transfercommandpool, m_transferqueue);
+	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingbuffermem, nullptr);
 
 }
 
+void Application::CleanVertexBuffers()
+{
+	for (int i = 0; i < mh_vertexbuffers.size(); i++) 
+	{
+		vkDestroyBuffer(m_device,mh_vertexbuffers[i].buffer, nullptr);
+		vkFreeMemory(m_device, mh_vertexbuffers[i].buffermem, nullptr);
+	}
+}
+
 uint32_t Application::CreateIndexBufferHandle()
 {
 	uint32_t handle = m_indexbuffercount++;
 
-	mh_indexbuffers.emplace ( handle, nullptr );
-	mh_indexbuffermem.emplace( handle, nullptr );
-
+	mh_indexbuffers.emplace_back(Buffer());
+	
 	return handle;
 }
 
@@ -2946,18 +2990,28 @@ void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t inde
 
 	vkUnmapMemory(m_device, stagingbuffermem);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle), mh_indexbuffermem.at(handle), VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
 
-	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle), buffersize, m_transfercommandpool, m_transferqueue);
+	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 
 	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vkFreeMemory(m_device, stagingbuffermem, nullptr);
 }
 
+void Application::CleanIndexBuffers()
+{
+	for (int i = 0; i < mh_indexbuffers.size(); i++) 
+	{
+		vkDestroyBuffer(m_device, mh_indexbuffers[i].buffer, nullptr);
+		vkFreeMemory(m_device, mh_indexbuffers[i].buffermem, nullptr);
+	
+	}
+}
+
 uint32_t Application::CreateUniformBufferHandle()
 {
 	uint32_t handle = m_uniformbuffercount++;
-	mh_uniformbuffers.emplace(handle, UniformBuffer());
+	mh_uniformbuffers.emplace_back(UniformBuffer());
 	return handle;
 }
 
@@ -2980,6 +3034,20 @@ void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const
 	
 
 	memcpy(uniformbuffer.memorymaps[currentframe], buffer, uniformbuffer.size);
+
+}
+
+void Application::CleanUniformBuffers()
+{
+
+	for (int i = 0; i < mh_uniformbuffers.size(); i++) 
+	{
+		for (int j = 0; j < PersistanceLib::MAXFRAMESINFLIGHT; j++)
+		{
+			vkDestroyBuffer(m_device, mh_uniformbuffers[i].buffers[j], nullptr);
+			vkFreeMemory(m_device, mh_uniformbuffers[i].memory[j], nullptr);
+		}
+	}
 
 }
 

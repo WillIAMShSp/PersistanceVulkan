@@ -86,6 +86,15 @@
     <ClInclude Include="src\Vendor\volk\volk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Structures\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Structures\GraphicsPipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Structures\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\Shaders\BasicFragment.frag" />

@@ -39,8 +39,6 @@ void Shader::AddFragmentShaderStage()
 	createinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	createinfo.pName = "main";
 
-	m_stages[ShaderStages::FRAGMENTSTAGE] = createinfo;
-
 	if (!m_hasfragmentstage)
 	{
 		m_hasfragmentstage = true;
