@@ -7,6 +7,7 @@ struct Texture
 	VkImage image;
 	VkDeviceMemory memory;
 	VkImageView imageview;
+	VmaAllocation allocation;
 	int width;
 	int height;
 };

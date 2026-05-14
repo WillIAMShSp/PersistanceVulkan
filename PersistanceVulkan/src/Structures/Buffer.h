@@ -6,6 +6,7 @@ struct Buffer {
 
 	VkBuffer buffer;
 	VkDeviceMemory buffermem;
+	VmaAllocation allocation;
 
 
 };

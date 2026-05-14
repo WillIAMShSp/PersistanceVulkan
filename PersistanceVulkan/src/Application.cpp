@@ -584,23 +584,7 @@ void Application::CreateCommandPools()
 	
 }
 
-void Application::CreateUniformBuffer()
-{
-	m_uniformbuffers.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	m_uniformbuffermem.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	m_uniformbuffersmapped.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
-	VkDeviceSize buffersize = sizeof(ModelViewProjectionBuffer);
-
-	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
-	{
-		CreateBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformbuffers[i], m_uniformbuffermem[i], VK_SHARING_MODE_CONCURRENT);
-
-		vkMapMemory(m_device, m_uniformbuffermem[i], 0, buffersize, 0, &m_uniformbuffersmapped[i]);
-
-	}
-
-}
 
 uint32_t Application::CreateDescriptorPoolHandle()
 {
@@ -875,6 +859,135 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	}
 }
 
+void Application::CreateAllocator()
+{
+	m_vmaalloccreateinfo.device = m_device;
+	m_vmaalloccreateinfo.physicalDevice = m_physicaldevice;
+	m_vmaalloccreateinfo.instance = m_instance;
+	m_vmaalloccreateinfo.vulkanApiVersion = VK_API_VERSION_1_0;
+	m_vmaalloccreateinfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+
+	m_vmafunctions = {};
+	m_vmafunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	m_vmafunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
+	m_vmaalloccreateinfo.pVulkanFunctions = &m_vmafunctions;
+	
+	if (vmaCreateAllocator(&m_vmaalloccreateinfo, &m_vmaallocator) != VK_SUCCESS) 
+	{
+		BREAK(0);
+	}
+
+}
+
+void Application::CleanAllocator()
+{
+	vmaDestroyAllocator(m_vmaallocator);
+}
+
+void Application::CreateImageT(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
+{
+
+	VkImageCreateInfo imageinfo{};
+	imageinfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageinfo.imageType = VK_IMAGE_TYPE_2D;
+	imageinfo.extent.width = width;
+	imageinfo.extent.height = height;
+	imageinfo.extent.depth = 1;
+	imageinfo.mipLevels = 1;
+	imageinfo.arrayLayers = 1;
+	imageinfo.format = format;
+	imageinfo.tiling = tiling;
+	imageinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageinfo.usage = usage;
+	imageinfo.sharingMode = sharingmode;
+	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageinfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; //temporary solution, This means that the framebuffer image can have the same format as a texture, but change to that of the swapchain
+
+	std::array<uint32_t, 2> queuefamilyindices;									  // so I can also write to it, or thats my theory at least, lets give it a go for now.
+
+	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
+	{
+		queuefamilyindices =
+		{
+			m_queuefamilyindices.graphicsfamily,
+			m_queuefamilyindices.transferfamily
+
+		};
+
+		imageinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
+		imageinfo.pQueueFamilyIndices = queuefamilyindices.data();
+
+
+
+	}
+	else
+	{
+		imageinfo.queueFamilyIndexCount = 1;
+		imageinfo.pQueueFamilyIndices = &m_queuefamilyindices.graphicsfamily;
+	}
+
+	VmaAllocationCreateInfo allocationcreateinfo{};
+	allocationcreateinfo.usage = VMA_MEMORY_USAGE_AUTO;
+	allocationcreateinfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+	allocationcreateinfo.priority = 1.0;
+
+
+
+	if (vmaCreateImage(m_vmaallocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS) 
+	{
+		std::cout << "Failed to create image!";
+		BREAK(0);
+	}
+
+
+	
+
+}
+
+void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation, VkSharingMode sharingmode)
+{
+	VkBufferCreateInfo buffercreateinfo{};
+	buffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffercreateinfo.size = size;
+
+	buffercreateinfo.usage = usageflags;
+	buffercreateinfo.sharingMode = sharingmode;
+	std::array<uint32_t, 2> queuefamilyindices;
+	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
+	{
+		queuefamilyindices =
+		{
+			m_queuefamilyindices.graphicsfamily,
+			m_queuefamilyindices.transferfamily
+
+		};
+
+		buffercreateinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
+		buffercreateinfo.pQueueFamilyIndices = queuefamilyindices.data();
+
+
+
+	}
+	
+
+	VmaAllocationCreateInfo allocationcreateinfo{};
+	allocationcreateinfo.usage = VMA_MEMORY_USAGE_AUTO;
+	allocationcreateinfo.minAlignment = 0;
+	allocationcreateinfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+		VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+	
+	if (vmaCreateBuffer(m_vmaallocator, &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
+	{
+		std::cout << "Failed to create buffer";
+		BREAK(0);
+
+	}
+
+	
+}
+
 
 void Application::CreateDescriptorPool()
 {
@@ -900,61 +1013,8 @@ void Application::CreateDescriptorPool()
 
 }
 
-void Application::CreateVertexBuffers()
-{
 
 
-	VkDeviceSize buffersize = sizeof(vertices[0]) * vertices.size();
-
-	VkBuffer stagingbuffer;
-	VkDeviceMemory stagingbuffermem;
-
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
-	
-	void* data;
-
-	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
-
-	memcpy(data, vertices.data(), (size_t)buffersize);
-
-	vkUnmapMemory(m_device, stagingbuffermem);
-
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexbuffer, m_vertexbuffermemory, VK_SHARING_MODE_CONCURRENT);
-
-	CopyBuffer(stagingbuffer, m_vertexbuffer, buffersize, m_transfercommandpool, m_transferqueue);
-
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingbuffermem, nullptr);
-
-}
-
-void Application::CreateIndexBuffers()
-{
-
-	VkDeviceSize buffersize = sizeof(indices[0]) * indices.size();
-
-	VkBuffer stagingbuffer;
-	VkDeviceMemory stagingbuffermem;
-
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
-
-
-	void* data;
-
-	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
-
-	memcpy(data, indices.data(), (size_t)buffersize);
-
-	vkUnmapMemory(m_device, stagingbuffermem);
-
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexbuffer, m_indexbuffermemory, VK_SHARING_MODE_CONCURRENT);
-
-	CopyBuffer(stagingbuffer, m_indexbuffer, buffersize, m_transfercommandpool, m_transferqueue);
-
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingbuffermem, nullptr);
-
-}
 
 void Application::CreateCommandBuffer()
 {
@@ -1027,48 +1087,6 @@ void Application::CleanUpSwapchain()
 
 }
 
-void Application::CreateTextureImage()
-{
-	int width, height, bpp;
-
-	stbi_uc* pixels = stbi_load("res/Textures/Placeholder.png", &width, &height, &bpp, STBI_rgb_alpha);
-	VkDeviceSize buffersize = width * height * 4;
-
-	if (!pixels)
-	{
-		throw std::runtime_error("Didnt find the texture!");
-	}
-
-	VkBuffer stagingbuffer;
-	VkDeviceMemory stagingmem;
-
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
-	
-	void* data;
-	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
-	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vkUnmapMemory(m_device, stagingmem);
-
-	stbi_image_free(pixels);
-
-	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_textureimage, m_textureimagemem, VK_SHARING_MODE_CONCURRENT);
-
-
-	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
-
-	CopyBuffertoImage(stagingbuffer, m_textureimage, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
-
-	TransitionImageLayout(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_transfercommandpool, m_transferqueue);
-
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingmem, nullptr);
-
-
-
-
-}
 
 void Application::CreateTextureImageView()
 {
@@ -1993,59 +2011,7 @@ void Application::RecreateSwapchain()
 	
 }
 
-void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode)
-{
-	
 
-	VkBufferCreateInfo buffercreateinfo{};
-	buffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffercreateinfo.size = size;
-
-	buffercreateinfo.usage = usageflags;
-	buffercreateinfo.sharingMode = sharingmode;
-	std::array<uint32_t, 2> queuefamilyindices;
-	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
-	{
-		queuefamilyindices =
-		{
-			m_queuefamilyindices.graphicsfamily,
-			m_queuefamilyindices.transferfamily
-
-		};
-
-		buffercreateinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
-		buffercreateinfo.pQueueFamilyIndices = queuefamilyindices.data();
-
-
-
-	}
-
-
-	if (vkCreateBuffer(m_device, &buffercreateinfo, nullptr, &buffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create vertex buffer!");
-
-	}
-
-	VkMemoryRequirements memrequirements;
-	vkGetBufferMemoryRequirements(m_device, buffer, &memrequirements);
-
-
-	VkMemoryAllocateInfo allocateinfo{};
-	allocateinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateinfo.allocationSize = memrequirements.size;
-	allocateinfo.memoryTypeIndex = FindMemoryType(memrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	if (vkAllocateMemory(m_device, &allocateinfo, nullptr, &buffermemory) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate vertex buffer memory!");
-	}
-
-
-	vkBindBufferMemory(m_device, buffer, buffermemory, 0);
-
-
-}
 
 void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode)
 {
@@ -2290,6 +2256,7 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 		throw std::runtime_error("Failed to create texture image view");
 
 	}
+	
 
 	return imageview;
 }
@@ -2716,26 +2683,36 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle)
 	VkMemoryPropertyFlags memoryproperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 
-	mh_framebuffers.at(handle).images.push_back(VkImage());
-	mh_framebuffers.at(handle).imagememory.push_back(VkDeviceMemory());
+	imageidx = mh_framebuffers.at(handle).images.size();
+
+	mh_framebuffers.at(handle).images.emplace_back(VkImage());
+	////mh_framebuffers.at(handle).imagememory.emplace_back(VkDeviceMemory());
+	mh_framebuffers.at(handle).allocations.emplace_back(VmaAllocation());
+
+	VkImage& image = mh_framebuffers.at(handle).images[imageidx];
+	VmaAllocation& allocation = mh_framebuffers.at(handle).allocations[imageidx];
+	
+
+	CreateImageT(width, height, format, tiling, usageflags, memoryproperties, image, allocation);
+
+	
 
 
-	imageidx = mh_framebuffers.at(handle).images.size() - 1;
-
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).imagememory[imageidx], VK_SHARING_MODE_CONCURRENT);
+	
 
 }
-
+ 
 void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
 {
 	uint32_t imageidx = 0;
 	mh_framebuffers.at(handle).images.push_back(VkImage());
 	mh_framebuffers.at(handle).imagememory.push_back(VkDeviceMemory());
+	mh_framebuffers.at(handle).allocations.push_back(VmaAllocation());
 
 
 	imageidx = mh_framebuffers.at(handle).images.size() - 1;
 
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).imagememory[imageidx], VK_SHARING_MODE_CONCURRENT);
+	CreateImageT(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).allocations[imageidx] , VK_SHARING_MODE_CONCURRENT);
 
 }
 
@@ -2797,8 +2774,7 @@ void Application::CleanFramebuffers()
 		
 		for (int i = 0; i < buffer.images.size(); i++) 
 		{
-			vkDestroyImage(m_device, buffer.images[i], nullptr);
-			vkFreeMemory(m_device, buffer.imagememory[i], nullptr);
+			vmaDestroyImage(m_vmaallocator, buffer.images[i], buffer.allocations[i]);
 		}
 		/*The reason as to why imageviews and images are deleted sepperately is because the developer
 		might not create an imageview for every image.*/
@@ -2844,14 +2820,28 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 
 	VkBuffer stagingbuffer;
 	VkDeviceMemory stagingmem;
+	VmaAllocation stagingalloc;
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
+
 
 	void* data;
-	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
-	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vkUnmapMemory(m_device, stagingmem);
+	
 
+	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vmaUnmapMemory(m_vmaallocator, stagingalloc);
+
+	
+	/*vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vkUnmapMemory(m_device, stagingmem);*/
+
+
+
+	//vmaCopyMemoryToAllocation(m_vmaallocator, &pixels, allocation, 0, buffersize);
+	
 	stbi_image_free(pixels);
 
 	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -2865,8 +2855,9 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingmem, nullptr);
+	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	//vkFreeMemory(m_device, stagingmem, nullptr);
 	
 }
 
@@ -2889,14 +2880,22 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 	VkBuffer stagingbuffer;
 	VkDeviceMemory stagingmem;
+	//VmaAllocation stagingalloc;
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
 
 	void* data;
-	vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	
+	/*vmaMapMemory(m_vmaallocator, stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vkUnmapMemory(m_device, stagingmem);
+	vmaUnmapMemory(m_vmaallocator, stagingalloc);*/
 
+
+	/* vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
+	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
+	vkUnmapMemory(m_device, stagingmem);*/
+
+	
 	stbi_image_free(pixels);
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
@@ -2905,8 +2904,9 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingmem, nullptr);
+	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+//	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	//vkFreeMemory(m_device, stagingmem, nullptr);
 
 }
 
@@ -2936,31 +2936,41 @@ void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t
 	VkBuffer stagingbuffer;
 	VkDeviceMemory stagingbuffermem;
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+	VmaAllocation stagingalloc;
+
+	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
 
 	void* data;
 
-	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
+	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	memcpy(data, buffer, buffersize);
+	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
+
+	/*vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
 	memcpy(data, buffer, (size_t)buffersize);
+	vkUnmapMemory(m_device, stagingbuffermem);*/
 
-	vkUnmapMemory(m_device, stagingbuffermem);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
+	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
 
 	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingbuffermem, nullptr);
+	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
+
+	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+
+	//vkFreeMemory(m_device, stagingbuffermem, nullptr);
 
 }
 
 void Application::CleanVertexBuffers()
 {
-	for (int i = 0; i < mh_vertexbuffers.size(); i++) 
+	for (auto& vertexbuffer : mh_vertexbuffers) 
 	{
-		vkDestroyBuffer(m_device,mh_vertexbuffers[i].buffer, nullptr);
-		vkFreeMemory(m_device, mh_vertexbuffers[i].buffermem, nullptr);
+		vmaDestroyBuffer(m_vmaallocator, vertexbuffer.buffer, vertexbuffer.allocation);	
 	}
 }
 
@@ -2979,32 +2989,30 @@ void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t inde
 
 	VkBuffer stagingbuffer;
 	VkDeviceMemory stagingbuffermem;
+	VmaAllocation stagingalloc;
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
 
 	void* data;
 
-	vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
-
+	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
 	memcpy(data, buffer, buffersize);
+	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
-	vkUnmapMemory(m_device, stagingbuffermem);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
 
 	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 
-	vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-	vkFreeMemory(m_device, stagingbuffermem, nullptr);
+	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 }
 
 void Application::CleanIndexBuffers()
 {
-	for (int i = 0; i < mh_indexbuffers.size(); i++) 
+	for (auto& indexbuffer : mh_indexbuffers)
 	{
-		vkDestroyBuffer(m_device, mh_indexbuffers[i].buffer, nullptr);
-		vkFreeMemory(m_device, mh_indexbuffers[i].buffermem, nullptr);
-	
+		vmaDestroyBuffer(m_vmaallocator, indexbuffer.buffer, indexbuffer.allocation);
+
 	}
 }
 
@@ -3018,12 +3026,13 @@ uint32_t Application::CreateUniformBufferHandle()
 void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 {
 	mh_uniformbuffers.at(handle).size = buffersize;
+	UniformBuffer& buffer = mh_uniformbuffers.at(handle);
+
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
-		UniformBuffer& buffer = mh_uniformbuffers.at(handle);
-
-		CreateBuffer(buffer.size , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.memory[i], VK_SHARING_MODE_CONCURRENT);
-		vkMapMemory(m_device, buffer.memory[i], 0, buffer.size, 0, &buffer.memorymaps[i]);
+		CreateBuffer(buffer.size , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.allocations[i], VK_SHARING_MODE_CONCURRENT);
+		
+		vmaMapMemory(m_vmaallocator, buffer.allocations[i], &buffer.memorymaps[i]);
 	}
 }
 
@@ -3035,17 +3044,20 @@ void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const
 
 	memcpy(uniformbuffer.memorymaps[currentframe], buffer, uniformbuffer.size);
 
+	
+
 }
 
 void Application::CleanUniformBuffers()
 {
 
-	for (int i = 0; i < mh_uniformbuffers.size(); i++) 
+	for (auto& uniformbuffer : mh_uniformbuffers) 
 	{
 		for (int j = 0; j < PersistanceLib::MAXFRAMESINFLIGHT; j++)
 		{
-			vkDestroyBuffer(m_device, mh_uniformbuffers[i].buffers[j], nullptr);
-			vkFreeMemory(m_device, mh_uniformbuffers[i].memory[j], nullptr);
+			vmaUnmapMemory(m_vmaallocator, uniformbuffer.allocations[j]);
+			vmaDestroyBuffer(m_vmaallocator, uniformbuffer.buffers[j], uniformbuffer.allocations[j]);
+
 		}
 	}
 

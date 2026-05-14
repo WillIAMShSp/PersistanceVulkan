@@ -156,6 +156,7 @@ private:
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
 		volkLoadDevice(m_device);
+		CreateAllocator();
 		CreateSwapChain();
 		CreateImageViews();
 		CreateCommandPools();
@@ -245,8 +246,7 @@ private:
 		
 
 //////////////////////////////////////////////////
-		CreateVertexBuffers();
-		CreateIndexBuffers();
+		
 		///////////////////////////
 		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
 		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), vertices.size());
@@ -269,11 +269,6 @@ private:
 
 		uint32_t uniformbufferhandle = CreateUniformBufferHandle();
 		CreateUniformBuffer(uniformbufferhandle, sizeof(ModelViewProjectionBuffer));
-
-		
-
-
-
 ////////////////////////////////////
 		
 		//CreateDescriptorPool();
@@ -393,6 +388,8 @@ private:
 
 		CleanGraphicsPipelines();
 
+		CleanAllocator();
+
 
 		vkDestroyDevice(m_device, nullptr);
 
@@ -499,14 +496,8 @@ private:
 	void CreateFramebuffers();
 
 	void CreateCommandPools();
-
-	void CreateUniformBuffer();
 	
 	void CreateDescriptorPool();
-
-	void CreateVertexBuffers();
-
-	void CreateIndexBuffers();
 
 	void CreateCommandBuffer();
 
@@ -564,7 +555,14 @@ private:
 
 	void RecreateSwapchain();
 
-	void CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffermemory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+	void CreateBuffer(
+		const VkDeviceSize& size,
+		VkBufferUsageFlags usageflags,
+		VkMemoryPropertyFlags properties,
+		VkBuffer& buffer,
+		VmaAllocation& allocation,
+		VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE
+	);
 
 	void CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags&  usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
 	
@@ -734,14 +732,9 @@ private:
 
 	//Graphics pipeline modulation
 	uint32_t m_pipelinecount = 0;
-	/*std::vector<VkPipeline> mh_pipelines;
-	std::vector<VkPipelineLayout> mh_pipelinelayouts;
-	std::vector<Shader> mh_shaders;*/
 	
 	std::vector<GraphicsPipeline> mh_graphicspipelines;
 
-
-	
 	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
 	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
 	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
@@ -787,9 +780,6 @@ private:
 
 	//Vertex buffer modulation
 
-	//std::unordered_map<uint32_t, VkBuffer> mh_vertexbuffers;
-	//std::unordered_map<uint32_t, VkDeviceMemory> mh_vertexbuffermem;
-
 	std::vector<Buffer> mh_vertexbuffers;
 
 	uint32_t m_vertexbuffercount = 0;
@@ -798,8 +788,7 @@ private:
 	void CleanVertexBuffers();
 
 	//Index buffer modulation
-	/*std::unordered_map<uint32_t, VkBuffer> mh_indexbuffers;
-	std::unordered_map<uint32_t, VkDeviceMemory> mh_indexbuffermem;*/
+	
 
 	std::vector<Buffer> mh_indexbuffers;
 
@@ -819,27 +808,6 @@ private:
 	void UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe);
 
 	void CleanUniformBuffers();
-	//test 
-	ModelViewProjectionBuffer buf;
-	void MVP()
-	{
-		static auto starttime = std::chrono::high_resolution_clock::now();
-
-		auto currenttime = std::chrono::high_resolution_clock::now();
-
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
-
-		ModelViewProjectionBuffer mvp;
-
-		mvp.model = glm::mat4(1.0);
-		mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-		mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
-
-		mvp.projection[1][1] *= -1;
-		buf = mvp;
-	}
-	//test\\\
-	
 
 	//Descriptor pool modulation
 	uint32_t m_descriptorpoolcount = 0;
@@ -874,19 +842,58 @@ private:
 	void CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
 
 
-	//Record Command Buffer implementation
+	//Record Command Buffer modulation
 
 	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle);
 
 	
+	//Vulkan memory allocator
 
-	
+	VmaAllocatorCreateInfo m_vmaalloccreateinfo{};
+	VmaAllocator m_vmaallocator;
+	VmaVulkanFunctions m_vmafunctions;
+
+	void CreateAllocator();
+	void CleanAllocator();
 
 
 	const std::vector<const char*> m_deviceextensions
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
+
+
+	//test 
+	ModelViewProjectionBuffer buf;
+	void MVP()
+	{
+		static auto starttime = std::chrono::high_resolution_clock::now();
+
+		auto currenttime = std::chrono::high_resolution_clock::now();
+
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
+
+		ModelViewProjectionBuffer mvp;
+
+		mvp.model = glm::mat4(1.0);
+		mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+		mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
+
+		mvp.projection[1][1] *= -1;
+		buf = mvp;
+	}
+	//test\\\
+
+	//quarantine functions
+
+	void CreateImageT(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+
+
+
+private: // Member variables
+
+
+
 
 private:
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);

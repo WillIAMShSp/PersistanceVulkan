@@ -9,6 +9,8 @@ struct Framebuffer {
 	std::vector<VkImageView> imageviews;
 	std::vector<VkImage> images;
 	std::vector<VkDeviceMemory> imagememory;
+	std::vector<VmaAllocation> allocations;
+
 
 
 };

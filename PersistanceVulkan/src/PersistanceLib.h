@@ -2,6 +2,8 @@
 
 #include "Vendor/volk/volk.h"
 
+#include "Vendor/vma/VmaUsage.h"
+
 
 class PersistanceLib
 {

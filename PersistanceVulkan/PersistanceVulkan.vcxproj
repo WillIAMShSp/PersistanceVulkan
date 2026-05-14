@@ -135,6 +135,7 @@
     <ClCompile Include="src\Objects\Shader.cpp" />
     <ClCompile Include="src\PersistanceVulkan.cpp" />
     <ClCompile Include="src\Settings\PipelineSettings.cpp" />
+    <ClCompile Include="src\Vendor\vma\VmaUsage.cpp" />
     <ClCompile Include="src\Vendor\volk\volk.c" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +159,8 @@
     <ClInclude Include="src\Structures\UniformBuffer.h" />
     <ClInclude Include="src\Structures\WriteDesciptorSet.h" />
     <ClInclude Include="src\Vendor\stb_image.h" />
+    <ClInclude Include="src\Vendor\vma\vk_mem_alloc.h" />
+    <ClInclude Include="src\Vendor\vma\VmaUsage.h" />
     <ClInclude Include="src\Vendor\volk\volk.h" />
   </ItemGroup>
   <ItemGroup>
