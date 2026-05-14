@@ -180,7 +180,7 @@ private:
 			0, 
 			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
 		CreateRenderPass(renderpasshandle, &colorattachment, 1, &subpassdescription, 1, &subpassdependency, 1);
-
+		CreateSwapchainFramebuffers(renderpasshandle);
 
 #pragma region done
 
@@ -223,7 +223,7 @@ private:
 		settings.ConfigureMultisample();
 		settings.ConfigureColorBlend();
 		settings.UseDynamicViewport();
-		CreateGraphicsPipeline(pipeline, settings);
+		CreateGraphicsPipeline(pipeline, settings, renderpasshandle);
 		m_pipeline = mh_graphicspipelines.at(pipeline).pipeline;
 		m_pipelinelayout = mh_graphicspipelines.at(pipeline).layout;
 
@@ -231,11 +231,10 @@ private:
 
 //////////////////////////////////////////////////
 #pragma endregion
-		CreateFramebuffers();
 		FrameBufferHandle frmbffrhndl = CreateFrameBuffersHandle();
 		CreateFramebufferImage(frmbffrhndl);
 		CreateFramebufferImageViews(frmbffrhndl);
-		CreateFramebuffers(frmbffrhndl);
+		CreateFramebuffers(frmbffrhndl, renderpasshandle);
 
 //////////////////////////////////////////////////
 
@@ -295,7 +294,7 @@ private:
 		CreateDescriptorSets(descriptorsethandle, descriptorsetlayouthandle, descriptorpoolhandle);
 
 ////////////////////////////////////
-		CreateCommandBuffer();
+		//CreateCommandBuffer();
 		//////////////////////
 		uint32_t commandbufferhandle = CreateCommandBufferHandle();
 		CreateCommandBuffer(commandbufferhandle, m_graphicscommandpool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -315,7 +314,7 @@ private:
 		{
 			glfwPollEvents();
 			
-			DrawFrame();
+			DrawFrame(0, 0, 0, 0, 0, 0);
 		
 		}
 
@@ -329,46 +328,20 @@ private:
 
 		CleanUpSwapchain();
 		
-		//Textures
 
 		CleanTextures();
 		vkDestroySampler(m_device, m_texsampler, nullptr);
-
-		vkDestroyImageView(m_device, m_teximageview, nullptr);
 		
-		vkDestroyImage(m_device, m_textureimage, nullptr);
-		vkFreeMemory(m_device, m_textureimagemem, nullptr);
-
-		//Descriptor Pools
-
 		CleanDescriptorPools();
 		CleanDescriptorSetLayout();
 
 		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
-
-		//Uniform Buffers
-
-		/*for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
-		{
-			vkDestroyBuffer(m_device, m_uniformbuffers[i], nullptr);
-			vkFreeMemory(m_device, m_uniformbuffermem[i], nullptr);
-
-		}*/
-
 		CleanUniformBuffers();
 
 		CleanVertexBuffers();
 		CleanIndexBuffers();
 
 		CleanFramebuffers();
-
-		//Buffers
-		vkDestroyBuffer(m_device, m_vertexbuffer, nullptr);
-		vkFreeMemory(m_device, m_vertexbuffermemory, nullptr);
-
-		vkDestroyBuffer(m_device, m_indexbuffer, nullptr);
-		vkFreeMemory(m_device, m_indexbuffermemory, nullptr);
-
 
 		for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 		{
@@ -379,17 +352,13 @@ private:
 		}
 
 		CleanRenderPass();
-		vkDestroyRenderPass(m_device, m_renderpass, nullptr);
-		//Command Pools
+
 		vkDestroyCommandPool(m_device, m_graphicscommandpool, nullptr);
 		vkDestroyCommandPool(m_device, m_transfercommandpool, nullptr);
-
-		//m_pipeline
 
 		CleanGraphicsPipelines();
 
 		CleanAllocator();
-
 
 		vkDestroyDevice(m_device, nullptr);
 
@@ -404,9 +373,7 @@ private:
 
 		glfwDestroyWindow(m_window);
 
-		
 		glfwTerminate();
-
 	}
 
 
@@ -485,15 +452,11 @@ private:
 
 	void CreateImageViews();
 
-	void CreateRenderPass();
+	void CreateSwapchainFramebuffers(uint32_t renderpasshandle);
 
 	void CreateDescriptorSetLayout();
 
 	void CreateDescriptorSets();
-
-	void CreateGraphicsPipeline();
-
-	void CreateFramebuffers();
 
 	void CreateCommandPools();
 	
@@ -504,8 +467,6 @@ private:
 	void CreateSyncObjects();
 
 	void CleanUpSwapchain();
-
-	void CreateTextureImage();
 
 	void CreateTextureImageView();
 
@@ -549,11 +510,9 @@ private:
 
 	void EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue);
 
-	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex);
+	void DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
 
-	void DrawFrame();
-
-	void RecreateSwapchain();
+	void RecreateSwapchain(uint32_t renderpasshandle);
 
 	void CreateBuffer(
 		const VkDeviceSize& size,
@@ -597,7 +556,6 @@ private:
 	VkFormat m_swapchainimageformat;
 	VkExtent2D m_swapchainextent;
 	std::vector<VkImageView> m_swapchainimageviews;
-	VkRenderPass m_renderpass;
 	VkDescriptorSetLayout m_descriptorsetlayout;
 	VkDescriptorPool m_descriptorpool;
 	std::vector<VkDescriptorSet> m_descriptorsets;
@@ -740,7 +698,7 @@ private:
 	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
 
 	void CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding);
-	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings);
+	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings, const uint32_t renderpasshandle);
 	void DestroyShaders(uint32_t handle);
 	void CleanGraphicsPipelines();
 	 
@@ -757,7 +715,7 @@ private:
 	void CreateFramebufferImage(FrameBufferHandle handle);
 	void CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties);
 	void CreateFramebufferImageViews(FrameBufferHandle handle);
-	void CreateFramebuffers(FrameBufferHandle handle);
+	void CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle);
 	
 	void CleanFramebuffers();
 
@@ -844,7 +802,7 @@ private:
 
 	//Record Command Buffer modulation
 
-	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle);
+	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
 
 	
 	//Vulkan memory allocator

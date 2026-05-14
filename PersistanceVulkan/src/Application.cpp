@@ -197,64 +197,35 @@ void Application::CreateImageViews()
 	}
 }
 
-void Application::CreateRenderPass()
+void Application::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 {
-	VkAttachmentDescription colorattachment{};
-	colorattachment.format = m_swapchainimageformat;
-	colorattachment.samples = (VkSampleCountFlagBits)1;
-	colorattachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorattachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	m_swapchainframebuffers.resize(m_swapchainimageviews.size());
+	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
 
-	colorattachment.stencilLoadOp= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorattachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-	colorattachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorattachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-
-	VkAttachmentReference colorattachmentref{};
-	colorattachmentref.attachment = 0;
-	colorattachmentref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass{};
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorattachmentref;
-	
-	
-
-
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-
-	
-	VkRenderPassCreateInfo renderpasscreateinfo{};
-	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderpasscreateinfo.attachmentCount = 1;
-	renderpasscreateinfo.pAttachments = &colorattachment;
-	renderpasscreateinfo.subpassCount = 1;
-	renderpasscreateinfo.pSubpasses = &subpass;
-
-	renderpasscreateinfo.dependencyCount = 1;
-	renderpasscreateinfo.pDependencies = &dependency;
-
-
-	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &m_renderpass) != VK_SUCCESS)
+	for (int i = 0; i < m_swapchainimageviews.size(); i++)
 	{
-		throw std::runtime_error("Failed to create render pass!");
+
+		VkImageView attachments[] = { m_swapchainimageviews[i] }; //separate this into another map
+
+		VkFramebufferCreateInfo framebufferinfo{};
+		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
+		framebufferinfo.layers = 1;
+		framebufferinfo.attachmentCount = 1;
+		framebufferinfo.pAttachments = attachments;
+		framebufferinfo.width = m_swapchainextent.width;
+		framebufferinfo.height = m_swapchainextent.height;
+
+		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &m_swapchainframebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create framebuffer");
+
+		}
+
 
 	}
-
-
-
 }
+
 
 void Application::CreateDescriptorSetLayout()
 {
@@ -344,209 +315,6 @@ void Application::CreateDescriptorSets()
 
 }
 
-void Application::CreateGraphicsPipeline()
-{
-	const auto vertexshaderfile = ReadFile("res/Shaders/basicvert.spv");
-	const auto fragmentshaderfile = ReadFile("res/Shaders/basicfrag.spv");
-
-	VkShaderModule vertexmodule = CreateShaderModule(vertexshaderfile);
-	VkShaderModule fragmentmodule = CreateShaderModule(fragmentshaderfile);
-
-	VkPipelineShaderStageCreateInfo vertcreateinfo{};
-	vertcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertcreateinfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertcreateinfo.module = vertexmodule;
-	vertcreateinfo.pName = "main";
-
-
-	VkPipelineShaderStageCreateInfo fragcreateinfo{};
-	fragcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragcreateinfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragcreateinfo.module = fragmentmodule;
-	fragcreateinfo.pName = "main";
-
-
-	VkPipelineShaderStageCreateInfo shaderstages[] = {vertcreateinfo, fragcreateinfo};
-	
-
-	std::vector<VkDynamicState> dynamicstates =
-	{
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-
-	};
-
-	VkPipelineDynamicStateCreateInfo dynamicstatecreateinfo{};
-	dynamicstatecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicstatecreateinfo.dynamicStateCount = static_cast<uint32_t>(dynamicstates.size());
-	dynamicstatecreateinfo.pDynamicStates = dynamicstates.data();
-
-
-
-
-	VkPipelineVertexInputStateCreateInfo inputvertexcreateinfo{};
-	inputvertexcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-	auto bindingdescription = Vertex::GetBindingDescription();
-	auto attributedescription = Vertex::GetAttributeDescription();
-
-
-	inputvertexcreateinfo.vertexBindingDescriptionCount = 1;
-	inputvertexcreateinfo.vertexAttributeDescriptionCount = attributedescription.size();
-
-	inputvertexcreateinfo.pVertexBindingDescriptions = &bindingdescription;
-	inputvertexcreateinfo.pVertexAttributeDescriptions = attributedescription.data();
-
-
-	VkPipelineInputAssemblyStateCreateInfo inputassemblycreateinfo{};
-	inputassemblycreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputassemblycreateinfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	inputassemblycreateinfo.primitiveRestartEnable = VK_FALSE;
-
-
-	
-
-
-	VkPipelineViewportStateCreateInfo viewportcreateinfo{};
-	viewportcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportcreateinfo.viewportCount = 1;
-	viewportcreateinfo.scissorCount = 1;
-
-	VkPipelineRasterizationStateCreateInfo rastercreateinfo{};
-	rastercreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rastercreateinfo.depthClampEnable = VK_FALSE;
-	rastercreateinfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rastercreateinfo.lineWidth = 1.0f;
-	rastercreateinfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rastercreateinfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rastercreateinfo.rasterizerDiscardEnable = VK_FALSE;
-
-	rastercreateinfo.depthBiasClamp = VK_FALSE;
-	rastercreateinfo.depthBiasEnable = VK_FALSE;
-	rastercreateinfo.depthBiasSlopeFactor = 0.f;
-	rastercreateinfo.depthBiasConstantFactor = 0.f;
-
-	
-
-	VkPipelineMultisampleStateCreateInfo multisamplecreateinfo{};
-	multisamplecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisamplecreateinfo.sampleShadingEnable = VK_FALSE;
-	multisamplecreateinfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisamplecreateinfo.minSampleShading = 1.0f;
-	multisamplecreateinfo.pSampleMask = nullptr;
-	multisamplecreateinfo.alphaToCoverageEnable = VK_FALSE;
-	multisamplecreateinfo.alphaToOneEnable = VK_FALSE;
-
-
-	VkPipelineColorBlendAttachmentState colorblendattachment{};
-	colorblendattachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-	colorblendattachment.blendEnable = VK_TRUE;
-	
-	colorblendattachment.colorBlendOp = VK_BLEND_OP_ADD;
-	colorblendattachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-	colorblendattachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-	colorblendattachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-
-	colorblendattachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorblendattachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-
-
-	VkPipelineColorBlendStateCreateInfo colorblendcreateinfo{};
-	colorblendcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorblendcreateinfo.attachmentCount = 1;
-	colorblendcreateinfo.logicOpEnable = VK_FALSE;
-	colorblendcreateinfo.logicOp = VK_LOGIC_OP_COPY;
-	colorblendcreateinfo.pAttachments = &colorblendattachment;
-	colorblendcreateinfo.blendConstants[0] = 0.0f;
-	colorblendcreateinfo.blendConstants[1] = 0.0f;
-	colorblendcreateinfo.blendConstants[2] = 0.0f;
-	colorblendcreateinfo.blendConstants[3] = 0.0f;
-
-	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
-	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelinelayoutcreateinfo.setLayoutCount = 1;
-	pipelinelayoutcreateinfo.pSetLayouts = &m_descriptorsetlayout;
-	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
-	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
-
-	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &m_pipelinelayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create pipeline layout!");
-	}
-
-
-	VkGraphicsPipelineCreateInfo pipelinecreateinfo{};
-	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelinecreateinfo.stageCount = 2;
-	pipelinecreateinfo.pStages = shaderstages;
-	
-	
-	pipelinecreateinfo.pVertexInputState = &inputvertexcreateinfo;
-	pipelinecreateinfo.pInputAssemblyState = &inputassemblycreateinfo;
-	pipelinecreateinfo.pViewportState = &viewportcreateinfo;
-	pipelinecreateinfo.pRasterizationState = &rastercreateinfo;
-	pipelinecreateinfo.pMultisampleState = &multisamplecreateinfo;
-	pipelinecreateinfo.pColorBlendState = &colorblendcreateinfo;
-	pipelinecreateinfo.pDepthStencilState = nullptr;
-	
-	
-	pipelinecreateinfo.layout = m_pipelinelayout;
-	pipelinecreateinfo.pDynamicState = &dynamicstatecreateinfo;
-	pipelinecreateinfo.renderPass = m_renderpass;
-	pipelinecreateinfo.subpass = 0;
-
-	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
-	pipelinecreateinfo.basePipelineIndex = -1;
-
-
-	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &m_pipeline) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create the graphics pipeline");
-
-	}
-
-
-
-
-	vkDestroyShaderModule(m_device, vertexmodule, nullptr);
-	vkDestroyShaderModule(m_device, fragmentmodule, nullptr);
-
-
-}
-
-void Application::CreateFramebuffers()
-{
-	m_swapchainframebuffers.resize(m_swapchainimageviews.size());
-	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
-
-	for (int i = 0; i < m_swapchainimageviews.size(); i++)
-	{
-
-		VkImageView attachments[] = { m_swapchainimageviews[i] }; //separate this into another map
-
-		VkFramebufferCreateInfo framebufferinfo{};
-		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferinfo.renderPass = m_renderpass;
-		framebufferinfo.layers = 1;
-		framebufferinfo.attachmentCount = 1;
-		framebufferinfo.pAttachments = attachments;
-		framebufferinfo.width = m_swapchainextent.width;
-		framebufferinfo.height = m_swapchainextent.height;
-
-		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &m_swapchainframebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create framebuffer");
-
-		}
-		
-
-	}
-
-
-
-}
 
 void Application::CreateCommandPools()
 {
@@ -780,7 +548,7 @@ void Application::CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpoo
 	cmdbufferinfo.commandPool = commandpool;
 	cmdbufferinfo.level = level;
 
-	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, m_commandbuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, mh_commandbuffers.at(handle).data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command buffer");
 
@@ -790,7 +558,7 @@ void Application::CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpoo
 
 }
 
-void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle,  const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle)
+void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle,  const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
 	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -806,7 +574,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	VkRenderPassBeginInfo renderpassbegininfo{};
 	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
-	renderpassbegininfo.renderPass = m_renderpass;
+	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 
 	renderpassbegininfo.renderArea.offset = { 0,0 };
 	renderpassbegininfo.renderArea.extent = m_swapchainextent;
@@ -1807,81 +1575,8 @@ void Application::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const Vk
 
 }
 
-void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex)
-{
 
-	VkCommandBufferBeginInfo cmdbufferbegininfo{};
-	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdbufferbegininfo.flags = 0;
-	cmdbufferbegininfo.pInheritanceInfo = nullptr;
-
-	if (vkBeginCommandBuffer(commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to begin command buffer!");
-
-	}
-
-	VkRenderPassBeginInfo renderpassbegininfo{};
-	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
-	renderpassbegininfo.renderPass = m_renderpass;
-
-	renderpassbegininfo.renderArea.offset = { 0,0 };
-	renderpassbegininfo.renderArea.extent = m_swapchainextent;
-
-	VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
-	renderpassbegininfo.clearValueCount = 1;
-	renderpassbegininfo.pClearValues = &clearcolor;
-
-
-	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
-
-
-	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-
-	VkBuffer buffers[] = { mh_vertexbuffers.at(0).buffer, mh_vertexbuffers.at(1).buffer};//{m_vertexbuffer};
-	VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(commandbuffer, 0, 2, buffers, offsets);
-
-
-
-	VkViewport viewport{};
-	viewport.x = 0.f;
-	viewport.y = 0.f;
-	viewport.minDepth = 0.f;
-	viewport.maxDepth = 1.f;
-	viewport.width = (float)m_swapchainextent.width;
-	viewport.height = (float)m_swapchainextent.height;
-	vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0,0 };
-	scissor.extent = m_swapchainextent;
-	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
-
-	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(0).buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(0).descriptorsets[m_currentframe], 0, nullptr);
-
-	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
-
-	vkCmdEndRenderPass(commandbuffer);
-
-	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to record command buffer");
-
-	}
-	
-
-
-
-
-
-
-}
-
-void Application::DrawFrame()
+void Application::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
 {
 
 	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
@@ -1893,7 +1588,7 @@ void Application::DrawFrame()
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		RecreateSwapchain();
+		RecreateSwapchain(renderpasshandle);
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
@@ -1917,11 +1612,9 @@ void Application::DrawFrame()
 	UpdateUniformBuffer(0, &buf, m_currentframe);
 
 
-	vkResetCommandBuffer(m_commandbuffers[m_currentframe], 0);
+	vkResetCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], 0);
 
-	//RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex);
-
-	RecordCommandBuffer(m_commandbuffers[m_currentframe], imageindex, 0,0,0,0);
+	RecordCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], imageindex, graphicspipelinehandle, vertexbufferhandle, indexbufferhandle, descriptorsethandle, renderpasshandle);
 
 	VkSemaphore waitsemaphores[] = {s_imageavailable[m_currentframe]};
 	VkSemaphore signalsemaphores[] = {s_renderfinished[m_currentframe]};
@@ -1932,7 +1625,7 @@ void Application::DrawFrame()
 
 	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitinfo.commandBufferCount = 1;
-	submitinfo.pCommandBuffers = &m_commandbuffers[m_currentframe];
+	submitinfo.pCommandBuffers = &mh_commandbuffers.at(commandbufferhandle)[m_currentframe];
 	submitinfo.waitSemaphoreCount = 1;
 	submitinfo.pWaitSemaphores = waitsemaphores;
 	submitinfo.pWaitDstStageMask = waitstages;
@@ -1966,7 +1659,7 @@ void Application::DrawFrame()
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
 	{
-		RecreateSwapchain();
+		RecreateSwapchain(renderpasshandle);
 		m_windowresized = false;
 
 	}
@@ -1981,7 +1674,8 @@ void Application::DrawFrame()
 
 }
 
-void Application::RecreateSwapchain()
+
+void Application::RecreateSwapchain(uint32_t renderpasshandle)
 {
 	int width = 0;
 	int height = 0;
@@ -2002,7 +1696,7 @@ void Application::RecreateSwapchain()
 
 	CreateSwapChain();
 	CreateImageViews();
-	CreateFramebuffers();
+	CreateSwapchainFramebuffers(renderpasshandle);
 
 
 
@@ -2465,7 +2159,7 @@ void Application::CreateRenderPass(uint32_t handle, const uint32_t* attachmentin
 	renderpasscreateinfo.pDependencies = mh_renderpasses.at(handle).subpassdependencies.data();
 
 
-	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &m_renderpass) != VK_SUCCESS)
+	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &mh_renderpasses.at(handle).renderpass) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create render pass!");
 
@@ -2588,7 +2282,7 @@ void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, 
 	}
 }
 
-void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings)
+void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings, const uint32_t renderpasshandle)
 {
 	std::vector<VkDynamicState> dynamicstates =
 	{
@@ -2623,7 +2317,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 	pipelinecreateinfo.layout = mh_graphicspipelines.at(handle).layout;
 	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &dynamicstatecreateinfo : nullptr;
-	pipelinecreateinfo.renderPass = m_renderpass;
+	pipelinecreateinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 	pipelinecreateinfo.subpass = 0;
 
 	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -2730,7 +2424,7 @@ void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
 
 
 }
-void Application::CreateFramebuffers(FrameBufferHandle handle)
+void Application::CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle)
 {
 	size_t imageviewcount = mh_framebuffers.at(handle).imageviews.size();
 	mh_framebuffers.at(handle).framebuffers.resize(imageviewcount);
@@ -2743,7 +2437,7 @@ void Application::CreateFramebuffers(FrameBufferHandle handle)
 
 		VkFramebufferCreateInfo framebufferinfo{};
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferinfo.renderPass = m_renderpass;
+		framebufferinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 		framebufferinfo.layers = 1;
 		framebufferinfo.attachmentCount = 1;
 		framebufferinfo.pAttachments = attachments;
@@ -2796,9 +2490,9 @@ uint32_t Application::CreateTextureHandle()
 
 void Application::CreateTextureImage(uint32_t handle, int width, int height)
 {
-	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	CreateImageT(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		mh_textures.at(handle).image, mh_textures.at(handle).memory, VK_SHARING_MODE_CONCURRENT);
+		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
 	mh_textures.at(handle).width = width;
 	mh_textures.at(handle).height = height;
@@ -2822,7 +2516,6 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 	VkDeviceMemory stagingmem;
 	VmaAllocation stagingalloc;
 
-	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
 
 
@@ -2832,21 +2525,12 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
 	vmaUnmapMemory(m_vmaallocator, stagingalloc);
-
-	
-	/*vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
-	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vkUnmapMemory(m_device, stagingmem);*/
-
-
-
-	//vmaCopyMemoryToAllocation(m_vmaallocator, &pixels, allocation, 0, buffersize);
 	
 	stbi_image_free(pixels);
 
-	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	CreateImageT(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		mh_textures.at(handle).image, mh_textures.at(handle).memory, VK_SHARING_MODE_CONCURRENT);
+		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
@@ -2855,9 +2539,8 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
-	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
-	//vkFreeMemory(m_device, stagingmem, nullptr);
+
 	
 }
 
@@ -2880,22 +2563,16 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 	VkBuffer stagingbuffer;
 	VkDeviceMemory stagingmem;
-	//VmaAllocation stagingalloc;
+	VmaAllocation stagingalloc;
 
-	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingmem, VK_SHARING_MODE_CONCURRENT);
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
 
 	void* data;
 	
-	/*vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vmaUnmapMemory(m_vmaallocator, stagingalloc);*/
+	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
-
-	/* vkMapMemory(m_device, stagingmem, 0, buffersize, 0, &data);
-	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vkUnmapMemory(m_device, stagingmem);*/
-
-	
 	stbi_image_free(pixels);
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
@@ -2904,18 +2581,16 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
 
-	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-//	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
-	//vkFreeMemory(m_device, stagingmem, nullptr);
-
+	
+	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	
 }
 
 void Application::CleanTextures()
 {
 	for (int i = 0; i < mh_textures.size(); i++) {
 		vkDestroyImageView(m_device, mh_textures[i].imageview, nullptr);
-		vkDestroyImage(m_device, mh_textures[i].image, nullptr);
-		vkFreeMemory(m_device, mh_textures[i].memory, nullptr);
+		vmaDestroyImage(m_vmaallocator, mh_textures[i].image, mh_textures[i].allocation);
 	}
 	
 }
@@ -2934,11 +2609,8 @@ void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t
 	VkDeviceSize buffersize = elementsize * elementcount;
 
 	VkBuffer stagingbuffer;
-	VkDeviceMemory stagingbuffermem;
-
 	VmaAllocation stagingalloc;
 
-	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingbuffermem, VK_SHARING_MODE_CONCURRENT);
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);
 
 	void* data;
@@ -2947,23 +2619,11 @@ void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t
 	memcpy(data, buffer, buffersize);
 	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
-
-	/*vkMapMemory(m_device, stagingbuffermem, 0, buffersize, 0, &data);
-	memcpy(data, buffer, (size_t)buffersize);
-	vkUnmapMemory(m_device, stagingbuffermem);*/
-
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
-
-	//CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).buffermem, VK_SHARING_MODE_CONCURRENT);
-
+	
 	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
-
-	//vkDestroyBuffer(m_device, stagingbuffer, nullptr);
-
+	
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
-
-	//vkFreeMemory(m_device, stagingbuffermem, nullptr);
-
 }
 
 void Application::CleanVertexBuffers()
