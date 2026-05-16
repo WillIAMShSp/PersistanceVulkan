@@ -1,10 +1,10 @@
 
-#include "Application.h"
+#include "PersistanceVk.h"
 
 
 
 
-Application Game;
+PersistanceVk Game;
 
 
 

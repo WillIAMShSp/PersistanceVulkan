@@ -18,7 +18,7 @@
     <ClCompile Include="src\PersistanceVulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Application.cpp">
+    <ClCompile Include="src\PersistanceVk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Objects\Shader.cpp">
@@ -41,7 +41,7 @@
     <ClInclude Include="src\Vendor\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Application.h">
+    <ClInclude Include="src\PersistanceVk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Settings\PipelineSettings.h">

@@ -1,10 +1,10 @@
-#include "Application.h"
+#include "PersistanceVk.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 
-void Application::SetUpDebugCallBack()
+void PersistanceVk::SetUpDebugCallBack()
 {
 	if (!enablevalidationlayers)
 	{
@@ -22,7 +22,7 @@ void Application::SetUpDebugCallBack()
 
 }
 
-void Application::CreateInstance()
+void PersistanceVk::CreateInstance()
 {
 	if (enablevalidationlayers && !CheckValidationLayers())
 	{
@@ -81,15 +81,15 @@ void Application::CreateInstance()
 	}
 	else
 	{
-		std::cout << "Created Application Instance\n";
-		std::cout << "Application Name: " << appinfo.pApplicationName << "\nEngine: "<< appinfo.pEngineName<< "\n";
+		std::cout << "Created PersistanceVk Instance\n";
+		std::cout << "PersistanceVk Name: " << appinfo.pApplicationName << "\nEngine: "<< appinfo.pEngineName<< "\n";
 		
 
 	}
 
 }
 
-void Application::CreateSwapChain()
+void PersistanceVk::CreateSwapChain()
 {
 	SwapChainSupportDetails details = QuerySwapChainSupport(m_physicaldevice);
 
@@ -187,7 +187,7 @@ void Application::CreateSwapChain()
 
 }
 
-void Application::CreateImageViews()
+void PersistanceVk::CreateImageViews()
 {
 	m_swapchainimageviews.resize(m_swapchainimages.size());
 
@@ -197,7 +197,7 @@ void Application::CreateImageViews()
 	}
 }
 
-void Application::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
+void PersistanceVk::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 {
 	m_swapchainframebuffers.resize(m_swapchainimageviews.size());
 	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
@@ -227,96 +227,8 @@ void Application::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 }
 
 
-void Application::CreateDescriptorSetLayout()
-{
-	VkDescriptorSetLayoutBinding bindingMVP{};
-	bindingMVP.descriptorCount = 1;
-	bindingMVP.binding = 0;
-	bindingMVP.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	bindingMVP.pImmutableSamplers = nullptr;
-	bindingMVP.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-	VkDescriptorSetLayoutBinding bindingsampler{};
-	bindingsampler.descriptorCount = 1;
-	bindingsampler.binding = 1;
-	bindingsampler.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	bindingsampler.pImmutableSamplers = nullptr;
-	bindingsampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {bindingMVP, bindingsampler};
-
-	VkDescriptorSetLayoutCreateInfo layoutinfo{};
-	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutinfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutinfo.pBindings = bindings.data();
-	
-	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &m_descriptorsetlayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor set layout!");
-	}
-
-
-
-}
-
-void Application::CreateDescriptorSets()
-{
-	std::vector<VkDescriptorSetLayout> layouts(PersistanceLib::MAXFRAMESINFLIGHT, m_descriptorsetlayout);
-	VkDescriptorSetAllocateInfo allocateinfo{};
-	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateinfo.descriptorPool = m_descriptorpool;
-	allocateinfo.descriptorSetCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
-	allocateinfo.pSetLayouts = layouts.data();
-
-
-	m_descriptorsets.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	
-	if (vkAllocateDescriptorSets(m_device, &allocateinfo, m_descriptorsets.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate descriptor sets!");
-	}
-
-	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferinfo{};
-		bufferinfo.buffer = m_uniformbuffers[i];
-		bufferinfo.offset = 0;
-		bufferinfo.range = sizeof(ModelViewProjectionBuffer);
-
-		VkDescriptorImageInfo imageinfo{};
-		imageinfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageinfo.imageView = mh_textures.at(0).imageview;
-		imageinfo.sampler = m_texsampler;
-
-		std::array<VkWriteDescriptorSet, 2> writedescriptors{};
-		writedescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writedescriptors[0].dstSet = m_descriptorsets[i];
-		writedescriptors[0].dstArrayElement = 0;
-		writedescriptors[0].descriptorCount = 1;
-		writedescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writedescriptors[0].dstBinding = 0;
-		writedescriptors[0].pBufferInfo = &bufferinfo;
-
-		writedescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writedescriptors[1].dstSet = m_descriptorsets[i];
-		writedescriptors[1].dstArrayElement = 0;
-		writedescriptors[1].descriptorCount = 1;
-		writedescriptors[1].dstBinding = 1;
-		writedescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writedescriptors[1].pImageInfo = &imageinfo;
-	
-
-		vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writedescriptors.size()), writedescriptors.data(), 0, nullptr);
-
-
-	}
-
-
-
-}
-
-
-void Application::CreateCommandPools()
+void PersistanceVk::CreateCommandPools()
 {
 	
 	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
@@ -354,7 +266,7 @@ void Application::CreateCommandPools()
 
 
 
-DescriptorPoolHandle Application::CreateDescriptorPoolHandle()
+DescriptorPoolHandle PersistanceVk::CreateDescriptorPoolHandle()
 {
 	uint32_t handle = m_descriptorpoolcount++;
 	mh_descriptorpools.emplace_back(DescriptorPool());
@@ -362,7 +274,7 @@ DescriptorPoolHandle Application::CreateDescriptorPoolHandle()
 	return handle;
 }
 
-void Application::AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescriptorType type)
+void PersistanceVk::AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescriptorType type)
 {
 	VkDescriptorPoolSize size;
 	size.descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -372,7 +284,7 @@ void Application::AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescripto
 
 }
 
-void Application::CreateDescriptorPool(DescriptorPoolHandle handle)
+void PersistanceVk::CreateDescriptorPool(DescriptorPoolHandle handle)
 {
 	std::vector<VkDescriptorPoolSize>& poolsizes = mh_descriptorpools.at(handle).poolsizes;
 
@@ -391,7 +303,7 @@ void Application::CreateDescriptorPool(DescriptorPoolHandle handle)
 
 }
 
-void Application::CleanDescriptorPools()
+void PersistanceVk::CleanDescriptorPools()
 {
 	for (int i = 0; i < mh_descriptorpools.size(); i++) 
 	{
@@ -400,7 +312,7 @@ void Application::CleanDescriptorPools()
 	}
 }
 
-DescriptorSetHandle Application::CreateDescriptorSetHandle()
+DescriptorSetHandle PersistanceVk::CreateDescriptorSetHandle()
 {
 	uint32_t handle = m_descriptorsetcount++;
 	mh_descriptorsets.emplace_back(DescriptorSet());
@@ -408,7 +320,7 @@ DescriptorSetHandle Application::CreateDescriptorSetHandle()
 	return handle;
 }
 
-void Application::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle)
+void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle)
 {
 	// first we allocate descriptorsets for every possible frame in flight. 
 	std::vector<VkDescriptorSetLayout> layouts(static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT), mh_descriptorsetlayouts.at(layouthandle).layout);
@@ -482,7 +394,7 @@ void Application::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layo
 
 }
 
-WriteDescriptorSet* Application::CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
+WriteDescriptorSet* PersistanceVk::CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
 {
 	uint32_t idx = mh_descriptorsets.at(handle).writedescriptorsets.size();
 	mh_descriptorsets.at(handle).writedescriptorsets.push_back(WriteDescriptorSet());
@@ -496,7 +408,7 @@ WriteDescriptorSet* Application::CreateWriteDescriptorSet(DescriptorSetHandle ha
 	return set;
 }
 
-void Application::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
+void PersistanceVk::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
 {
 
 	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.size() > 0)
@@ -513,7 +425,7 @@ void Application::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandl
 
 }
 
-void Application::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
+void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
 {
 	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
 	{
@@ -529,7 +441,7 @@ void Application::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle
 
 }
 
-BufferHandle Application::CreateCommandBufferHandle()
+BufferHandle PersistanceVk::CreateCommandBufferHandle()
 {
 	uint32_t handle = m_commandbuffercount++;
 	mh_commandbuffers.emplace_back(std::vector<VkCommandBuffer>());
@@ -537,7 +449,7 @@ BufferHandle Application::CreateCommandBufferHandle()
 	return handle;
 }
 
-void Application::CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
 
 	mh_commandbuffers.at(handle).resize(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -558,7 +470,7 @@ void Application::CreateCommandBuffer(BufferHandle handle, VkCommandPool& comman
 
 }
 
-void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle)
+void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle)
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
 	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -627,7 +539,7 @@ void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint
 	}
 }
 
-void Application::CreateAllocator()
+void PersistanceVk::CreateAllocator()
 {
 	m_vmaalloccreateinfo.device = m_device;
 	m_vmaalloccreateinfo.physicalDevice = m_physicaldevice;
@@ -648,12 +560,12 @@ void Application::CreateAllocator()
 
 }
 
-void Application::CleanAllocator()
+void PersistanceVk::CleanAllocator()
 {
 	vmaDestroyAllocator(m_vmaallocator);
 }
 
-void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
+void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
 {
 
 	VkImageCreateInfo imageinfo{};
@@ -713,7 +625,7 @@ void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFo
 
 }
 
-void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation, VkSharingMode sharingmode)
+void PersistanceVk::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation, VkSharingMode sharingmode)
 {
 	VkBufferCreateInfo buffercreateinfo{};
 	buffercreateinfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -757,55 +669,8 @@ void Application::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags usag
 }
 
 
-void Application::CreateDescriptorPool()
-{
 
-	std::array<VkDescriptorPoolSize, 2> poolsizes{};
-
-	poolsizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolsizes[0].descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
-	poolsizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolsizes[1].descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
-
-	VkDescriptorPoolCreateInfo poolinfo{};
-	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolinfo.poolSizeCount = static_cast<uint32_t>(poolsizes.size());
-	poolinfo.pPoolSizes = poolsizes.data();
-	poolinfo.maxSets = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
-
-	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &m_descriptorpool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor pool!");
-
-	}
-
-}
-
-
-
-
-void Application::CreateCommandBuffer()
-{
-	m_commandbuffers.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-
-	VkCommandBufferAllocateInfo cmdbufferinfo{};
-	cmdbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cmdbufferinfo.commandBufferCount = static_cast<uint32_t>( m_commandbuffers.size());
-	cmdbufferinfo.commandPool = m_graphicscommandpool;
-	cmdbufferinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, m_commandbuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create command buffer");
-
-
-	}
-	
-
-
-}
-
-void Application::CreateSyncObjects()
+void PersistanceVk::CreateSyncObjects()
 {
 
 	VkSemaphoreCreateInfo semaphorecreateinfo{};
@@ -837,7 +702,7 @@ void Application::CreateSyncObjects()
 
 }
 
-void Application::CleanUpSwapchain()
+void PersistanceVk::CleanUpSwapchain()
 {
 	for (auto framebuffer : m_swapchainframebuffers)
 	{
@@ -856,63 +721,7 @@ void Application::CleanUpSwapchain()
 }
 
 
-void Application::CreateTextureImageView()
-{
-
-	m_teximageview = CreateImageView(m_textureimage, VK_FORMAT_R8G8B8A8_SRGB);
-
-
-
-
-
-}
-
-void Application::CreateTextureSampler()
-{
-
-	VkPhysicalDeviceProperties properties{};
-
-	vkGetPhysicalDeviceProperties(m_physicaldevice, &properties);
-
-
-
-	VkSamplerCreateInfo samplerinfo{};
-	samplerinfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-
-	samplerinfo.magFilter = VK_FILTER_LINEAR;
-	samplerinfo.minFilter = VK_FILTER_LINEAR;
-
-	samplerinfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerinfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerinfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-
-	samplerinfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-
-	samplerinfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerinfo.mipLodBias = 0.0f;
-	samplerinfo.minLod = 0.0f;
-	samplerinfo.maxLod = 0.0f;
-
-	samplerinfo.anisotropyEnable = VK_TRUE;
-	samplerinfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	
-
-
-	samplerinfo.unnormalizedCoordinates = VK_FALSE;
-	samplerinfo.compareEnable = VK_FALSE;
-	samplerinfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-	if (vkCreateSampler(m_device, &samplerinfo, nullptr, &m_texsampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create sampler");
-
-	}
-
-		
-
-}
-
-bool Application::CheckValidationLayers()
+bool PersistanceVk::CheckValidationLayers()
 {
 
 	uint32_t validationlayercount = -1;
@@ -953,7 +762,7 @@ bool Application::CheckValidationLayers()
 	return true;
 }
 
-std::vector<const char*> Application::GetRequiredInstanceExtensions()
+std::vector<const char*> PersistanceVk::GetRequiredInstanceExtensions()
 {
 
 	//glfw extensions
@@ -984,7 +793,7 @@ std::vector<const char*> Application::GetRequiredInstanceExtensions()
 	return requiredextensions;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL Application::DebugCallBack(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL PersistanceVk::DebugCallBack(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 
 	std::cerr<< "Validation layer: " << pCallbackData->pMessage << std::endl;
@@ -993,7 +802,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Application::DebugCallBack(VkDebugUtilsMessageSev
 	return VK_FALSE;
 }
 
-void Application::SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateInfoEXT& createinfo)
+void PersistanceVk::SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateInfoEXT& createinfo)
 {
 	createinfo = {};
 	createinfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -1006,7 +815,7 @@ void Application::SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateI
 
 }
 
-void Application::SelectPhysicalDevice()
+void PersistanceVk::SelectPhysicalDevice()
 {
 
 	uint32_t physicaldevicecount = -1;
@@ -1073,7 +882,7 @@ void Application::SelectPhysicalDevice()
 
 }
 
-bool Application::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle)
+bool PersistanceVk::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle)
 {
 
 	
@@ -1171,7 +980,7 @@ bool Application::RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scoreha
 	return true;
 }
 
-QueueFamilyIndices Application::FindQueueFamilies(VkPhysicalDevice& physicaldevice)
+QueueFamilyIndices PersistanceVk::FindQueueFamilies(VkPhysicalDevice& physicaldevice)
 {
 	QueueFamilyIndices indices;
 
@@ -1237,7 +1046,7 @@ QueueFamilyIndices Application::FindQueueFamilies(VkPhysicalDevice& physicaldevi
 	return indices;
 }
 
-bool Application::DeviceExtensionSupport(VkPhysicalDevice& physicaldevice)
+bool PersistanceVk::DeviceExtensionSupport(VkPhysicalDevice& physicaldevice)
 {
 	uint32_t extensioncount;
 
@@ -1266,7 +1075,7 @@ bool Application::DeviceExtensionSupport(VkPhysicalDevice& physicaldevice)
 	return requiredextensions.empty();
 }
 
-void Application::CreateLogicalDevice()
+void PersistanceVk::CreateLogicalDevice()
 {
 
 
@@ -1354,7 +1163,7 @@ void Application::CreateLogicalDevice()
 
 }
 
-void Application::CreateSurface()
+void PersistanceVk::CreateSurface()
 {
 	if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
 	{
@@ -1364,7 +1173,7 @@ void Application::CreateSurface()
 
 }
 
-SwapChainSupportDetails Application::QuerySwapChainSupport(VkPhysicalDevice& physicaldevice)
+SwapChainSupportDetails PersistanceVk::QuerySwapChainSupport(VkPhysicalDevice& physicaldevice)
 {
 	SwapChainSupportDetails details{};
 
@@ -1400,7 +1209,7 @@ SwapChainSupportDetails Application::QuerySwapChainSupport(VkPhysicalDevice& phy
 	return details;
 }
 
-VkSurfaceFormatKHR Application::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableformats)
+VkSurfaceFormatKHR PersistanceVk::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableformats)
 {
 
 	for (const auto& format : availableformats)
@@ -1423,7 +1232,7 @@ VkSurfaceFormatKHR Application::ChooseSwapSurfaceFormat(const std::vector<VkSurf
 
 }
 
-VkPresentModeKHR Application::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablepresentmodes)
+VkPresentModeKHR PersistanceVk::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablepresentmodes)
 {
 
 	for (const auto& presentmode : availablepresentmodes)
@@ -1441,7 +1250,7 @@ VkPresentModeKHR Application::ChooseSwapPresentMode(const std::vector<VkPresentM
 
 }
 
-VkExtent2D Application::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities)
+VkExtent2D PersistanceVk::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities)
 {
 
 
@@ -1478,7 +1287,7 @@ VkExtent2D Application::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surface
 
 }
 
-std::vector<char> Application::ReadFile(const char* filepath)
+std::vector<char> PersistanceVk::ReadFile(const char* filepath)
 {
 	std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
@@ -1510,7 +1319,7 @@ std::vector<char> Application::ReadFile(const char* filepath)
 	
 }
 
-VkShaderModule Application::CreateShaderModule(const std::vector<char>& shaderfile)
+VkShaderModule PersistanceVk::CreateShaderModule(const std::vector<char>& shaderfile)
 {
 
 	VkShaderModuleCreateInfo createinfo{};
@@ -1530,7 +1339,7 @@ VkShaderModule Application::CreateShaderModule(const std::vector<char>& shaderfi
 
 }
 
-VkCommandBuffer Application::BeginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level)
+VkCommandBuffer PersistanceVk::BeginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level)
 {
 
 	VkCommandBufferAllocateInfo allocinfo{};
@@ -1557,7 +1366,7 @@ VkCommandBuffer Application::BeginSingleTimeCommands(VkCommandPool& commandpool,
 	return commandbuffer;
 }
 
-void Application::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue)
+void PersistanceVk::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue)
 {
 
 	vkEndCommandBuffer(commandbuffer);
@@ -1576,7 +1385,7 @@ void Application::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const Vk
 }
 
 
-void Application::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
+void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
 {
 
 	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
@@ -1674,7 +1483,7 @@ void Application::DrawFrame(const uint32_t commandbufferhandle, const uint32_t g
 }
 
 
-void Application::RecreateSwapchain(uint32_t renderpasshandle)
+void PersistanceVk::RecreateSwapchain(uint32_t renderpasshandle)
 {
 	int width = 0;
 	int height = 0;
@@ -1708,7 +1517,7 @@ void Application::RecreateSwapchain(uint32_t renderpasshandle)
 
 
 
-void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue)
+void PersistanceVk::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue)
 {
 	
 	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
@@ -1725,7 +1534,7 @@ void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceS
 
 }
 
-uint32_t Application::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags)
+uint32_t PersistanceVk::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags)
 {
 	VkPhysicalDeviceMemoryProperties memproperties;
 
@@ -1745,7 +1554,7 @@ uint32_t Application::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags 
 	return 0;
 }
 
-void Application::UpdateUniformBuffer(const uint32_t& currentframe)
+void PersistanceVk::UpdateUniformBuffer(const uint32_t& currentframe)
 {
 	static auto starttime = std::chrono::high_resolution_clock::now();
 	
@@ -1766,7 +1575,7 @@ void Application::UpdateUniformBuffer(const uint32_t& currentframe)
 
 }
 
-void Application::TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue)
+void PersistanceVk::TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue)
 {
 	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
 
@@ -1837,7 +1646,7 @@ void Application::TransitionImageLayout(VkImage& image, const VkFormat& format, 
 
 }
 
-void Application::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue)
+void PersistanceVk::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue)
 {
 	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(commandpool);
 	
@@ -1864,7 +1673,7 @@ void Application::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t w
 
 }
 
-VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect)
+VkImageView PersistanceVk::CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect)
 {
 	VkImageView imageview;
 
@@ -1889,7 +1698,7 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 	return imageview;
 }
 
-RenderPassHandle Application::CreateRenderPassHandle()
+RenderPassHandle PersistanceVk::CreateRenderPassHandle()
 {
 	uint32_t handle = m_renderpasscount++;
 
@@ -1898,7 +1707,7 @@ RenderPassHandle Application::CreateRenderPassHandle()
 	return handle;
 }
 
-uint32_t Application::CreateRenderPassColorAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t PersistanceVk::CreateRenderPassColorAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).colorattachments.size();
 	mh_renderpasses.at(handle).colorattachments.push_back(RenderPassAttachment());
@@ -1922,7 +1731,7 @@ uint32_t Application::CreateRenderPassColorAttachment(RenderPassHandle handle, V
 
 }
 
-uint32_t Application::CreateRenderPassDepthStencilAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t PersistanceVk::CreateRenderPassDepthStencilAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).depthstencilattachments.size();
 	mh_renderpasses.at(handle).depthstencilattachments.push_back(RenderPassAttachment());
@@ -1945,7 +1754,7 @@ uint32_t Application::CreateRenderPassDepthStencilAttachment(RenderPassHandle ha
 	return index;
 }
 
-uint32_t Application::CreateRenderPassInputAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t PersistanceVk::CreateRenderPassInputAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).inputattachments.size();
 	mh_renderpasses.at(handle).inputattachments.push_back(RenderPassAttachment());
@@ -1970,7 +1779,7 @@ uint32_t Application::CreateRenderPassInputAttachment(RenderPassHandle handle, V
 
 
 
-uint32_t Application::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).attachments.size();
 	mh_renderpasses.at(handle).attachments.push_back(RenderPassAttachment());
@@ -1994,7 +1803,7 @@ uint32_t Application::CreateRenderpassAttachment(RenderPassHandle handle, VkImag
 
 }
 
-uint32_t Application::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
+uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
 {
 	uint32_t descriptionindex = mh_renderpasses.at(handle).subpassdescription.size();
 	mh_renderpasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
@@ -2048,7 +1857,7 @@ uint32_t Application::CreateSubpassDescription(RenderPassHandle handle, const ui
 
 }
 
-uint32_t Application::CreateSubpassDependency(RenderPassHandle handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
+uint32_t PersistanceVk::CreateSubpassDependency(RenderPassHandle handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
 {
 	uint32_t dependencyindex = mh_renderpasses.at(handle).subpassdependencies.size();
 	mh_renderpasses.at(handle).subpassdependencies.push_back(VkSubpassDependency());
@@ -2069,7 +1878,7 @@ uint32_t Application::CreateSubpassDependency(RenderPassHandle handle, uint32_t 
 
 }
 
-void Application::CreateRenderPass(RenderPassHandle handle, const uint32_t* attachmentindicies, uint32_t attachmentcount, const uint32_t* subpassdescriptionindicies, uint32_t subpassdescriptioncount, const uint32_t* subpassdependencyindices, uint32_t subpassdependencycount)
+void PersistanceVk::CreateRenderPass(RenderPassHandle handle, const uint32_t* attachmentindicies, uint32_t attachmentcount, const uint32_t* subpassdescriptionindicies, uint32_t subpassdescriptioncount, const uint32_t* subpassdependencyindices, uint32_t subpassdependencycount)
 {
 	std::vector<VkAttachmentDescription> attachments;
 	attachments.reserve(attachmentcount);
@@ -2104,7 +1913,7 @@ void Application::CreateRenderPass(RenderPassHandle handle, const uint32_t* atta
 
 }
 
-void Application::CleanRenderPass()
+void PersistanceVk::CleanRenderPass()
 {
 	for (RenderPass pass : mh_renderpasses) 
 	{
@@ -2114,7 +1923,7 @@ void Application::CleanRenderPass()
 }
 
 
-DescriptorSetLayoutHandle Application::CreateDescriptorSetLayoutHandle()
+DescriptorSetLayoutHandle PersistanceVk::CreateDescriptorSetLayoutHandle()
 {
 	uint32_t handle = m_dslhandlecount++;
 
@@ -2123,12 +1932,12 @@ DescriptorSetLayoutHandle Application::CreateDescriptorSetLayoutHandle()
 	return handle;
 }
 
-void Application::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding)
+void PersistanceVk::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding)
 {
 	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
 }
 
-void Application::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
+void PersistanceVk::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
 {
 	VkDescriptorSetLayoutBinding binding{};
 	binding.binding = bindingidx;
@@ -2142,7 +1951,7 @@ void Application::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint
 
 }
 
-void Application::CreateDescriptorSetLayout(DescriptorSetHandle handle)
+void PersistanceVk::CreateDescriptorSetLayout(DescriptorSetHandle handle)
 {
 
 	//VkDescriptorSetLayout layout;
@@ -2162,7 +1971,7 @@ void Application::CreateDescriptorSetLayout(DescriptorSetHandle handle)
 
 }
 
-void Application::CleanDescriptorSetLayout()
+void PersistanceVk::CleanDescriptorSetLayout()
 {
 	for (int i = 0; i < mh_descriptorsetlayouts.size(); i++)
 	{
@@ -2170,7 +1979,7 @@ void Application::CleanDescriptorSetLayout()
 	}
 }
 
-GraphicsPipelineHandle Application::CreateGraphicsPipelineHandle()
+GraphicsPipelineHandle PersistanceVk::CreateGraphicsPipelineHandle()
 {
 	uint32_t handle = m_pipelinecount++;
 
@@ -2186,21 +1995,21 @@ GraphicsPipelineHandle Application::CreateGraphicsPipelineHandle()
 
 
 
-void Application::AddVertexStage(GraphicsPipelineHandle handle, const char* shaderpath)
+void PersistanceVk::AddVertexStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
 	mh_graphicspipelines.at(handle).shader.GetVertexModule() = CreateShaderModule(shaderfile);
 	mh_graphicspipelines.at(handle).shader.AddVertexShaderStage();
 }
 
-void Application::AddFragmentStage(GraphicsPipelineHandle handle, const char* shaderpath)
+void PersistanceVk::AddFragmentStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
 	mh_graphicspipelines.at(handle).shader.GetFragmentModule() = CreateShaderModule(shaderfile);
 	mh_graphicspipelines.at(handle).shader.AddFragmentShaderStage();
 }
 
-void Application::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspipelinehandle, uint32_t descriptorsetbinding)
+void PersistanceVk::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspipelinehandle, uint32_t descriptorsetbinding)
 {
 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
@@ -2216,7 +2025,7 @@ void Application::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspi
 	}
 }
 
-void Application::CreateGraphicsPipeline(GraphicsPipelineHandle handle, PipelineSettings& settings, const uint32_t renderpasshandle)
+void PersistanceVk::CreateGraphicsPipeline(GraphicsPipelineHandle handle, PipelineSettings& settings, const uint32_t renderpasshandle)
 {
 	std::vector<VkDynamicState> dynamicstates =
 	{
@@ -2271,7 +2080,7 @@ void Application::CreateGraphicsPipeline(GraphicsPipelineHandle handle, Pipeline
 
 }
 
-void Application::DestroyShaders(GraphicsPipelineHandle handle)
+void PersistanceVk::DestroyShaders(GraphicsPipelineHandle handle)
 {
 	
 	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetVertexModule(), nullptr);
@@ -2280,7 +2089,7 @@ void Application::DestroyShaders(GraphicsPipelineHandle handle)
 	// compute one goes here.
 }
 
-void Application::CleanGraphicsPipelines()
+void PersistanceVk::CleanGraphicsPipelines()
 {
 	for (GraphicsPipeline pipeline : mh_graphicspipelines) 
 	{
@@ -2291,7 +2100,7 @@ void Application::CleanGraphicsPipelines()
 
 }
 
-FrameBufferHandle Application::CreateFrameBuffersHandle()
+FrameBufferHandle PersistanceVk::CreateFrameBuffersHandle()
 {
 	
 	mh_framebuffers.emplace_back(Framebuffer());
@@ -2300,7 +2109,7 @@ FrameBufferHandle Application::CreateFrameBuffersHandle()
 
 }
 
-void Application::CreateFramebufferImage(FrameBufferHandle handle)
+void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle)
 {
 	uint32_t imageidx = 0;
 	int width = m_swapchainextent.width;
@@ -2330,7 +2139,7 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle)
 
 }
  
-void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
+void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
 {
 	uint32_t imageidx = 0;
 	mh_framebuffers.at(handle).images.push_back(VkImage());
@@ -2343,7 +2152,7 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, in
 
 }
 
-void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
+void PersistanceVk::CreateFramebufferImageViews(FrameBufferHandle handle)
 {
 	size_t imagecount = mh_framebuffers.at(handle).images.size();
 
@@ -2357,7 +2166,7 @@ void Application::CreateFramebufferImageViews(FrameBufferHandle handle)
 
 
 }
-void Application::CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle)
+void PersistanceVk::CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle)
 {
 	size_t imageviewcount = mh_framebuffers.at(handle).imageviews.size();
 	mh_framebuffers.at(handle).framebuffers.resize(imageviewcount);
@@ -2385,7 +2194,7 @@ void Application::CreateFramebuffers(FrameBufferHandle handle, const uint32_t re
 	}
 }
 
-void Application::CleanFramebuffers()
+void PersistanceVk::CleanFramebuffers()
 {
 	for (Framebuffer buffer : mh_framebuffers) 
 	{
@@ -2411,7 +2220,7 @@ void Application::CleanFramebuffers()
 
 }
 
-uint32_t Application::CreateTextureHandle()
+uint32_t PersistanceVk::CreateTextureHandle()
 {
 	uint32_t handle = m_texturecount++;
 
@@ -2421,7 +2230,7 @@ uint32_t Application::CreateTextureHandle()
 
 }
 
-void Application::CreateTextureImage(TextureHandle handle, int width, int height)
+void PersistanceVk::CreateTextureImage(TextureHandle handle, int width, int height)
 {
 	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -2432,7 +2241,7 @@ void Application::CreateTextureImage(TextureHandle handle, int width, int height
 
 }
 
-void Application::CreateTextureImage(TextureHandle handle, const char* imagesrc)
+void PersistanceVk::CreateTextureImage(TextureHandle handle, const char* imagesrc)
 {
 
 	int width, height, bpp;
@@ -2477,12 +2286,12 @@ void Application::CreateTextureImage(TextureHandle handle, const char* imagesrc)
 	
 }
 
-void Application::CreateTextureImageView(TextureHandle handle)
+void PersistanceVk::CreateTextureImageView(TextureHandle handle)
 {
 	mh_textures.at(handle).imageview = CreateImageView(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-void Application::AddImageToTexture(TextureHandle handle, const char* imagesrc)
+void PersistanceVk::AddImageToTexture(TextureHandle handle, const char* imagesrc)
 {
 	int width, height, bpp;
 
@@ -2519,7 +2328,7 @@ void Application::AddImageToTexture(TextureHandle handle, const char* imagesrc)
 	
 }
 
-TextureSamplerHandle Application::CreateTextureSamplerHandle()
+TextureSamplerHandle PersistanceVk::CreateTextureSamplerHandle()
 {
 	uint32_t handle = m_texturesamplercount++;
 
@@ -2528,7 +2337,7 @@ TextureSamplerHandle Application::CreateTextureSamplerHandle()
 	return handle;
 }
 
-void Application::CreateTextureSampler(TextureSamplerHandle handle, VkFilter magfilter, VkFilter minfilter, VkSamplerAddressMode addressmodeU, VkSamplerAddressMode addressmodeV, VkSamplerAddressMode addressmodeW, VkBorderColor bordercolor, VkSamplerMipmapMode mipmapmode, float miplodbias, float minlod, float maxlod, bool anisotropy)
+void PersistanceVk::CreateTextureSampler(TextureSamplerHandle handle, VkFilter magfilter, VkFilter minfilter, VkSamplerAddressMode addressmodeU, VkSamplerAddressMode addressmodeV, VkSamplerAddressMode addressmodeW, VkBorderColor bordercolor, VkSamplerMipmapMode mipmapmode, float miplodbias, float minlod, float maxlod, bool anisotropy)
 {
 	VkPhysicalDeviceProperties properties{};
 
@@ -2572,7 +2381,7 @@ void Application::CreateTextureSampler(TextureSamplerHandle handle, VkFilter mag
 
 }
 
-void Application::CleanTextures()
+void PersistanceVk::CleanTextures()
 {
 	for (int i = 0; i < mh_textures.size(); i++) {
 		vkDestroyImageView(m_device, mh_textures[i].imageview, nullptr);
@@ -2585,7 +2394,7 @@ void Application::CleanTextures()
 	
 }
 
-BufferHandle Application::CreateVertexBufferHandle()
+BufferHandle PersistanceVk::CreateVertexBufferHandle()
 {
 	uint32_t handle = m_vertexbuffercount++;
 
@@ -2594,7 +2403,7 @@ BufferHandle Application::CreateVertexBufferHandle()
 	return handle;
 }
 
-void Application::CreateVertexBuffer(BufferHandle handle, const void* buffer, size_t elementsize, uint32_t elementcount)
+void PersistanceVk::CreateVertexBuffer(BufferHandle handle, const void* buffer, size_t elementsize, uint32_t elementcount)
 {
 	VkDeviceSize buffersize = elementsize * elementcount;
 
@@ -2616,7 +2425,7 @@ void Application::CreateVertexBuffer(BufferHandle handle, const void* buffer, si
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 }
 
-void Application::CleanVertexBuffers()
+void PersistanceVk::CleanVertexBuffers()
 {
 	for (auto& vertexbuffer : mh_vertexbuffers) 
 	{
@@ -2624,7 +2433,7 @@ void Application::CleanVertexBuffers()
 	}
 }
 
-uint32_t Application::CreateIndexBufferHandle()
+uint32_t PersistanceVk::CreateIndexBufferHandle()
 {
 	uint32_t handle = m_indexbuffercount++;
 
@@ -2633,7 +2442,7 @@ uint32_t Application::CreateIndexBufferHandle()
 	return handle;
 }
 
-void Application::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t indexcount)
+void PersistanceVk::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t indexcount)
 {
 	VkDeviceSize buffersize = sizeof(uint32_t) * indexcount;
 
@@ -2657,7 +2466,7 @@ void Application::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t 
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 }
 
-void Application::CleanIndexBuffers()
+void PersistanceVk::CleanIndexBuffers()
 {
 	for (auto& indexbuffer : mh_indexbuffers)
 	{
@@ -2666,14 +2475,14 @@ void Application::CleanIndexBuffers()
 	}
 }
 
-uint32_t Application::CreateUniformBufferHandle()
+uint32_t PersistanceVk::CreateUniformBufferHandle()
 {
 	uint32_t handle = m_uniformbuffercount++;
 	mh_uniformbuffers.emplace_back(UniformBuffer());
 	return handle;
 }
 
-void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
+void PersistanceVk::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 {
 	mh_uniformbuffers.at(handle).size = buffersize;
 	UniformBuffer& buffer = mh_uniformbuffers.at(handle);
@@ -2686,7 +2495,7 @@ void Application::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 	}
 }
 
-void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe)
+void PersistanceVk::UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe)
 {
 
 	UniformBuffer& uniformbuffer = mh_uniformbuffers.at(handle);
@@ -2698,7 +2507,7 @@ void Application::UpdateUniformBuffer(uint32_t handle, const void* buffer, const
 
 }
 
-void Application::CleanUniformBuffers()
+void PersistanceVk::CleanUniformBuffers()
 {
 
 	for (auto& uniformbuffer : mh_uniformbuffers) 

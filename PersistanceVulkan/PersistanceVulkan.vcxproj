@@ -131,7 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\PersistanceVk.cpp" />
     <ClCompile Include="src\Objects\Shader.cpp" />
     <ClCompile Include="src\PersistanceVulkan.cpp" />
     <ClCompile Include="src\Settings\PipelineSettings.cpp" />
@@ -139,7 +139,7 @@
     <ClCompile Include="src\Vendor\volk\volk.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\PersistanceVk.h" />
     <ClInclude Include="src\DebugUtilsMessengerEXT.h" />
     <ClInclude Include="src\Objects\Shader.h" />
     <ClInclude Include="src\Objects\Vertex.h" />
