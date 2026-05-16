@@ -111,8 +111,8 @@
     <None Include="res\Shaders\compile.bat">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="res\Shaders\basicfrag.spv" />
     <None Include="res\Shaders\basicvert.spv" />
+    <None Include="res\Shaders\basicfrag.spv" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Textures\Placeholder.png">

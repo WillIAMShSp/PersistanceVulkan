@@ -3,7 +3,7 @@
 #include "RenderPassAttachment.h"
 #include <Vector>
 
-
+typedef uint32_t RenderPassHandle;
 
 struct RenderPass 
 {

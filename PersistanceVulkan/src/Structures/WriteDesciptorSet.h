@@ -1,6 +1,9 @@
 #pragma once
 #include "PersistanceLib.h"
 #include <vector>
+
+typedef uint32_t WriteDescriptorSetHandle;
+
 struct WriteDescriptorSet
 {
 	uint32_t arrayelement;

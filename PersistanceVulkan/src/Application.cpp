@@ -354,7 +354,7 @@ void Application::CreateCommandPools()
 
 
 
-uint32_t Application::CreateDescriptorPoolHandle()
+DescriptorPoolHandle Application::CreateDescriptorPoolHandle()
 {
 	uint32_t handle = m_descriptorpoolcount++;
 	mh_descriptorpools.emplace_back(DescriptorPool());
@@ -362,7 +362,7 @@ uint32_t Application::CreateDescriptorPoolHandle()
 	return handle;
 }
 
-void Application::AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type)
+void Application::AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescriptorType type)
 {
 	VkDescriptorPoolSize size;
 	size.descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -372,7 +372,7 @@ void Application::AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type)
 
 }
 
-void Application::CreateDescriptorPool(uint32_t handle)
+void Application::CreateDescriptorPool(DescriptorPoolHandle handle)
 {
 	std::vector<VkDescriptorPoolSize>& poolsizes = mh_descriptorpools.at(handle).poolsizes;
 
@@ -400,15 +400,15 @@ void Application::CleanDescriptorPools()
 	}
 }
 
-uint32_t Application::CreateDescriptorSetHandle()
+DescriptorSetHandle Application::CreateDescriptorSetHandle()
 {
 	uint32_t handle = m_descriptorsetcount++;
-	mh_descriptorsets.emplace(handle, DescriptorSet());
+	mh_descriptorsets.emplace_back(DescriptorSet());
 
 	return handle;
 }
 
-void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle)
+void Application::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle)
 {
 	// first we allocate descriptorsets for every possible frame in flight. 
 	std::vector<VkDescriptorSetLayout> layouts(static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT), mh_descriptorsetlayouts.at(layouthandle).layout);
@@ -482,7 +482,7 @@ void Application::CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, u
 
 }
 
-WriteDescriptorSet* Application::CreateWriteDescriptorSet(uint32_t handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
+WriteDescriptorSet* Application::CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
 {
 	uint32_t idx = mh_descriptorsets.at(handle).writedescriptorsets.size();
 	mh_descriptorsets.at(handle).writedescriptorsets.push_back(WriteDescriptorSet());
@@ -496,7 +496,7 @@ WriteDescriptorSet* Application::CreateWriteDescriptorSet(uint32_t handle, uint3
 	return set;
 }
 
-void Application::AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
+void Application::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
 {
 
 	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.size() > 0)
@@ -513,7 +513,7 @@ void Application::AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, u
 
 }
 
-void Application::AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
+void Application::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
 {
 	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
 	{
@@ -529,15 +529,15 @@ void Application::AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, ui
 
 }
 
-uint32_t Application::CreateCommandBufferHandle()
+BufferHandle Application::CreateCommandBufferHandle()
 {
 	uint32_t handle = m_commandbuffercount++;
-	mh_commandbuffers.emplace(handle, std::vector<VkCommandBuffer>());
+	mh_commandbuffers.emplace_back(std::vector<VkCommandBuffer>());
 
 	return handle;
 }
 
-void Application::CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+void Application::CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
 
 	mh_commandbuffers.at(handle).resize(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -558,7 +558,7 @@ void Application::CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpoo
 
 }
 
-void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle,  const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
+void Application::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle)
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
 	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -653,7 +653,7 @@ void Application::CleanAllocator()
 	vmaDestroyAllocator(m_vmaallocator);
 }
 
-void Application::CreateImageT(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
+void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
 {
 
 	VkImageCreateInfo imageinfo{};
@@ -1321,7 +1321,7 @@ void Application::CreateLogicalDevice()
 
 	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-	devicecreateinfo.queueCreateInfoCount = queuecreateinfos.size();
+	devicecreateinfo.queueCreateInfoCount = static_cast<uint32_t>(queuecreateinfos.size());
 	devicecreateinfo.pQueueCreateInfos = queuecreateinfos.data();
 
 
@@ -1669,7 +1669,6 @@ void Application::DrawFrame(const uint32_t commandbufferhandle, const uint32_t g
 
 	}
 
-
 	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
 
 }
@@ -1707,72 +1706,7 @@ void Application::RecreateSwapchain(uint32_t renderpasshandle)
 
 
 
-void Application::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode)
-{
-	VkImageCreateInfo imageinfo{};
-	imageinfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageinfo.imageType = VK_IMAGE_TYPE_2D;
-	imageinfo.extent.width = width;
-	imageinfo.extent.height = height;
-	imageinfo.extent.depth = 1;
-	imageinfo.mipLevels = 1;
-	imageinfo.arrayLayers = 1;
-	imageinfo.format = format;
-	imageinfo.tiling = tiling;
-	imageinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageinfo.usage = usage;
-	imageinfo.sharingMode = sharingmode;
-	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageinfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT; //temporary solution, This means that the framebuffer image can have the same format as a texture, but change to that of the swapchain
-	
-	std::array<uint32_t, 2> queuefamilyindices;									  // so I can also write to it, or thats my theory at least, lets give it a go for now.
 
-	if (sharingmode & VK_SHARING_MODE_CONCURRENT)
-	{
-		 queuefamilyindices =
-		{
-			m_queuefamilyindices.graphicsfamily,
-			m_queuefamilyindices.transferfamily
-
-		};
-
-		imageinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
-		imageinfo.pQueueFamilyIndices = queuefamilyindices.data();
-
-
-
-	}
-	else 
-	{
-		imageinfo.queueFamilyIndexCount = 1;
-		imageinfo.pQueueFamilyIndices = &m_queuefamilyindices.graphicsfamily;
-	}
-	
-
-	if (vkCreateImage(m_device, &imageinfo, nullptr, &image) != VK_SUCCESS)
-	{
-		throw std::runtime_error("There is always gonna be someone who's better than you at something, that doesnt make you any less. I AM THAT I AM, I want to see who dares oppose that! also your image couldnt be created womp womp :( !");
-
-	}
-
-	VkMemoryRequirements imagememrequirements;
-	vkGetImageMemoryRequirements(m_device, image, &imagememrequirements);
-
-	VkMemoryAllocateInfo allocinfo{};
-	allocinfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocinfo.allocationSize = imagememrequirements.size;
-	allocinfo.memoryTypeIndex = FindMemoryType(imagememrequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	if (vkAllocateMemory(m_device, &allocinfo, nullptr, &imagememory) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate texture memory.");
-	}
-
-	vkBindImageMemory(m_device, image, imagememory, 0);
-
-
-
-}
 
 void Application::CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue)
 {
@@ -1955,7 +1889,7 @@ VkImageView Application::CreateImageView(VkImage& image, VkFormat format, VkImag
 	return imageview;
 }
 
-uint32_t Application::CreateRenderPassHandle()
+RenderPassHandle Application::CreateRenderPassHandle()
 {
 	uint32_t handle = m_renderpasscount++;
 
@@ -1964,7 +1898,7 @@ uint32_t Application::CreateRenderPassHandle()
 	return handle;
 }
 
-uint32_t Application::CreateRenderPassColorAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t Application::CreateRenderPassColorAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).colorattachments.size();
 	mh_renderpasses.at(handle).colorattachments.push_back(RenderPassAttachment());
@@ -1988,7 +1922,7 @@ uint32_t Application::CreateRenderPassColorAttachment(uint32_t handle, VkFormat 
 
 }
 
-uint32_t Application::CreateRenderPassDepthStencilAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t Application::CreateRenderPassDepthStencilAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).depthstencilattachments.size();
 	mh_renderpasses.at(handle).depthstencilattachments.push_back(RenderPassAttachment());
@@ -2011,7 +1945,7 @@ uint32_t Application::CreateRenderPassDepthStencilAttachment(uint32_t handle, Vk
 	return index;
 }
 
-uint32_t Application::CreateRenderPassInputAttachment(uint32_t handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t Application::CreateRenderPassInputAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).inputattachments.size();
 	mh_renderpasses.at(handle).inputattachments.push_back(RenderPassAttachment());
@@ -2036,7 +1970,7 @@ uint32_t Application::CreateRenderPassInputAttachment(uint32_t handle, VkFormat 
 
 
 
-uint32_t Application::CreateRenderpassAttachment(uint32_t handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+uint32_t Application::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
 	int index = mh_renderpasses.at(handle).attachments.size();
 	mh_renderpasses.at(handle).attachments.push_back(RenderPassAttachment());
@@ -2060,7 +1994,7 @@ uint32_t Application::CreateRenderpassAttachment(uint32_t handle, VkImageLayout 
 
 }
 
-uint32_t Application::CreateSubpassDescription(uint32_t handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
+uint32_t Application::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
 {
 	uint32_t descriptionindex = mh_renderpasses.at(handle).subpassdescription.size();
 	mh_renderpasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
@@ -2099,7 +2033,7 @@ uint32_t Application::CreateSubpassDescription(uint32_t handle, const uint32_t* 
 	}*/
 
 	//assigning attachments to the subpass description
-	description.colorAttachmentCount = mh_renderpasses.at(handle).colorattachments.size();
+	description.colorAttachmentCount = (uint32_t)mh_renderpasses.at(handle).colorattachments.size();
 	description.pColorAttachments = &mh_renderpasses.at(handle).colorattachments[0].reference;
 	description.inputAttachmentCount = inputattachmentcount;
 	description.pInputAttachments = inputattachments.data();
@@ -2114,7 +2048,7 @@ uint32_t Application::CreateSubpassDescription(uint32_t handle, const uint32_t* 
 
 }
 
-uint32_t Application::CreateSubpassDependency(uint32_t handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
+uint32_t Application::CreateSubpassDependency(RenderPassHandle handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
 {
 	uint32_t dependencyindex = mh_renderpasses.at(handle).subpassdependencies.size();
 	mh_renderpasses.at(handle).subpassdependencies.push_back(VkSubpassDependency());
@@ -2135,12 +2069,12 @@ uint32_t Application::CreateSubpassDependency(uint32_t handle, uint32_t srcsubpa
 
 }
 
-void Application::CreateRenderPass(uint32_t handle, const uint32_t* attachmentindicies, uint32_t attachmentcount, const uint32_t* subpassdescriptionindicies, uint32_t subpassdescriptioncount, const uint32_t* subpassdependencyindices, uint32_t subpassdependencycount)
+void Application::CreateRenderPass(RenderPassHandle handle, const uint32_t* attachmentindicies, uint32_t attachmentcount, const uint32_t* subpassdescriptionindicies, uint32_t subpassdescriptioncount, const uint32_t* subpassdependencyindices, uint32_t subpassdependencycount)
 {
 	std::vector<VkAttachmentDescription> attachments;
 	attachments.reserve(attachmentcount);
 
-	for (int i = 0; i < attachmentcount; i++) 
+	for (int i = 0; i < attachmentcount; i++)
 	{
 		attachments.emplace_back(mh_renderpasses.at(handle).colorattachments[attachmentindicies[i]].description);
 
@@ -2152,10 +2086,10 @@ void Application::CreateRenderPass(uint32_t handle, const uint32_t* attachmentin
 	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderpasscreateinfo.attachmentCount = attachmentcount;
 	renderpasscreateinfo.pAttachments = attachments.data();
-	renderpasscreateinfo.subpassCount = mh_renderpasses.at(handle).subpassdescription.size();
+	renderpasscreateinfo.subpassCount = (uint32_t)mh_renderpasses.at(handle).subpassdescription.size();
 	renderpasscreateinfo.pSubpasses = mh_renderpasses.at(handle).subpassdescription.data();
 
-	renderpasscreateinfo.dependencyCount = mh_renderpasses.at(handle).subpassdependencies.size();
+	renderpasscreateinfo.dependencyCount = (uint32_t)mh_renderpasses.at(handle).subpassdependencies.size();
 	renderpasscreateinfo.pDependencies = mh_renderpasses.at(handle).subpassdependencies.data();
 
 
@@ -2180,7 +2114,7 @@ void Application::CleanRenderPass()
 }
 
 
-uint32_t Application::CreateDescriptorSetLayoutHandle()
+DescriptorSetLayoutHandle Application::CreateDescriptorSetLayoutHandle()
 {
 	uint32_t handle = m_dslhandlecount++;
 
@@ -2189,12 +2123,12 @@ uint32_t Application::CreateDescriptorSetLayoutHandle()
 	return handle;
 }
 
-void Application::AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding)
+void Application::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding)
 {
 	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
 }
 
-void Application::AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
+void Application::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
 {
 	VkDescriptorSetLayoutBinding binding{};
 	binding.binding = bindingidx;
@@ -2208,7 +2142,7 @@ void Application::AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindin
 
 }
 
-void Application::CreateDescriptorSetLayout(uint32_t handle)
+void Application::CreateDescriptorSetLayout(DescriptorSetHandle handle)
 {
 
 	//VkDescriptorSetLayout layout;
@@ -2236,7 +2170,7 @@ void Application::CleanDescriptorSetLayout()
 	}
 }
 
-uint32_t Application::CreateGraphicsPipelineHandle()
+GraphicsPipelineHandle Application::CreateGraphicsPipelineHandle()
 {
 	uint32_t handle = m_pipelinecount++;
 
@@ -2252,21 +2186,21 @@ uint32_t Application::CreateGraphicsPipelineHandle()
 
 
 
-void Application::AddVertexStage(uint32_t handle, const char* shaderpath)
+void Application::AddVertexStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
 	mh_graphicspipelines.at(handle).shader.GetVertexModule() = CreateShaderModule(shaderfile);
 	mh_graphicspipelines.at(handle).shader.AddVertexShaderStage();
 }
 
-void Application::AddFragmentStage(uint32_t handle, const char* shaderpath)
+void Application::AddFragmentStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
 	mh_graphicspipelines.at(handle).shader.GetFragmentModule() = CreateShaderModule(shaderfile);
 	mh_graphicspipelines.at(handle).shader.AddFragmentShaderStage();
 }
 
-void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding)
+void Application::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspipelinehandle, uint32_t descriptorsetbinding)
 {
 
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
@@ -2282,7 +2216,7 @@ void Application::CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, 
 	}
 }
 
-void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings, const uint32_t renderpasshandle)
+void Application::CreateGraphicsPipeline(GraphicsPipelineHandle handle, PipelineSettings& settings, const uint32_t renderpasshandle)
 {
 	std::vector<VkDynamicState> dynamicstates =
 	{
@@ -2337,7 +2271,7 @@ void Application::CreateGraphicsPipeline(uint32_t handle, PipelineSettings& sett
 
 }
 
-void Application::DestroyShaders(uint32_t handle)
+void Application::DestroyShaders(GraphicsPipelineHandle handle)
 {
 	
 	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetVertexModule(), nullptr);
@@ -2377,7 +2311,7 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle)
 	VkMemoryPropertyFlags memoryproperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 
-	imageidx = mh_framebuffers.at(handle).images.size();
+	imageidx = (uint32_t)mh_framebuffers.at(handle).images.size();
 
 	mh_framebuffers.at(handle).images.emplace_back(VkImage());
 	////mh_framebuffers.at(handle).imagememory.emplace_back(VkDeviceMemory());
@@ -2387,7 +2321,7 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle)
 	VmaAllocation& allocation = mh_framebuffers.at(handle).allocations[imageidx];
 	
 
-	CreateImageT(width, height, format, tiling, usageflags, memoryproperties, image, allocation);
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, image, allocation);
 
 	
 
@@ -2400,13 +2334,12 @@ void Application::CreateFramebufferImage(FrameBufferHandle handle, int width, in
 {
 	uint32_t imageidx = 0;
 	mh_framebuffers.at(handle).images.push_back(VkImage());
-	mh_framebuffers.at(handle).imagememory.push_back(VkDeviceMemory());
 	mh_framebuffers.at(handle).allocations.push_back(VmaAllocation());
 
 
-	imageidx = mh_framebuffers.at(handle).images.size() - 1;
+	imageidx = (uint32_t)mh_framebuffers.at(handle).images.size() - 1;
 
-	CreateImageT(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).allocations[imageidx] , VK_SHARING_MODE_CONCURRENT);
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).allocations[imageidx] , VK_SHARING_MODE_CONCURRENT);
 
 }
 
@@ -2488,9 +2421,9 @@ uint32_t Application::CreateTextureHandle()
 
 }
 
-void Application::CreateTextureImage(uint32_t handle, int width, int height)
+void Application::CreateTextureImage(TextureHandle handle, int width, int height)
 {
-	CreateImageT(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
@@ -2499,7 +2432,7 @@ void Application::CreateTextureImage(uint32_t handle, int width, int height)
 
 }
 
-void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
+void Application::CreateTextureImage(TextureHandle handle, const char* imagesrc)
 {
 
 	int width, height, bpp;
@@ -2528,7 +2461,7 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 	
 	stbi_image_free(pixels);
 
-	CreateImageT(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
@@ -2544,12 +2477,12 @@ void Application::CreateTextureImage(uint32_t handle, const char* imagesrc)
 	
 }
 
-void Application::CreateTextureImageView(uint32_t handle)
+void Application::CreateTextureImageView(TextureHandle handle)
 {
 	mh_textures.at(handle).imageview = CreateImageView(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
+void Application::AddImageToTexture(TextureHandle handle, const char* imagesrc)
 {
 	int width, height, bpp;
 
@@ -2586,16 +2519,73 @@ void Application::AddImageToTexture(uint32_t handle, const char* imagesrc)
 	
 }
 
+TextureSamplerHandle Application::CreateTextureSamplerHandle()
+{
+	uint32_t handle = m_texturesamplercount++;
+
+	mh_texturesamplers.emplace_back(VkSampler());
+	
+	return handle;
+}
+
+void Application::CreateTextureSampler(TextureSamplerHandle handle, VkFilter magfilter, VkFilter minfilter, VkSamplerAddressMode addressmodeU, VkSamplerAddressMode addressmodeV, VkSamplerAddressMode addressmodeW, VkBorderColor bordercolor, VkSamplerMipmapMode mipmapmode, float miplodbias, float minlod, float maxlod, bool anisotropy)
+{
+	VkPhysicalDeviceProperties properties{};
+
+	vkGetPhysicalDeviceProperties(m_physicaldevice, &properties);
+
+
+
+	VkSamplerCreateInfo samplerinfo{};
+	samplerinfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+
+	samplerinfo.magFilter = magfilter;
+	samplerinfo.minFilter = minfilter;
+
+	samplerinfo.addressModeU = addressmodeU;
+	samplerinfo.addressModeV = addressmodeV;
+	samplerinfo.addressModeW = addressmodeW;
+
+	samplerinfo.borderColor = bordercolor;
+
+	samplerinfo.mipmapMode = mipmapmode;
+	samplerinfo.mipLodBias = miplodbias;
+	samplerinfo.minLod = minlod;
+	samplerinfo.maxLod = maxlod;
+
+	samplerinfo.anisotropyEnable = anisotropy;
+	samplerinfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+
+
+
+	samplerinfo.unnormalizedCoordinates = VK_FALSE;
+	samplerinfo.compareEnable = VK_FALSE;
+	samplerinfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	if (vkCreateSampler(m_device, &samplerinfo, nullptr, &mh_texturesamplers.at(handle)) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create sampler");
+
+	}
+
+
+
+}
+
 void Application::CleanTextures()
 {
 	for (int i = 0; i < mh_textures.size(); i++) {
 		vkDestroyImageView(m_device, mh_textures[i].imageview, nullptr);
 		vmaDestroyImage(m_vmaallocator, mh_textures[i].image, mh_textures[i].allocation);
 	}
+	for (auto& sampler : mh_texturesamplers) 
+	{
+		vkDestroySampler(m_device, sampler, nullptr);
+	}
 	
 }
 
-uint32_t Application::CreateVertexBufferHandle()
+BufferHandle Application::CreateVertexBufferHandle()
 {
 	uint32_t handle = m_vertexbuffercount++;
 
@@ -2604,7 +2594,7 @@ uint32_t Application::CreateVertexBufferHandle()
 	return handle;
 }
 
-void Application::CreateVertexBuffer(uint32_t handle, const void* buffer, size_t elementsize, uint32_t elementcount)
+void Application::CreateVertexBuffer(BufferHandle handle, const void* buffer, size_t elementsize, uint32_t elementcount)
 {
 	VkDeviceSize buffersize = elementsize * elementcount;
 
@@ -2643,7 +2633,7 @@ uint32_t Application::CreateIndexBufferHandle()
 	return handle;
 }
 
-void Application::CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount)
+void Application::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t indexcount)
 {
 	VkDeviceSize buffersize = sizeof(uint32_t) * indexcount;
 

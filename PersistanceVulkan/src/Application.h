@@ -170,7 +170,7 @@ private:
 			VK_ATTACHMENT_STORE_OP_STORE, 
 			VK_IMAGE_LAYOUT_UNDEFINED, 
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-		uint32_t subpassdescription = CreateSubpassDescription(renderpasshandle, &colorattachment, 1);
+		uint32_t subpassdescription = CreateSubpassDescription(renderpasshandle, &colorattachment, 1, UINT32_MAX, nullptr, 0, nullptr, 0);
 		uint32_t subpassdependency = CreateSubpassDependency(
 			renderpasshandle, 
 			VK_SUBPASS_EXTERNAL, 
@@ -238,26 +238,27 @@ private:
 
 //////////////////////////////////////////////////
 
-		CreateTextureSampler();
+		//CreateTextureSampler();
+		uint32_t texturesamplerhandle = CreateTextureSamplerHandle();
 		uint32_t texturehandle = CreateTextureHandle();
 		CreateTextureImage(texturehandle, "res/Textures/Placeholder.png");
 		CreateTextureImageView(texturehandle);
-		
+		CreateTextureSampler(texturesamplerhandle);
 
 //////////////////////////////////////////////////
 		
 		///////////////////////////
 		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
-		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), vertices.size());
+		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), (uint32_t)vertices.size());
 
 		/////TESTVB/////
 		uint32_t testvbhandl = CreateVertexBufferHandle();
-		CreateVertexBuffer(testvbhandl, TESTvertices.data(), sizeof(TESTvertices[0]), TESTvertices.size());
+		CreateVertexBuffer(testvbhandl, TESTvertices.data(), sizeof(TESTvertices[0]), (uint32_t)TESTvertices.size());
 		////////////////
 
 
 		uint32_t indexbufferhndl = CreateIndexBufferHandle();
-		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), indices.size());
+		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), (uint32_t)indices.size());
 
 ////////////////////////////////////
 
@@ -290,7 +291,7 @@ private:
 		CreateWriteDescriptorSet(descriptorsethandle, 1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &uniformbufferwritedescriptor);
 		AddDescriptorBufferInfoToWriteDescriptorSet(descriptorsethandle, uniformbufferwritedescriptor, uniformbufferhandle, 0, sizeof(ModelViewProjectionBuffer));
 		CreateWriteDescriptorSet(descriptorsethandle, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &texturewritedescriptor);
-		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mh_textures.at(texturehandle).imageview, m_texsampler);
+		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mh_textures.at(texturehandle).imageview, mh_texturesamplers.at(texturesamplerhandle));
 		CreateDescriptorSets(descriptorsethandle, descriptorsetlayouthandle, descriptorpoolhandle);
 
 ////////////////////////////////////
@@ -523,8 +524,6 @@ private:
 		VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE
 	);
 
-	void CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags&  usage, const VkMemoryPropertyFlags& properties, VkImage& image, VkDeviceMemory& imagememory, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
-	
 	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue);
 
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
@@ -596,20 +595,17 @@ private:
 	
 	std::vector<RenderPass> mh_renderpasses;
 
-	uint32_t CreateRenderPassHandle(); 
+	RenderPassHandle CreateRenderPassHandle(); 
 	
 	
-	uint32_t CreateRenderPassColorAttachment(
-		uint32_t handle,
+	uint32_t CreateRenderPassColorAttachment(RenderPassHandle handle,
 		VkFormat format,
 		VkSampleCountFlagBits imagesamples,
 		VkAttachmentLoadOp loadop,
 		VkAttachmentStoreOp storeop,
 		VkImageLayout initialimagelayout,
-		VkImageLayout finalimagelayout
-		);
-	uint32_t CreateRenderPassDepthStencilAttachment(
-		uint32_t handle,
+		VkImageLayout finalimagelayout);
+	uint32_t CreateRenderPassDepthStencilAttachment(RenderPassHandle handle,
 		VkFormat format,
 		VkSampleCountFlagBits imagesamples,
 		VkAttachmentLoadOp loadop,
@@ -617,11 +613,8 @@ private:
 		VkAttachmentLoadOp depthstencilloadop,
 		VkAttachmentStoreOp depthstencilstoreop,
 		VkImageLayout initialimagelayout,
-		VkImageLayout finalimagelayout
-	);
-
-	uint32_t CreateRenderPassInputAttachment(
-		uint32_t handle,
+		VkImageLayout finalimagelayout);
+	uint32_t CreateRenderPassInputAttachment(RenderPassHandle handle,
 		VkFormat format,
 		VkSampleCountFlagBits imagesamples,
 		VkAttachmentLoadOp loadop,
@@ -629,50 +622,37 @@ private:
 		VkAttachmentLoadOp depthstencilloadop,
 		VkAttachmentStoreOp depthstencilstoreop,
 		VkImageLayout initialimagelayout,
-		VkImageLayout finalimagelayout
-	);
-
-	uint32_t CreateRenderpassAttachment(
-		uint32_t handle, 
+		VkImageLayout finalimagelayout);
+	uint32_t CreateRenderpassAttachment(RenderPassHandle handle, 
 		VkImageLayout attachmentlayout, 
 		VkFormat format, 
 		VkSampleCountFlagBits imagesamples, 
 		VkAttachmentLoadOp loadop, 
 		VkAttachmentStoreOp storeop, 
 		VkImageLayout initialimagelayout, 
-		VkImageLayout finalimagelayout
-	);
-
-	uint32_t CreateSubpassDescription(
-		uint32_t handle,
+		VkImageLayout finalimagelayout);
+	uint32_t CreateSubpassDescription(RenderPassHandle handle,
 		const uint32_t* colorattachmentindices = nullptr,
 		size_t colorattachmentcount = 0,
 		const uint32_t depthandstencilattachmentindex =  UINT32_MAX,
 		const uint32_t* inputattachmentindices = nullptr,
 		const uint32_t inputattachmentcount = 0,
 		const uint32_t* preserveattachmentindices = nullptr,
-		const uint32_t preservedattachmentcount = 0
-	);
-
-	uint32_t CreateSubpassDependency(
-		uint32_t handle,
+		const uint32_t preservedattachmentcount = 0);
+	uint32_t CreateSubpassDependency(RenderPassHandle handle,
 		uint32_t srcsubpass, 
 		uint32_t dstsubpass, 
 		VkPipelineStageFlags srcstagemask, 
 		VkPipelineStageFlags dststagemask, 
 		VkAccessFlags srcaccessmask, 
-		VkAccessFlags dstaccessmask
-	);
-
-	void CreateRenderPass(
-		uint32_t handle, 
+		VkAccessFlags dstaccessmask);
+	void CreateRenderPass(RenderPassHandle handle, 
 		const uint32_t* attachmentindicies, 
 		uint32_t attachmentcount, 
 		const uint32_t* subpassdescriptionindicies, 
 		uint32_t subpassdescriptioncount, 
 		const uint32_t* subpassdependencyindices, 
-		uint32_t subpassdependencycount
-	);
+		uint32_t subpassdependencycount);
 	
 	void CleanRenderPass();
 		
@@ -680,12 +660,12 @@ private:
 
 	std::vector<DescriptorSetLayout> mh_descriptorsetlayouts;
 
-	uint8_t m_dslhandlecount = 0;
-	uint32_t CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
-	void AddDescriptorSetLayoutBinding(uint32_t handle, VkDescriptorSetLayoutBinding& binding); //The handle is used here to add bindings to the layout;
-	void AddDescriptorSetLayoutBinding(uint32_t handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
-	void CreateDescriptorSetLayout(uint32_t handle);
+	uint32_t m_dslhandlecount = 0;
 
+	DescriptorSetLayoutHandle CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
+	void AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding); //The handle is used here to add bindings to the layout;
+	void AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
+	void CreateDescriptorSetLayout(DescriptorSetHandle handle);
 	void CleanDescriptorSetLayout();
 
 	//Graphics pipeline modulation
@@ -693,13 +673,13 @@ private:
 	
 	std::vector<GraphicsPipeline> mh_graphicspipelines;
 
-	uint32_t CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
-	void AddVertexStage(uint32_t handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
-	void AddFragmentStage(uint32_t handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
+	GraphicsPipelineHandle CreateGraphicsPipelineHandle(); //Creates a handle for a graphics pipeline;
+	void AddVertexStage(GraphicsPipelineHandle handle, const char* shaderpath); //adds a vertex stage to the created pipeline shader.
+	void AddFragmentStage(GraphicsPipelineHandle handle, const char* shaderpath); // adds a fragment stage to the created pipeline shader.
 
-	void CreateGraphicsPipelineLayout(uint32_t graphicspipelinehandle, uint32_t descriptorsetbinding);
-	void CreateGraphicsPipeline(uint32_t handle, PipelineSettings& settings, const uint32_t renderpasshandle);
-	void DestroyShaders(uint32_t handle);
+	void CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspipelinehandle, uint32_t descriptorsetbinding);
+	void CreateGraphicsPipeline(GraphicsPipelineHandle handle, PipelineSettings& settings, const uint32_t renderpasshandle);
+	void DestroyShaders(GraphicsPipelineHandle handle);
 	void CleanGraphicsPipelines();
 	 
 	//Framebuffer modulation
@@ -723,15 +703,30 @@ private:
 
 
 	std::vector<Texture> mh_textures;
-	std::unordered_map<uint32_t, VkSampler> mh_texturesamplers;
+	std::vector <VkSampler> mh_texturesamplers;
 
 	uint32_t m_texturecount = 0;
+	uint32_t m_texturesamplercount = 0;
 
 	uint32_t CreateTextureHandle();
-	void CreateTextureImage(uint32_t handle, int width, int height);
-	void CreateTextureImage(uint32_t handle, const char* imagesrc);
-	void CreateTextureImageView(uint32_t handle);
-	void AddImageToTexture(uint32_t handle, const char* imagesrc);
+	void CreateTextureImage(TextureHandle handle, int width, int height);
+	void CreateTextureImage(TextureHandle handle, const char* imagesrc);
+	void CreateTextureImageView(TextureHandle handle);
+	void AddImageToTexture(TextureHandle handle, const char* imagesrc);
+	
+	TextureSamplerHandle CreateTextureSamplerHandle();
+	void CreateTextureSampler(TextureSamplerHandle handle, 
+		VkFilter magfilter = VK_FILTER_LINEAR,
+		VkFilter minfilter = VK_FILTER_LINEAR,
+		VkSamplerAddressMode addressmodeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VkSamplerAddressMode addressmodeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VkSamplerAddressMode addressmodeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		VkBorderColor bordercolor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		VkSamplerMipmapMode mipmapmode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		float miplodbias = 0.0f, 
+		float minlod = 0.0f, 
+		float maxlod = 0.0f, 
+		bool anisotropy = false);
 
 	void CleanTextures();
 
@@ -741,8 +736,8 @@ private:
 	std::vector<Buffer> mh_vertexbuffers;
 
 	uint32_t m_vertexbuffercount = 0;
-	uint32_t CreateVertexBufferHandle();
-	void CreateVertexBuffer(uint32_t handle, const void* buffer, size_t elementsize, uint32_t elementcount);
+	BufferHandle CreateVertexBufferHandle();
+	void CreateVertexBuffer(BufferHandle handle, const void* buffer, size_t elementsize, uint32_t elementcount);
 	void CleanVertexBuffers();
 
 	//Index buffer modulation
@@ -751,8 +746,8 @@ private:
 	std::vector<Buffer> mh_indexbuffers;
 
 	uint32_t m_indexbuffercount = 0;
-	uint32_t CreateIndexBufferHandle();
-	void CreateIndexBuffer(uint32_t handle, void* buffer, uint32_t indexcount);
+	BufferHandle CreateIndexBufferHandle();
+	void CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t indexcount);
 
 	void CleanIndexBuffers();
 
@@ -772,37 +767,37 @@ private:
 	std::vector<DescriptorPool> mh_descriptorpools;
 
 
-	uint32_t CreateDescriptorPoolHandle();
-	void AddDescriptorPoolSize(uint32_t handle, VkDescriptorType type);
-	void CreateDescriptorPool(uint32_t handle);
+	DescriptorPoolHandle CreateDescriptorPoolHandle();
+	void AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescriptorType type);
+	void CreateDescriptorPool(DescriptorPoolHandle handle);
 
 	void CleanDescriptorPools();
 
 	//Descriptor set modulation
 	uint32_t m_descriptorsetcount = 0;
-	std::unordered_map<uint32_t, DescriptorSet>mh_descriptorsets;
+	std::vector<DescriptorSet>mh_descriptorsets;
 	
 
-	uint32_t CreateDescriptorSetHandle();
-	void CreateDescriptorSets(uint32_t handle, uint32_t layouthandle, uint32_t poolhandle);
-	WriteDescriptorSet* CreateWriteDescriptorSet(uint32_t handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
-	void AddDescriptorBufferInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
-	void AddDescriptorImageInfoToWriteDescriptorSet(uint32_t handle, uint32_t writedescriptorindex,VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
+	DescriptorSetHandle CreateDescriptorSetHandle();
+	void CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle);
+	WriteDescriptorSet* CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
+	void AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
+	void AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex,VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
 
 
 
 	/// <Command Buffer Modulation>
 	
 	uint32_t m_commandbuffercount = 0;
-	std::unordered_map<uint32_t, std::vector<VkCommandBuffer>> mh_commandbuffers;
+	std::vector<std::vector<VkCommandBuffer>> mh_commandbuffers;
 	
-	uint32_t CreateCommandBufferHandle();
-	void CreateCommandBuffer(uint32_t handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
+	BufferHandle CreateCommandBufferHandle();
+	void CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
 
 
 	//Record Command Buffer modulation
 
-	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
+	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle);
 
 	
 	//Vulkan memory allocator
@@ -844,7 +839,7 @@ private:
 
 	//quarantine functions
 
-	void CreateImageT(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+	void CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
 
 
 

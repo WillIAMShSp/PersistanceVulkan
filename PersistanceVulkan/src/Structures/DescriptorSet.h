@@ -3,6 +3,8 @@
 #include "WriteDesciptorSet.h"
 #include <vector>
 
+typedef uint32_t DescriptorSetHandle;
+
 struct DescriptorSet
 {
 	std::vector<VkDescriptorSet> descriptorsets;

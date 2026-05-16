@@ -2,10 +2,12 @@
 #include "PersistanceLib.h"
 #include <vector>
 
+typedef uint32_t TextureHandle;
+typedef uint32_t TextureSamplerHandle;
+
 struct Texture
 {
 	VkImage image;
-	VkDeviceMemory memory;
 	VkImageView imageview;
 	VmaAllocation allocation;
 	int width;

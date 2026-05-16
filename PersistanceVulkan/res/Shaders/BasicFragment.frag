@@ -10,5 +10,5 @@ layout(binding = 1) uniform sampler2D texsampler;
 void main() {
 
     outColor = texture(texsampler, uvcords);
-    outColor = vec4(1.0,1.0,1.0,1.0);
+    
 }
