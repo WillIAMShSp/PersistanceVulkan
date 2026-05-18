@@ -45,6 +45,7 @@
 #include "Structures/Buffer.h"
 #include "Structures/GraphicsPipeline.h"
 #include "Structures/Framebuffer.h"
+#include "Structures/Drawable.h"
 
 
 
@@ -191,21 +192,10 @@ private:
 		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
 		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-
 		CreateDescriptorSetLayout(descriptorsetlayouthandle);
-
-
-
 
 		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
 
-
-
-
-
-		//CreateDescriptorSetLayout();
-		//CreateGraphicsPipeline();
-///////////////////////////////////////////////////
 		uint32_t pipeline = CreateGraphicsPipelineHandle();
 
 		AddVertexStage(pipeline, "res/Shaders/basicvert.spv"); /*Create shaders*/
@@ -228,16 +218,13 @@ private:
 		m_pipelinelayout = mh_graphicspipelines.at(pipeline).layout;
 
 
-
-		//////////////////////////////////////////////////
 #pragma endregion
 		FrameBufferHandle frmbffrhndl = CreateFrameBuffersHandle();
 		CreateFramebufferImage(frmbffrhndl);
 		CreateFramebufferImageViews(frmbffrhndl);
 		CreateFramebuffers(frmbffrhndl, renderpasshandle);
 
-		//////////////////////////////////////////////////
-
+		
 				//CreateTextureSampler();
 		uint32_t texturesamplerhandle = CreateTextureSamplerHandle();
 		uint32_t texturehandle = CreateTextureHandle();
@@ -245,9 +232,8 @@ private:
 		CreateTextureImageView(texturehandle);
 		CreateTextureSampler(texturesamplerhandle);
 
-		//////////////////////////////////////////////////
-
-				///////////////////////////
+		
+				
 		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
 		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), (uint32_t)vertices.size());
 
@@ -260,31 +246,20 @@ private:
 		uint32_t indexbufferhndl = CreateIndexBufferHandle();
 		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), (uint32_t)indices.size());
 
-		////////////////////////////////////
-
-
 				//CreateUniformBuffer();
-
-				////////////////////////
 
 		uint32_t uniformbufferhandle = CreateUniformBufferHandle();
 		CreateUniformBuffer(uniformbufferhandle, sizeof(ModelViewProjectionBuffer));
-		////////////////////////////////////
 
 				//CreateDescriptorPool();
-
-				////////////////////////
 
 		uint32_t descriptorpoolhandle = CreateDescriptorPoolHandle();
 		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 		CreateDescriptorPool(descriptorpoolhandle);
 
-
-
-		////////////////////////////////////
 				//CreateDescriptorSets();
-				////////////////////////
+
 		uint32_t descriptorsethandle = CreateDescriptorSetHandle();
 		uint32_t uniformbufferwritedescriptor;
 		uint32_t texturewritedescriptor;
@@ -602,15 +577,23 @@ private: //member variables
 	VmaAllocatorCreateInfo m_vmaalloccreateinfo{};
 	VmaAllocator m_vmaallocator;
 	VmaVulkanFunctions m_vmafunctions;
+	
+	const std::vector<const char*> m_deviceextensions
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 
 
 public:
 
+	//Getters and Setters
+	VkExtent2D GetSwapchainExtent();
+	uint32_t GetCurrentFrame();
+
+	//Drawing
 	void DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
 
 	//RenderPass modulation	
-
-
 
 	RenderPassHandle CreateRenderPassHandle();
 	uint32_t CreateRenderPassColorAttachment(RenderPassHandle handle,
@@ -672,6 +655,7 @@ public:
 	void CleanRenderPass();
 
 	//Descriptor set layout modulation
+
 	DescriptorSetLayoutHandle CreateDescriptorSetLayoutHandle(); //this fuction creates a handle for a descriptorsetlayout.
 	void AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding); //The handle is used here to add bindings to the layout;
 	void AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage);
@@ -691,10 +675,6 @@ public:
 
 	//Framebuffer modulation
 
-
-
-
-
 	FrameBufferHandle CreateFrameBuffersHandle();
 
 	void CreateFramebufferImage(FrameBufferHandle handle);
@@ -705,9 +685,6 @@ public:
 	void CleanFramebuffers();
 
 	//Texture modulation
-
-
-
 
 	uint32_t CreateTextureHandle();
 	void CreateTextureImage(TextureHandle handle, int width, int height);
@@ -734,16 +711,11 @@ public:
 
 	//Vertex buffer modulation
 
-
-
-
 	BufferHandle CreateVertexBufferHandle();
 	void CreateVertexBuffer(BufferHandle handle, const void* buffer, size_t elementsize, uint32_t elementcount);
 	void CleanVertexBuffers();
 
 	//Index buffer modulation
-
-
 
 	BufferHandle CreateIndexBufferHandle();
 	void CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_t indexcount);
@@ -751,9 +723,6 @@ public:
 	void CleanIndexBuffers();
 
 	//Uniform buffer modulation
-
-
-
 
 	uint32_t CreateUniformBufferHandle();
 	void CreateUniformBuffer(uint32_t handle, size_t buffersize);
@@ -763,8 +732,6 @@ public:
 
 	//Descriptor pool modulation
 
-
-
 	DescriptorPoolHandle CreateDescriptorPoolHandle();
 	void AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescriptorType type);
 	void CreateDescriptorPool(DescriptorPoolHandle handle);
@@ -773,45 +740,34 @@ public:
 
 	//Descriptor set modulation
 
-
-
 	DescriptorSetHandle CreateDescriptorSetHandle();
 	void CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle);
 	WriteDescriptorSet* CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
 	void AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
 	void AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
 
-
-
-	/// <Command Buffer Modulation>
+	/// Command Buffer Modulation
 
 	BufferHandle CreateCommandBufferHandle();
 	void CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
 
 
-	//Record Command Buffer modulation
+	// Record Command Buffer modulation
 
 	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle);
-
-
+	void BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags);
+	void BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, uint32_t swapchainimageindex, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
+	void BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
+	void SetViewport(BufferHandle commandbufferhandle, uint32_t commandbufferframe, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent);
+	void SetScissors(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkOffset2D offset, VkExtent2D extent);
+	void Draw(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings);
+	void DrawIndexed(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings);
+	void EndRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
+	void EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
 	//Vulkan memory allocator
-
-
 
 	void CreateAllocator();
 	void CleanAllocator();
-
-
-	const std::vector<const char*> m_deviceextensions
-	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-
-
-
-	//quarantine functions
-
-
 
 private: // Tesing
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
@@ -860,10 +816,5 @@ private: // Tesing
 	{{0.1f, 0.1f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 	{{-0.1f, 0.1f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
-
-
-
-
-
 
 };

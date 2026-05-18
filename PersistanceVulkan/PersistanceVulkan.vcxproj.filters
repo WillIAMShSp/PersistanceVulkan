@@ -104,6 +104,9 @@
     <ClInclude Include="src\Vendor\vma\VmaUsage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Structures\Drawable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\Shaders\BasicFragment.frag" />

@@ -463,8 +463,6 @@ void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& comm
 	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, mh_commandbuffers.at(handle).data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command buffer");
-
-
 	}
 
 
@@ -521,14 +519,12 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
-	//vkCmdBindIndexBuffer(commandbuffer, m_indexbuffer, 0, VK_INDEX_TYPE_UINT32);
+	
 	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle).buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	//vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &m_descriptorsets[m_currentframe], 0, nullptr);
-	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelinelayout, 0, 1, &mh_descriptorsets.at(descriptorsethandle).descriptorsets[m_currentframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).layout, 0, 1, &mh_descriptorsets.at(descriptorsethandle).descriptorsets[m_currentframe], 0, nullptr);
 
-	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (indices.size()), 1, 0, 0, 0);
-
+	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexbuffers.at(indexbufferhandle).size / sizeof(uint32_t)), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandbuffer);
 
@@ -538,6 +534,130 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 
 	}
 }
+
+void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags)
+{
+	VkCommandBufferBeginInfo cmdbufferbegininfo{};
+	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmdbufferbegininfo.flags = flags;
+	cmdbufferbegininfo.pInheritanceInfo = nullptr;
+
+	if (vkBeginCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(currentframe), &cmdbufferbegininfo) != VK_SUCCESS)
+	{
+		std::cout << "Couldnt begin command buffer \n";
+		BREAK(0);
+
+	}
+}
+
+void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, uint32_t swapchainimageindex, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
+{
+	VkRenderPassBeginInfo renderpassbegininfo{};
+	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
+	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
+
+	renderpassbegininfo.renderArea.offset = { 0,0 };
+	renderpassbegininfo.renderArea.extent = m_swapchainextent;
+
+	renderpassbegininfo.clearValueCount = 1;
+	renderpassbegininfo.pClearValues = &clearcolor;
+
+
+	vkCmdBeginRenderPass(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void PersistanceVk::BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle)
+{
+	vkCmdBindPipeline(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), bindingpoint, mh_graphicspipelines.at(handle).pipeline);
+}
+
+void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, uint32_t commandbufferframe, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent)
+{
+	VkViewport viewport{};
+	viewport.x = xpos;
+	viewport.y = ypos;
+	viewport.minDepth = mindepth;
+	viewport.maxDepth = maxdepth;
+	viewport.width = (float)extent.width;
+	viewport.height = (float)extent.height;
+	vkCmdSetViewport(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), 0, 1, &viewport);
+}
+
+void PersistanceVk::SetScissors(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkOffset2D offset, VkExtent2D extent)
+{
+	VkRect2D scissor{};
+	scissor.offset = offset;
+	scissor.extent = extent;
+	vkCmdSetScissor(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), 0, 1, &scissor);
+}
+
+void PersistanceVk::Draw(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings)
+{
+	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe);
+
+	BindGraphicsPipeline(commandbufferhandle, commandbufferframe, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
+
+	size_t buffercount = drawsettings.GetVertexBufferHandles().size();
+	size_t offsetcount = drawsettings.GetVertexBufferOffsets().size();
+	std::vector<VkBuffer> buffers;
+	buffers.reserve(buffercount);
+
+	size_t vertexcount = 0;
+
+	for (size_t i = 0; i < buffercount; i++) {
+		buffers.emplace_back(mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
+		vertexcount += mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).size;
+	}
+
+	vertexcount /= sizeof(uint32_t);
+
+	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers.data(), drawsettings.GetVertexBufferOffsets().data());
+
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[commandbufferframe], 0, nullptr);
+
+	vkCmdDraw(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), vertexcount, 1, 0, 0);
+}
+
+void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings)
+{
+	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe);
+
+	BindGraphicsPipeline(commandbufferhandle, commandbufferframe, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
+
+	size_t buffercount = drawsettings.GetVertexBufferHandles().size();
+	size_t offsetcount = drawsettings.GetVertexBufferOffsets().size();
+	std::vector<VkBuffer> buffers;
+	buffers.reserve(buffercount);
+
+	for (size_t i = 0; i < buffercount; i++) {
+		buffers.emplace_back(mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
+		
+	}
+
+	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers.data(), drawsettings.GetVertexBufferOffsets().data());
+
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[commandbufferframe], 0, nullptr);
+
+	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).size/sizeof(uint32_t)), 1, 0, 0, 0);
+
+}
+
+void PersistanceVk::EndRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe)
+{
+	vkCmdEndRenderPass(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe));
+}
+
+void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t commandbufferframe)
+{
+	if (vkEndCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe)) != VK_SUCCESS) 
+	{
+		BREAK(0);
+	}
+}
+
 
 void PersistanceVk::CreateAllocator()
 {
@@ -646,8 +766,6 @@ void PersistanceVk::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags us
 		buffercreateinfo.queueFamilyIndexCount = static_cast<uint32_t>(queuefamilyindices.size());
 		buffercreateinfo.pQueueFamilyIndices = queuefamilyindices.data();
 
-
-
 	}
 	
 
@@ -665,17 +783,14 @@ void PersistanceVk::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags us
 
 	}
 
-	
 }
 
 
 
 void PersistanceVk::CreateSyncObjects()
 {
-
 	VkSemaphoreCreateInfo semaphorecreateinfo{};
 	semaphorecreateinfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
 
 	VkFenceCreateInfo fencecreateinfo{};
 
@@ -688,7 +803,6 @@ void PersistanceVk::CreateSyncObjects()
 	f_imagesinflight.resize(m_swapchainimages.size(), VK_NULL_HANDLE);
 
 
-
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageavailable[i]) != VK_SUCCESS || vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_renderfinished[i]) != VK_SUCCESS || vkCreateFence(m_device, &fencecreateinfo, nullptr, &f_inflightfence[i]) != VK_SUCCESS)
@@ -697,9 +811,6 @@ void PersistanceVk::CreateSyncObjects()
 		}
 
 	}
-
-	
-
 }
 
 void PersistanceVk::CleanUpSwapchain()
@@ -714,9 +825,6 @@ void PersistanceVk::CleanUpSwapchain()
 
 	}
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-
-
-
 
 }
 
@@ -1385,6 +1493,16 @@ void PersistanceVk::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const 
 }
 
 
+VkExtent2D PersistanceVk::GetSwapchainExtent()
+{
+	return m_swapchainextent;
+}
+
+uint32_t PersistanceVk::GetCurrentFrame()
+{
+	return m_currentframe;
+}
+
 void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
 {
 
@@ -1506,11 +1624,6 @@ void PersistanceVk::RecreateSwapchain(uint32_t renderpasshandle)
 	CreateImageViews();
 	CreateSwapchainFramebuffers(renderpasshandle);
 
-
-
-
-
-	
 }
 
 
@@ -1627,10 +1740,6 @@ void PersistanceVk::TransitionImageLayout(VkImage& image, const VkFormat& format
 	}
 
 
-
-	
-
-
 	vkCmdPipelineBarrier(
 		commandbuffer,
 		srcstage, //todo
@@ -1666,8 +1775,6 @@ void PersistanceVk::CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t
 
 
 	vkCmdCopyBufferToImage(commandbuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imgcopy);
-
-
 	
 	EndSingleTimeCommands(commandbuffer, commandpool, submitqueue);
 
@@ -2419,7 +2526,8 @@ void PersistanceVk::CreateVertexBuffer(BufferHandle handle, const void* buffer, 
 	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
-	
+	mh_vertexbuffers.at(handle).size = buffersize;
+
 	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 	
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
@@ -2459,7 +2567,7 @@ void PersistanceVk::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_
 	vmaUnmapMemory(m_vmaallocator, stagingalloc);
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
-
+	mh_indexbuffers.at(handle).size = buffersize;
 
 	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
 

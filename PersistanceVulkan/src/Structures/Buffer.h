@@ -8,4 +8,5 @@ struct Buffer {
 
 	VkBuffer buffer;
 	VmaAllocation allocation;
+	size_t size;
 };

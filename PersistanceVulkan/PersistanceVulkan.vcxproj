@@ -151,6 +151,7 @@
     <ClInclude Include="src\Structures\DescriptorPool.h" />
     <ClInclude Include="src\Structures\DescriptorSet.h" />
     <ClInclude Include="src\Structures\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Structures\Drawable.h" />
     <ClInclude Include="src\Structures\Framebuffer.h" />
     <ClInclude Include="src\Structures\GraphicsPipeline.h" />
     <ClInclude Include="src\Structures\RenderPass.h" />
