@@ -583,11 +583,11 @@ void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_
 	}
 }
 
-void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, uint32_t swapchainimageindex, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
+void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
 {
 	VkRenderPassBeginInfo renderpassbegininfo{};
 	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
+	renderpassbegininfo.framebuffer = m_swapchainframebuffers[m_imageindex];
 	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 
 	renderpassbegininfo.renderArea.offset = { 0,0 };
@@ -1224,22 +1224,7 @@ QueueFamilyIndices PersistanceVk::FindQueueFamilies(VkPhysicalDevice& physicalde
 		}
 
 
-		// well a switch statement would be ideal honestly
-
-		//switch (queueflag)// & VK_QUEUE_GRAPHICS_BIT)
-		//{
-		// case (const char)queueflag & VK_QUEUE_GRAPHICS_BIT:
-		//	indices.graphicsfamily = i;
-		//	break; 
-		// case VK_QUEUE_COMPUTE_BIT:
-		//	 indices.computefamily = i;
-		//	 break;
-		// case VK_QUEUE_TRANSFER_BIT:
-		//	 indices.transferfamily = i;
-		//	 break;
-
-		//}
-
+		
 
 	}
 
@@ -1611,102 +1596,7 @@ VkCommandPool& PersistanceVk::GetTransferCommandPool()
 	return m_transfercommandpool;
 }
 
-void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
-{
 
-	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
-	
-	
-
-	uint32_t imageindex;
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], nullptr, &imageindex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		RecreateSwapchain(renderpasshandle);
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error("Failed to aquire swapchain image!");
-
-	}
-
-	if (f_imagesinflight[imageindex] != VK_NULL_HANDLE) 
-	{
-		vkWaitForFences(m_device, 1, &f_imagesinflight[imageindex], true, UINT64_MAX);
-	}
-	
-	f_imagesinflight[imageindex] = f_inflightfence[m_currentframe];
-	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
-	
-
-	//UpdateUniformBuffer(m_currentframe);
-	
-	MVP();
-
-	UpdateUniformBuffer(0, &buf, m_currentframe);
-
-
-	vkResetCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], 0);
-
-	RecordCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], imageindex, graphicspipelinehandle, vertexbufferhandle, indexbufferhandle, descriptorsethandle, renderpasshandle);
-
-	VkSemaphore waitsemaphores[] = {s_imageavailable[m_currentframe]};
-	VkSemaphore signalsemaphores[] = {s_renderfinished[m_currentframe]};
-	VkPipelineStageFlags waitstages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-	VkSubmitInfo submitinfo{};
-	
-
-	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitinfo.commandBufferCount = 1;
-	submitinfo.pCommandBuffers = &mh_commandbuffers.at(commandbufferhandle)[m_currentframe];
-	submitinfo.waitSemaphoreCount = 1;
-	submitinfo.pWaitSemaphores = waitsemaphores;
-	submitinfo.pWaitDstStageMask = waitstages;
-	submitinfo.signalSemaphoreCount = 1;
-	submitinfo.pSignalSemaphores = signalsemaphores;
-	
-	
-
-	if (vkQueueSubmit(m_graphicsqueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to submit graphics queue!");
-
-	}	
-
-	VkSwapchainKHR swapchains[] = { m_swapchain };
-
-	VkPresentInfoKHR presentinfo{};
-	presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentinfo.waitSemaphoreCount = 1;
-	presentinfo.pWaitSemaphores = signalsemaphores;
-
-	presentinfo.swapchainCount = 1;
-	presentinfo.pSwapchains = swapchains;
-
-	presentinfo.pImageIndices = &imageindex;
-
-	presentinfo.pResults = nullptr;
-
-	result = vkQueuePresentKHR(m_presentqueue, &presentinfo);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
-	{
-		RecreateSwapchain(renderpasshandle);
-		m_windowresized = false;
-
-	}
-	else if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to present queue!";
-		BREAK;
-	}
-
-	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
-
-}
 
 
 void PersistanceVk::RecreateSwapchain(uint32_t renderpasshandle)

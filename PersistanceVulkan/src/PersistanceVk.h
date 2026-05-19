@@ -115,13 +115,17 @@ struct ModelViewProjectionBuffer
 class PersistanceVk
 {
 public:
-	void run()
+	void Init()
 	{
 		InitWindow();
 		InitVulkan();
-		MainLoop();
-		CleanUp();
+		
+		
 
+	}
+	void End() 
+	{
+		CleanUp();
 	}
 
 private:
@@ -148,7 +152,6 @@ private:
 
 	void InitVulkan()
 	{
-#pragma region InitFunc
 		volkInitialize();
 		CreateInstance();
 		volkLoadInstance(m_instance);
@@ -162,166 +165,9 @@ private:
 		CreateImageViews();
 		CreateCommandPools();
 		CreateSyncObjects();
-#pragma endregion
-		uint32_t renderpasshandle = CreateRenderPassHandle();
-		uint32_t colorattachment = CreateRenderPassColorAttachment(
-			renderpasshandle,
-			m_swapchainimageformat,
-			VK_SAMPLE_COUNT_1_BIT,
-			VK_ATTACHMENT_LOAD_OP_CLEAR,
-			VK_ATTACHMENT_STORE_OP_STORE,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-		uint32_t subpassdescription = CreateSubpassDescription(renderpasshandle, &colorattachment, 1, UINT32_MAX, nullptr, 0, nullptr, 0);
-		uint32_t subpassdependency = CreateSubpassDependency(
-			renderpasshandle,
-			VK_SUBPASS_EXTERNAL,
-			0,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			0,
-			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-		CreateRenderPass(renderpasshandle, &colorattachment, 1, &subpassdescription, 1, &subpassdependency, 1);
-		CreateSwapchainFramebuffers(renderpasshandle);
-
-
-
-		//////// DescriptorSetLayouts
-
-		int descriptorsetlayouthandle;
-		descriptorsetlayouthandle = CreateDescriptorSetLayoutHandle();
-		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-		AddDescriptorSetLayoutBinding(descriptorsetlayouthandle, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-		CreateDescriptorSetLayout(descriptorsetlayouthandle);
-
-		//The way this works is we create a layout handle and we create bindings associating it to that handle. we create a descriptorsetlayout associated with that handle. For now, it becomes the used descriptorsetlayout.
-
-		uint32_t pipeline = CreateGraphicsPipelineHandle();
-
-		AddVertexStage(pipeline, "res/Shaders/basicvert.spv"); /*Create shaders*/
-		AddFragmentStage(pipeline, "res/Shaders/basicfrag.spv"); //
-		CreateGraphicsPipelineLayout(pipeline, descriptorsetlayouthandle);
-		PipelineSettings settings;
-		VertexInputStateLayout vertexbufferlayout;
-		vertexbufferlayout.push<glm::vec2>();/*Configure vertex array layout*/
-		vertexbufferlayout.push<glm::vec3>();//
-		vertexbufferlayout.push<glm::vec2>();//
-		settings.CreateVertexInputState(vertexbufferlayout);
-		settings.DefineInputAssemblyState();
-		settings.CreateStaticViewPort();
-		settings.ConfigureRasterizationStage();
-		settings.ConfigureMultisample();
-		settings.ConfigureColorBlend();
-		settings.UseDynamicViewport();
-		CreateGraphicsPipeline(pipeline, settings, renderpasshandle);
-		
-		FrameBufferHandle frmbffrhndl = CreateFrameBuffersHandle();
-		CreateFramebufferImage(frmbffrhndl);
-		CreateFramebufferImageViews(frmbffrhndl);
-		CreateFramebuffers(frmbffrhndl, renderpasshandle);
-
-		
-				//CreateTextureSampler();
-		uint32_t texturesamplerhandle = CreateTextureSamplerHandle();
-		uint32_t texturehandle = CreateTextureHandle();
-		CreateTextureImage(texturehandle, "res/Textures/Placeholder.png");
-		CreateTextureImageView(texturehandle);
-		CreateTextureSampler(texturesamplerhandle);
-
-		
-				
-		uint32_t vertexbufferhndl = CreateVertexBufferHandle();
-		CreateVertexBuffer(vertexbufferhndl, vertices.data(), sizeof(vertices[0]), (uint32_t)vertices.size());
-
-		/////TESTVB/////
-		uint32_t testvbhandl = CreateVertexBufferHandle();
-		CreateVertexBuffer(testvbhandl, TESTvertices.data(), sizeof(TESTvertices[0]), (uint32_t)TESTvertices.size());
-		////////////////
-
-
-		uint32_t indexbufferhndl = CreateIndexBufferHandle();
-		CreateIndexBuffer(indexbufferhndl, (void*)indices.data(), (uint32_t)indices.size());
-
-				//CreateUniformBuffer();
-
-		uint32_t uniformbufferhandle = CreateUniformBufferHandle();
-		CreateUniformBuffer(uniformbufferhandle, sizeof(ModelViewProjectionBuffer));
-
-				//CreateDescriptorPool();
-
-		uint32_t descriptorpoolhandle = CreateDescriptorPoolHandle();
-		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-		AddDescriptorPoolSize(descriptorpoolhandle, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-		CreateDescriptorPool(descriptorpoolhandle);
-
-				//CreateDescriptorSets();
-
-		uint32_t descriptorsethandle = CreateDescriptorSetHandle();
-		uint32_t uniformbufferwritedescriptor;
-		uint32_t texturewritedescriptor;
-		CreateWriteDescriptorSet(descriptorsethandle, 1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &uniformbufferwritedescriptor);
-		AddDescriptorBufferInfoToWriteDescriptorSet(descriptorsethandle, uniformbufferwritedescriptor, uniformbufferhandle, 0, sizeof(ModelViewProjectionBuffer));
-		CreateWriteDescriptorSet(descriptorsethandle, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &texturewritedescriptor);
-		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texturehandle, texturesamplerhandle);
-		CreateDescriptorSets(descriptorsethandle, descriptorsetlayouthandle, descriptorpoolhandle);
-
-		////////////////////////////////////
-				//CreateCommandBuffer();
-				//////////////////////
-		uint32_t commandbufferhandle = CreateCommandBufferHandle();
-		CreateCommandBuffer(commandbufferhandle, m_graphicscommandpool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-
-
-		drawing.AddVertexBuffer(vertexbufferhndl);
-		drawing.AddVertexBufferOffset(0);
-		drawing.SetDescriptorSetHandle(descriptorsethandle);
-		drawing.SetGraphicsPipelineHandle(pipeline);
-		drawing.SetIndexBufferHandle(indexbufferhndl);
-		drawing.SetGraphicsPipelineBindingPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-
 	}
 
-	void MainLoop()
-	{
-		while (!glfwWindowShouldClose(m_window))
-		{
-			glfwPollEvents();
-
-
-			
-
-
-			StartDrawing(0,0);
-
-			MVP();
-			UpdateUniformBuffer(0, &buf, GetCurrentFrame());
-
-			BeginCommandBuffer(0,GetCurrentFrame(), 0);
-
-			VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
-			VkOffset2D offset = { 0,0 };
-
-			BeginRenderPass(0, GetCurrentFrame(), 0, m_imageindex, clearcolor, VkRect2D(), GetSwapchainExtent());
-			BindGraphicsPipeline(0,GetCurrentFrame(), VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
-			SetViewport(0, GetCurrentFrame(), 0, 0, 0.f, 1.f, GetSwapchainExtent());
-			SetScissors(0,GetCurrentFrame(), offset, GetSwapchainExtent());
-			DrawIndexed(0,GetCurrentFrame(), drawing);
-			EndRenderPass(0, GetCurrentFrame());
-			EndCommandBuffer(0, GetCurrentFrame());
-			EndAndPresentDrawing(0, 0);
-			
-			//DrawFrame(0,0,0,0,0,0);
-
-			
-
-		}
-
-		vkDeviceWaitIdle(m_device);
-
-	}
-
+	
 	void CleanUp()
 	{
 
@@ -386,52 +232,7 @@ public:
 
 	}
 
-	struct Vertex
-	{
-		glm::vec2 position;
-		glm::vec3 color;
-		glm::vec2 uv;
-
-		static VkVertexInputBindingDescription GetBindingDescription()
-		{
-			VkVertexInputBindingDescription bindingdescription{};
-			bindingdescription.binding = 0;
-			bindingdescription.stride = sizeof(Vertex);
-			bindingdescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-
-
-			return bindingdescription;
-
-		}
-
-		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription()
-		{
-			std::vector<VkVertexInputAttributeDescription> attributedescription{};
-			attributedescription.resize(3);
-
-			attributedescription[0].binding = 0;
-			attributedescription[0].location = 0;
-			attributedescription[0].format = VK_FORMAT_R32G32_SFLOAT;
-			attributedescription[0].offset = offsetof(Vertex, position);
-
-			attributedescription[1].binding = 0;
-			attributedescription[1].location = 1;
-			attributedescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-			attributedescription[1].offset = offsetof(Vertex, color);
-
-			attributedescription[2].binding = 0;
-			attributedescription[2].location = 2;
-			attributedescription[2].format = VK_FORMAT_R32G32_SFLOAT;
-			attributedescription[2].offset = offsetof(Vertex, uv);
-
-
-			return attributedescription;
-
-		}
-
-
-	};
+	
 
 
 
@@ -450,8 +251,6 @@ private:
 	void CreateSwapChain();
 
 	void CreateImageViews();
-
-	void CreateSwapchainFramebuffers(uint32_t renderpasshandle);
 
 	void CreateCommandPools();
 
@@ -606,10 +405,6 @@ public:
 	VkCommandPool& GetGraphicsCommandPool();
 	VkCommandPool& GetTransferCommandPool();
 
-
-	//Drawing
-	void DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
-
 	//RenderPass modulation	
 
 	RenderPassHandle CreateRenderPassHandle();
@@ -668,6 +463,7 @@ public:
 		uint32_t subpassdescriptioncount,
 		const uint32_t* subpassdependencyindices,
 		uint32_t subpassdependencycount);
+	void CreateSwapchainFramebuffers(uint32_t renderpasshandle);
 
 	void CleanRenderPass();
 
@@ -776,7 +572,7 @@ public:
 
 	void StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle);
 	void BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags);
-	void BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, uint32_t swapchainimageindex, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
+	void BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
 	void BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
 	void SetViewport(BufferHandle commandbufferhandle, uint32_t commandbufferframe, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent);
 	void SetScissors(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkOffset2D offset, VkExtent2D extent);
@@ -791,52 +587,18 @@ public:
 	void CreateAllocator();
 	void CleanAllocator();
 
-private: // Tesing
-	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
-
-
-	//test 
-	ModelViewProjectionBuffer buf;
-	void MVP()
+	bool IsRunning() 
 	{
-		static auto starttime = std::chrono::high_resolution_clock::now();
-
-		auto currenttime = std::chrono::high_resolution_clock::now();
-
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
-
-		ModelViewProjectionBuffer mvp;
-
-		mvp.model = glm::mat4(1.0);
-		mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-		mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
-
-		mvp.projection[1][1] *= -1;
-		buf = mvp;
+		return !glfwWindowShouldClose(m_window);
 	}
-	//test\\\
-
-
-	const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-	};
-	const std::vector<uint32_t> indices =
+	void PollEvents() 
 	{
-		0, 1, 2, 2, 3, 0
+		glfwPollEvents();
+	}
+	void WaitForDeviceIdle() 
+	{
+		vkDeviceWaitIdle(m_device);
+	} 
 
-	};
-
-
-	const std::vector<Vertex> TESTvertices = {
-	{{-0.1f, -0.1f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.1f, -0.1f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.1f, 0.1f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.1f, 0.1f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-	};
-
-	Drawable drawing;
 
 };
