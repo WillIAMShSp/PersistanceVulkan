@@ -571,15 +571,15 @@ public:
 
 
 	void StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle);
-	void BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags);
-	void BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
-	void BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
-	void SetViewport(BufferHandle commandbufferhandle, uint32_t commandbufferframe, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent);
-	void SetScissors(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkOffset2D offset, VkExtent2D extent);
-	void Draw(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings);
-	void DrawIndexed(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings);
-	void EndRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
-	void EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
+	void BeginCommandBuffer(BufferHandle commandbufferhandle, VkCommandBufferUsageFlags flags);
+	void BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
+	void BindGraphicsPipeline(BufferHandle commandbufferhandle, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
+	void SetViewport(BufferHandle commandbufferhandle, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent);
+	void SetScissors(BufferHandle commandbufferhandle, VkOffset2D offset, VkExtent2D extent);
+	void Draw(BufferHandle commandbufferhandle, Drawable drawsettings);
+	void DrawIndexed(BufferHandle commandbufferhandle, Drawable drawsettings);
+	void EndRenderPass(BufferHandle commandbufferhandle);
+	void EndCommandBuffer(BufferHandle commandbufferhandle);
 	void EndAndPresentDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpassHandle);
 
 	//Vulkan memory allocator

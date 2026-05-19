@@ -568,14 +568,14 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	}
 }
 
-void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags)
+void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, VkCommandBufferUsageFlags flags)
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
 	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmdbufferbegininfo.flags = flags;
 	cmdbufferbegininfo.pInheritanceInfo = nullptr;
 
-	if (vkBeginCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(currentframe), &cmdbufferbegininfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), &cmdbufferbegininfo) != VK_SUCCESS)
 	{
 		std::cout << "Couldnt begin command buffer \n";
 		BREAK(0);
@@ -583,7 +583,7 @@ void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_
 	}
 }
 
-void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
+void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
 {
 	VkRenderPassBeginInfo renderpassbegininfo{};
 	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -597,15 +597,15 @@ void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, uint32_t c
 	renderpassbegininfo.pClearValues = &clearcolor;
 
 
-	vkCmdBeginRenderPass(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void PersistanceVk::BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle)
+void PersistanceVk::BindGraphicsPipeline(BufferHandle commandbufferhandle, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle)
 {
-	vkCmdBindPipeline(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), bindingpoint, mh_graphicspipelines.at(handle).pipeline);
+	vkCmdBindPipeline(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), bindingpoint, mh_graphicspipelines.at(handle).pipeline);
 }
 
-void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, uint32_t commandbufferframe, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent)
+void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent)
 {
 	VkViewport viewport{};
 	viewport.x = xpos;
@@ -614,22 +614,22 @@ void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, uint32_t comma
 	viewport.maxDepth = maxdepth;
 	viewport.width = (float)extent.width;
 	viewport.height = (float)extent.height;
-	vkCmdSetViewport(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), 0, 1, &viewport);
+	vkCmdSetViewport(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), 0, 1, &viewport);
 }
 
-void PersistanceVk::SetScissors(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkOffset2D offset, VkExtent2D extent)
+void PersistanceVk::SetScissors(BufferHandle commandbufferhandle, VkOffset2D offset, VkExtent2D extent)
 {
 	VkRect2D scissor{};
 	scissor.offset = offset;
 	scissor.extent = extent;
-	vkCmdSetScissor(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), 0, 1, &scissor);
+	vkCmdSetScissor(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), 0, 1, &scissor);
 }
 
-void PersistanceVk::Draw(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings)
+void PersistanceVk::Draw(BufferHandle commandbufferhandle, Drawable drawsettings)
 {
-	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe);
+	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(m_currentframe);
 
-	BindGraphicsPipeline(commandbufferhandle, commandbufferframe, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
+	BindGraphicsPipeline(commandbufferhandle, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
 
 	size_t buffercount = drawsettings.GetVertexBufferHandles().size();
 	size_t offsetcount = drawsettings.GetVertexBufferOffsets().size();
@@ -647,16 +647,16 @@ void PersistanceVk::Draw(BufferHandle commandbufferhandle, uint32_t commandbuffe
 
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers.data(), drawsettings.GetVertexBufferOffsets().data());
 
-	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[commandbufferframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentframe], 0, nullptr);
 
-	vkCmdDraw(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe), vertexcount, 1, 0, 0);
+	vkCmdDraw(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), vertexcount, 1, 0, 0);
 }
 
-void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings)
+void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, Drawable drawsettings)
 {
-	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe);
+	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(m_currentframe);
 
-	BindGraphicsPipeline(commandbufferhandle, commandbufferframe, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
+	BindGraphicsPipeline(commandbufferhandle, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
 
 	size_t buffercount = drawsettings.GetVertexBufferHandles().size();
 	size_t offsetcount = drawsettings.GetVertexBufferOffsets().size();
@@ -672,20 +672,20 @@ void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, uint32_t comma
 
 	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[commandbufferframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentframe], 0, nullptr);
 
 	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).size/sizeof(uint32_t)), 1, 0, 0, 0);
 
 }
 
-void PersistanceVk::EndRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe)
+void PersistanceVk::EndRenderPass(BufferHandle commandbufferhandle)
 {
-	vkCmdEndRenderPass(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe));
+	vkCmdEndRenderPass(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe));
 }
 
-void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t commandbufferframe)
+void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle)
 {
-	if (vkEndCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(commandbufferframe)) != VK_SUCCESS) 
+	if (vkEndCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe)) != VK_SUCCESS)
 	{
 		BREAK(0);
 	}

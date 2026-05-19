@@ -170,18 +170,18 @@ int main() {
 		MVP();
 		engine.UpdateUniformBuffer(uniformbufferhandle, &buf, engine.GetCurrentFrame());
 
-		engine.BeginCommandBuffer(commandbufferhandle, engine.GetCurrentFrame(), 0);
+		engine.BeginCommandBuffer(commandbufferhandle, 0);
 
 		VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
 		VkOffset2D offset = { 0,0 };
 
-		engine.BeginRenderPass(0, engine.GetCurrentFrame(), 0, clearcolor, VkRect2D(), engine.GetSwapchainExtent());
-		engine.BindGraphicsPipeline(0, engine.GetCurrentFrame(), VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
-		engine.SetViewport(0, engine.GetCurrentFrame(), 0, 0, 0.f, 1.f, engine.GetSwapchainExtent());
-		engine.SetScissors(0, engine.GetCurrentFrame(), offset, engine.GetSwapchainExtent());
-		engine.DrawIndexed(0, engine.GetCurrentFrame(), drawing);
-		engine.EndRenderPass(0, engine.GetCurrentFrame());
-		engine.EndCommandBuffer(0, engine.GetCurrentFrame());
+		engine.BeginRenderPass(0, 0, clearcolor, VkRect2D(), engine.GetSwapchainExtent());
+		engine.BindGraphicsPipeline(0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
+		engine.SetViewport(0, 0, 0, 0.f, 1.f, engine.GetSwapchainExtent());
+		engine.SetScissors(0, offset, engine.GetSwapchainExtent());
+		engine.DrawIndexed(0, drawing);
+		engine.EndRenderPass(0);
+		engine.EndCommandBuffer(0);
 		engine.EndAndPresentDrawing(0, 0);
 
 
