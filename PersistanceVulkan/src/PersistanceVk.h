@@ -161,6 +161,7 @@ private:
 		CreateSwapChain();
 		CreateImageViews();
 		CreateCommandPools();
+		CreateSyncObjects();
 #pragma endregion
 		uint32_t renderpasshandle = CreateRenderPassHandle();
 		uint32_t colorattachment = CreateRenderPassColorAttachment(
@@ -183,7 +184,7 @@ private:
 		CreateRenderPass(renderpasshandle, &colorattachment, 1, &subpassdescription, 1, &subpassdependency, 1);
 		CreateSwapchainFramebuffers(renderpasshandle);
 
-#pragma region done
+
 
 		//////// DescriptorSetLayouts
 
@@ -214,11 +215,7 @@ private:
 		settings.ConfigureColorBlend();
 		settings.UseDynamicViewport();
 		CreateGraphicsPipeline(pipeline, settings, renderpasshandle);
-		m_pipeline = mh_graphicspipelines.at(pipeline).pipeline;
-		m_pipelinelayout = mh_graphicspipelines.at(pipeline).layout;
-
-
-#pragma endregion
+		
 		FrameBufferHandle frmbffrhndl = CreateFrameBuffersHandle();
 		CreateFramebufferImage(frmbffrhndl);
 		CreateFramebufferImageViews(frmbffrhndl);
@@ -266,7 +263,7 @@ private:
 		CreateWriteDescriptorSet(descriptorsethandle, 1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &uniformbufferwritedescriptor);
 		AddDescriptorBufferInfoToWriteDescriptorSet(descriptorsethandle, uniformbufferwritedescriptor, uniformbufferhandle, 0, sizeof(ModelViewProjectionBuffer));
 		CreateWriteDescriptorSet(descriptorsethandle, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &texturewritedescriptor);
-		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mh_textures.at(texturehandle).imageview, mh_texturesamplers.at(texturesamplerhandle));
+		AddDescriptorImageInfoToWriteDescriptorSet(descriptorsethandle, texturewritedescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texturehandle, texturesamplerhandle);
 		CreateDescriptorSets(descriptorsethandle, descriptorsetlayouthandle, descriptorpoolhandle);
 
 		////////////////////////////////////
@@ -277,12 +274,14 @@ private:
 
 
 
-
-		CreateSyncObjects();
+		drawing.AddVertexBuffer(vertexbufferhndl);
+		drawing.AddVertexBufferOffset(0);
+		drawing.SetDescriptorSetHandle(descriptorsethandle);
+		drawing.SetGraphicsPipelineHandle(pipeline);
+		drawing.SetIndexBufferHandle(indexbufferhndl);
+		drawing.SetGraphicsPipelineBindingPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 	}
-
-
 
 	void MainLoop()
 	{
@@ -290,7 +289,32 @@ private:
 		{
 			glfwPollEvents();
 
-			DrawFrame(0, 0, 0, 0, 0, 0);
+
+			
+
+
+			StartDrawing(0,0);
+
+			MVP();
+			UpdateUniformBuffer(0, &buf, GetCurrentFrame());
+
+			BeginCommandBuffer(0,GetCurrentFrame(), 0);
+
+			VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
+			VkOffset2D offset = { 0,0 };
+
+			BeginRenderPass(0, GetCurrentFrame(), 0, m_imageindex, clearcolor, VkRect2D(), GetSwapchainExtent());
+			BindGraphicsPipeline(0,GetCurrentFrame(), VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
+			SetViewport(0, GetCurrentFrame(), 0, 0, 0.f, 1.f, GetSwapchainExtent());
+			SetScissors(0,GetCurrentFrame(), offset, GetSwapchainExtent());
+			DrawIndexed(0,GetCurrentFrame(), drawing);
+			EndRenderPass(0, GetCurrentFrame());
+			EndCommandBuffer(0, GetCurrentFrame());
+			EndAndPresentDrawing(0, 0);
+			
+			//DrawFrame(0,0,0,0,0,0);
+
+			
 
 		}
 
@@ -306,8 +330,7 @@ private:
 
 
 		CleanTextures();
-		vkDestroySampler(m_device, m_texsampler, nullptr);
-
+		
 		CleanDescriptorPools();
 		CleanDescriptorSetLayout();
 
@@ -497,8 +520,6 @@ private:
 
 	uint32_t FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlags flags);
 
-	void UpdateUniformBuffer(const uint32_t& currentframe);
-
 	void TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue);
 
 	void CopyBuffertoImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue);
@@ -508,7 +529,7 @@ private:
 private: //member variables
 
 	GLFWwindow* m_window = nullptr;
-	VkInstance m_instance = nullptr;
+	VkInstance m_instance;
 	VkDebugUtilsMessengerEXT debugmessenger;
 	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
 	QueueFamilyIndices m_queuefamilyindices;
@@ -538,18 +559,10 @@ private: //member variables
 	std::vector<VkFence> f_imagesinflight;
 	bool m_windowresized = false;
 
-	VkBuffer m_vertexbuffer;
-	VkDeviceMemory m_vertexbuffermemory;
-	VkBuffer m_indexbuffer;
-	VkDeviceMemory m_indexbuffermemory;
-	std::vector<VkBuffer> m_uniformbuffers;
-	std::vector<VkDeviceMemory> m_uniformbuffermem;
-	std::vector<void*> m_uniformbuffersmapped;
+	uint32_t m_currentframe = 0;
+	uint32_t m_imageindex = 0;
+	bool m_drawingstarted = false;
 
-	VkImage m_textureimage;
-	VkDeviceMemory m_textureimagemem;
-	VkImageView m_teximageview;
-	VkSampler m_texsampler;
 	uint32_t m_renderpasscount = 0;
 	std::vector<RenderPass> mh_renderpasses;
 	std::vector<DescriptorSetLayout> mh_descriptorsetlayouts;
@@ -587,8 +600,12 @@ private: //member variables
 public:
 
 	//Getters and Setters
-	VkExtent2D GetSwapchainExtent();
+	VkExtent2D& GetSwapchainExtent();
+	VkFormat& GetSwapchainImageFormat();
 	uint32_t GetCurrentFrame();
+	VkCommandPool& GetGraphicsCommandPool();
+	VkCommandPool& GetTransferCommandPool();
+
 
 	//Drawing
 	void DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle);
@@ -744,7 +761,7 @@ public:
 	void CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle);
 	WriteDescriptorSet* CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex);
 	void AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range);
-	void AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler);
+	void AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, TextureHandle texturehandle, TextureSamplerHandle texturesamplerhandle);
 
 	/// Command Buffer Modulation
 
@@ -755,6 +772,9 @@ public:
 	// Record Command Buffer modulation
 
 	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle);
+
+
+	void StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle);
 	void BeginCommandBuffer(BufferHandle commandbufferhandle, uint32_t currentframe, VkCommandBufferUsageFlags flags);
 	void BeginRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe, RenderPassHandle renderpasshandle, uint32_t swapchainimageindex, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
 	void BindGraphicsPipeline(BufferHandle commandbufferhandle, uint32_t commandbufferframe, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
@@ -764,6 +784,8 @@ public:
 	void DrawIndexed(BufferHandle commandbufferhandle, uint32_t commandbufferframe, Drawable drawsettings);
 	void EndRenderPass(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
 	void EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t commandbufferframe);
+	void EndAndPresentDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpassHandle);
+
 	//Vulkan memory allocator
 
 	void CreateAllocator();
@@ -772,8 +794,6 @@ public:
 private: // Tesing
 	//bool IsDeviceSuitable(VkPhysicalDevice& physicaldevice);
 
-
-	uint32_t m_currentframe = 0;
 
 	//test 
 	ModelViewProjectionBuffer buf;
@@ -816,5 +836,7 @@ private: // Tesing
 	{{0.1f, 0.1f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 	{{-0.1f, 0.1f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
+
+	Drawable drawing;
 
 };

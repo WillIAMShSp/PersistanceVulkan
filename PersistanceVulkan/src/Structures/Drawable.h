@@ -53,6 +53,10 @@ public:
 	{
 		m_graphicspipelinehandle = handle;
 	}
+	void SetGraphicsPipelineBindingPoint(VkPipelineBindPoint point) 
+	{
+		m_bindingpoint = point;
+	}
 
 private:
 	std::vector<uint32_t>m_vertexbufferhandles;

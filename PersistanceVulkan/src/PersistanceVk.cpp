@@ -425,7 +425,7 @@ void PersistanceVk::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHan
 
 }
 
-void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, VkImageView imageview, VkSampler sampler)
+void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, TextureHandle texturehandle, TextureSamplerHandle texturesamplerhandle)
 {
 	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
 	{
@@ -434,8 +434,8 @@ void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHand
 
 	DescriptorImageInfo info;
 	info.imagelayout = imagelayout;
-	info.imageview = imageview;
-	info.sampler = sampler;
+	info.imageview = mh_textures.at(texturehandle).imageview;
+	info.sampler = mh_texturesamplers.at(texturesamplerhandle);
 
 	mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.push_back(info);
 
@@ -468,6 +468,41 @@ void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& comm
 
 }
 
+void PersistanceVk::StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle)
+{
+	if (m_drawingstarted)
+	{
+		std::cout << "Previous drawing not ended properly";
+	}
+	else 
+	{
+		m_drawingstarted = true;
+	}
+
+	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
+
+	
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], nullptr, &m_imageindex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		RecreateSwapchain(renderpasshandle);
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("Failed to aquire swapchain image!");
+	}
+	if (f_imagesinflight[m_imageindex] != VK_NULL_HANDLE)
+	{
+		vkWaitForFences(m_device, 1, &f_imagesinflight[m_imageindex], true, UINT64_MAX);
+	}
+	f_imagesinflight[m_imageindex] = f_inflightfence[m_currentframe];
+	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
+
+	vkResetCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], 0);
+
+}
+
 void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle)
 {
 	VkCommandBufferBeginInfo cmdbufferbegininfo{};
@@ -497,14 +532,6 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
 
 
-	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).pipeline);
-
-	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle).buffer };//{m_vertexbuffer};
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
-
-
-
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
@@ -519,6 +546,12 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	scissor.extent = m_swapchainextent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
+
+	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).pipeline);
+
+	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle).buffer };//{m_vertexbuffer};
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
 	
 	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle).buffer, 0, VK_INDEX_TYPE_UINT32);
 
@@ -656,6 +689,66 @@ void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle, uint32_t 
 	{
 		BREAK(0);
 	}
+}
+
+void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle)
+{
+	VkSemaphore waitsemaphores[] = { s_imageavailable[m_currentframe] };
+	VkSemaphore signalsemaphores[] = { s_renderfinished[m_currentframe] };
+	VkPipelineStageFlags waitstages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	VkSubmitInfo submitinfo{};
+
+
+	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitinfo.commandBufferCount = 1;
+	submitinfo.pCommandBuffers = &mh_commandbuffers.at(commandbufferhandle)[m_currentframe];
+	submitinfo.waitSemaphoreCount = 1;
+	submitinfo.pWaitSemaphores = waitsemaphores;
+	submitinfo.pWaitDstStageMask = waitstages;
+	submitinfo.signalSemaphoreCount = 1;
+	submitinfo.pSignalSemaphores = signalsemaphores;
+
+
+
+	if (vkQueueSubmit(m_graphicsqueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to submit graphics queue!");
+
+	}
+
+	VkSwapchainKHR swapchains[] = { m_swapchain };
+
+	VkPresentInfoKHR presentinfo{};
+	presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentinfo.waitSemaphoreCount = 1;
+	presentinfo.pWaitSemaphores = signalsemaphores;
+
+	presentinfo.swapchainCount = 1;
+	presentinfo.pSwapchains = swapchains;
+
+	presentinfo.pImageIndices = &m_imageindex;
+
+	presentinfo.pResults = nullptr;
+
+	VkResult result = vkQueuePresentKHR(m_presentqueue, &presentinfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
+	{
+		RecreateSwapchain(renderpasshandle);
+		m_windowresized = false;
+
+	}
+	else if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to present queue!";
+		BREAK;
+	}
+
+	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
+	m_drawingstarted = false;
+
 }
 
 
@@ -1493,14 +1586,29 @@ void PersistanceVk::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const 
 }
 
 
-VkExtent2D PersistanceVk::GetSwapchainExtent()
+VkExtent2D& PersistanceVk::GetSwapchainExtent()
 {
 	return m_swapchainextent;
+}
+
+VkFormat& PersistanceVk::GetSwapchainImageFormat()
+{
+	return m_swapchainimageformat;
 }
 
 uint32_t PersistanceVk::GetCurrentFrame()
 {
 	return m_currentframe;
+}
+
+VkCommandPool& PersistanceVk::GetGraphicsCommandPool()
+{
+	return m_graphicscommandpool;
+}
+
+VkCommandPool& PersistanceVk::GetTransferCommandPool()
+{
+	return m_transfercommandpool;
 }
 
 void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t graphicspipelinehandle, const uint32_t vertexbufferhandle, const uint32_t indexbufferhandle, const uint32_t descriptorsethandle, const uint32_t renderpasshandle)
@@ -1565,7 +1673,7 @@ void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t
 	{
 		throw std::runtime_error("Failed to submit graphics queue!");
 
-	}
+	}	
 
 	VkSwapchainKHR swapchains[] = { m_swapchain };
 
@@ -1592,8 +1700,8 @@ void PersistanceVk::DrawFrame(const uint32_t commandbufferhandle, const uint32_t
 	}
 	else if (result != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to present queue!");
-
+		std::cout << "Failed to present queue!";
+		BREAK;
 	}
 
 	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
@@ -1667,26 +1775,7 @@ uint32_t PersistanceVk::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlag
 	return 0;
 }
 
-void PersistanceVk::UpdateUniformBuffer(const uint32_t& currentframe)
-{
-	static auto starttime = std::chrono::high_resolution_clock::now();
-	
-	auto currenttime = std::chrono::high_resolution_clock::now();
-	
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currenttime - starttime).count();
 
-	ModelViewProjectionBuffer mvp;
-
-	mvp.model = glm::mat4(1.0);
-	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	mvp.projection = glm::perspective(45.f, ((float)m_swapchainextent.width / (float)m_swapchainextent.height), 0.1f, 100.f);
-
-	mvp.projection[1][1] *= -1;
-
-	memcpy(m_uniformbuffersmapped[currentframe], &mvp, sizeof(mvp));
-
-
-}
 
 void PersistanceVk::TransitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue)
 {
