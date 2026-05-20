@@ -175,14 +175,14 @@ int main() {
 		VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
 		VkOffset2D offset = { 0,0 };
 
-		engine.BeginRenderPass(0, 0, clearcolor, VkRect2D(), engine.GetSwapchainExtent());
-		engine.BindGraphicsPipeline(0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
-		engine.SetViewport(0, 0, 0, 0.f, 1.f, engine.GetSwapchainExtent());
-		engine.SetScissors(0, offset, engine.GetSwapchainExtent());
-		engine.DrawIndexed(0, drawing);
-		engine.EndRenderPass(0);
-		engine.EndCommandBuffer(0);
-		engine.EndAndPresentDrawing(0, 0);
+		engine.BeginRenderPass(commandbufferhandle, renderpasshandle, clearcolor, VkRect2D(), engine.GetSwapchainExtent());
+		engine.BindGraphicsPipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
+		engine.SetViewport(commandbufferhandle, 0.f, 0.f, 0.f, 1.f, engine.GetSwapchainExtent());
+		engine.SetScissors(commandbufferhandle, offset, engine.GetSwapchainExtent());
+		engine.DrawIndexed(commandbufferhandle, drawing);
+		engine.EndRenderPass(commandbufferhandle);
+		engine.EndCommandBuffer(commandbufferhandle);
+		engine.EndAndPresentDrawing(commandbufferhandle, renderpasshandle);
 
 
         

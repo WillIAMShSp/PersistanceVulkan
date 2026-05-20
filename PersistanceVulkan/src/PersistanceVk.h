@@ -180,7 +180,6 @@ private:
 		CleanDescriptorPools();
 		CleanDescriptorSetLayout();
 
-		vkDestroyDescriptorPool(m_device, m_descriptorpool, nullptr);
 		CleanUniformBuffers();
 
 		CleanVertexBuffers();
@@ -190,16 +189,16 @@ private:
 
 		for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 		{
-			vkDestroySemaphore(m_device, s_imageavailable[i], nullptr);
-			vkDestroySemaphore(m_device, s_renderfinished[i], nullptr);
-			vkDestroyFence(m_device, f_inflightfence[i], nullptr);
+			vkDestroySemaphore(m_device, s_imageAvailable[i], nullptr);
+			vkDestroySemaphore(m_device, s_renderFinished[i], nullptr);
+			vkDestroyFence(m_device, f_inFlightFence[i], nullptr);
 
 		}
 
 		CleanRenderPass();
 
-		vkDestroyCommandPool(m_device, m_graphicscommandpool, nullptr);
-		vkDestroyCommandPool(m_device, m_transfercommandpool, nullptr);
+		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
+		vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
 
 		CleanGraphicsPipelines();
 
@@ -209,7 +208,7 @@ private:
 
 		if (enablevalidationlayers)
 		{
-			DebugUtilsMessengerEXT::Destroy(m_instance, debugmessenger, nullptr);
+			DebugUtilsMessengerEXT::Destroy(m_instance, m_debugMessenger, nullptr);
 		}
 
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -227,7 +226,7 @@ public:
 	static void ResizeWindowCallback(GLFWwindow* window, int width, int height)
 	{
 		auto app = reinterpret_cast<PersistanceVk*>(glfwGetWindowUserPointer(window));
-		app->m_windowresized = true;
+		app->m_windowResized = true;
 
 
 	}
@@ -329,66 +328,60 @@ private: //member variables
 
 	GLFWwindow* m_window = nullptr;
 	VkInstance m_instance;
-	VkDebugUtilsMessengerEXT debugmessenger;
-	VkPhysicalDevice m_physicaldevice = VK_NULL_HANDLE;
-	QueueFamilyIndices m_queuefamilyindices;
+	VkDebugUtilsMessengerEXT m_debugMessenger;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+	QueueFamilyIndices m_queueFamilyIndices;
 	VkDevice m_device;
-	VkQueue m_graphicsqueue;
-	VkQueue m_presentqueue;
-	VkQueue m_transferqueue;
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
+	VkQueue m_transferQueue;
 	VkSurfaceKHR m_surface;
 	VkSwapchainKHR m_swapchain;
-	std::vector<VkImage> m_swapchainimages;
-	VkFormat m_swapchainimageformat;
-	VkExtent2D m_swapchainextent;
-	std::vector<VkImageView> m_swapchainimageviews;
-	VkDescriptorSetLayout m_descriptorsetlayout;
-	VkDescriptorPool m_descriptorpool;
-	std::vector<VkDescriptorSet> m_descriptorsets;
-	VkPipelineLayout m_pipelinelayout;
-	VkPipeline m_pipeline;
-	std::vector<VkFramebuffer> m_swapchainframebuffers;
-	VkCommandPool m_graphicscommandpool;
-	VkCommandPool m_transfercommandpool;
-	std::vector<VkCommandBuffer> m_commandbuffers;
+	std::vector<VkImage> m_swapchainImages;
+	VkFormat m_swapchainImageFormat;
+	VkExtent2D m_swapchainExtent;
+	std::vector<VkImageView> m_swapchainImageViews;
+	std::vector<VkFramebuffer> m_swapchainFramebuffers;
+	VkCommandPool m_graphicsCommandPool;
+	VkCommandPool m_transferCommandPool;
 
-	std::vector<VkSemaphore> s_imageavailable;
-	std::vector<VkSemaphore> s_renderfinished;
-	std::vector<VkFence> f_inflightfence;
-	std::vector<VkFence> f_imagesinflight;
-	bool m_windowresized = false;
+	std::vector<VkSemaphore> s_imageAvailable;
+	std::vector<VkSemaphore> s_renderFinished;
+	std::vector<VkFence> f_inFlightFence;
+	std::vector<VkFence> f_imagesInFlight;
+	bool m_windowResized = false;
 
-	uint32_t m_currentframe = 0;
-	uint32_t m_imageindex = 0;
-	bool m_drawingstarted = false;
+	uint32_t m_currentFrame = 0;
+	uint32_t m_imageIndex = 0;
+	bool m_currentlyDrawing = false;
 
-	uint32_t m_renderpasscount = 0;
-	std::vector<RenderPass> mh_renderpasses;
-	std::vector<DescriptorSetLayout> mh_descriptorsetlayouts;
-	uint32_t m_dslhandlecount = 0;
-	uint32_t m_pipelinecount = 0;
-	std::vector<GraphicsPipeline> mh_graphicspipelines;
-	uint32_t m_framebuffercount = 0;
+	uint32_t m_renderPassCount = 0;
+	std::vector<RenderPass> mh_renderPasses;
+	std::vector<DescriptorSetLayout> mh_descriptorSetLayouts;
+	uint32_t m_DSLHandleCount = 0;
+	uint32_t m_pipelineHandleCount = 0;
+	std::vector<GraphicsPipeline> mh_graphicsPipelines;
+	uint32_t m_framebufferHandleCount = 0;
 	std::vector<Framebuffer> mh_framebuffers;
 	std::vector<Texture> mh_textures;
-	std::vector <VkSampler> mh_texturesamplers;
-	uint32_t m_texturecount = 0;
-	uint32_t m_texturesamplercount = 0;
-	std::vector<Buffer> mh_vertexbuffers;
-	uint32_t m_vertexbuffercount = 0;
-	std::vector<Buffer> mh_indexbuffers;
-	uint32_t m_indexbuffercount = 0;
-	std::vector<UniformBuffer> mh_uniformbuffers;
-	uint32_t m_uniformbuffercount = 0;
-	uint32_t m_descriptorpoolcount = 0;
-	std::vector<DescriptorPool> mh_descriptorpools;
-	uint32_t m_descriptorsetcount = 0;
-	std::vector<DescriptorSet>mh_descriptorsets;
-	uint32_t m_commandbuffercount = 0;
-	std::vector<std::vector<VkCommandBuffer>> mh_commandbuffers;
-	VmaAllocatorCreateInfo m_vmaalloccreateinfo{};
-	VmaAllocator m_vmaallocator;
-	VmaVulkanFunctions m_vmafunctions;
+	std::vector <VkSampler> mh_textureSamplers;
+	uint32_t m_textureHandleCount = 0;
+	uint32_t m_textureSamplerHandleCount = 0;
+	std::vector<Buffer> mh_vertexBuffers;
+	uint32_t m_vertexBufferHandleCount = 0;
+	std::vector<Buffer> mh_indexBuffers;
+	uint32_t m_indexBufferHandleCount = 0;
+	std::vector<UniformBuffer> mh_uniformBuffers;
+	uint32_t m_uniformBufferHandleCount = 0;
+	uint32_t m_descriptorPoolHandleCount = 0;
+	std::vector<DescriptorPool> mh_descriptorPools;
+	uint32_t m_descriptorSetHandleCount = 0;
+	std::vector<DescriptorSet>mh_descriptorSets;
+	uint32_t m_commandBufferHandleCount = 0;
+	std::vector<std::vector<VkCommandBuffer>> mh_commandBuffers;
+	VmaAllocatorCreateInfo m_vmaAllocCreateInfo{};
+	VmaAllocator m_vmaAllocator;
+	VmaVulkanFunctions m_vmaFunctions;
 	
 	const std::vector<const char*> m_deviceextensions
 	{

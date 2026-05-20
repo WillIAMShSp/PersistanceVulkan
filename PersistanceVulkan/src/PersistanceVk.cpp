@@ -14,7 +14,7 @@ void PersistanceVk::SetUpDebugCallBack()
 	VkDebugUtilsMessengerCreateInfoEXT createinfo;
 	SetDebugCreateInfoStructVariables(createinfo);
 
-	if (DebugUtilsMessengerEXT::Create(m_instance, &createinfo, nullptr, &debugmessenger) != VK_SUCCESS)
+	if (DebugUtilsMessengerEXT::Create(m_instance, &createinfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to set up debug messenger");
 
@@ -91,7 +91,7 @@ void PersistanceVk::CreateInstance()
 
 void PersistanceVk::CreateSwapChain()
 {
-	SwapChainSupportDetails details = QuerySwapChainSupport(m_physicaldevice);
+	SwapChainSupportDetails details = QuerySwapChainSupport(m_physicalDevice);
 
 	VkSurfaceFormatKHR surfaceformat = ChooseSwapSurfaceFormat(details.surfaceformat);
 	VkPresentModeKHR surfacepresentmode = ChooseSwapPresentMode(details.presentmode);
@@ -126,7 +126,7 @@ void PersistanceVk::CreateSwapChain()
 	createinfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 
-	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
+	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 	
 	uint32_t queuefamilyindices[] =
 	{
@@ -170,13 +170,13 @@ void PersistanceVk::CreateSwapChain()
 
 	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, nullptr);
 
-	m_swapchainimages.resize(swapchainimagecount);
+	m_swapchainImages.resize(swapchainimagecount);
 
-	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, m_swapchainimages.data());
+	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, m_swapchainImages.data());
 
-	m_swapchainimageformat = surfaceformat.format;
+	m_swapchainImageFormat = surfaceformat.format;
 	
-	m_swapchainextent = extent;
+	m_swapchainExtent = extent;
 
 
 
@@ -189,23 +189,23 @@ void PersistanceVk::CreateSwapChain()
 
 void PersistanceVk::CreateImageViews()
 {
-	m_swapchainimageviews.resize(m_swapchainimages.size());
+	m_swapchainImageViews.resize(m_swapchainImages.size());
 
-	for (int i = 0; i < m_swapchainimages.size(); i++)
+	for (int i = 0; i < m_swapchainImages.size(); i++)
 	{
-		m_swapchainimageviews[i] = CreateImageView(m_swapchainimages[i], m_swapchainimageformat);
+		m_swapchainImageViews[i] = CreateImageView(m_swapchainImages[i], m_swapchainImageFormat);
 	}
 }
 
 void PersistanceVk::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 {
-	m_swapchainframebuffers.resize(m_swapchainimageviews.size());
+	m_swapchainframebuffers.resize(m_swapchainImageViews.size());
 	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
 
-	for (int i = 0; i < m_swapchainimageviews.size(); i++)
+	for (int i = 0; i < m_swapchainImageViews.size(); i++)
 	{
 
-		VkImageView attachments[] = { m_swapchainimageviews[i] }; //separate this into another map
+		VkImageView attachments[] = { m_swapchainImageViews[i] }; //separate this into another map
 
 		VkFramebufferCreateInfo framebufferinfo{};
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -213,8 +213,8 @@ void PersistanceVk::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 		framebufferinfo.layers = 1;
 		framebufferinfo.attachmentCount = 1;
 		framebufferinfo.pAttachments = attachments;
-		framebufferinfo.width = m_swapchainextent.width;
-		framebufferinfo.height = m_swapchainextent.height;
+		framebufferinfo.width = m_swapchainExtent.width;
+		framebufferinfo.height = m_swapchainExtent.height;
 
 		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &m_swapchainframebuffers[i]) != VK_SUCCESS)
 		{
@@ -231,7 +231,7 @@ void PersistanceVk::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
 void PersistanceVk::CreateCommandPools()
 {
 	
-	QueueFamilyIndices indices = FindQueueFamilies(m_physicaldevice);
+	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 
 	if (indices.graphicsfamily != -1)
 	{
@@ -522,7 +522,7 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 
 	renderpassbegininfo.renderArea.offset = { 0,0 };
-	renderpassbegininfo.renderArea.extent = m_swapchainextent;
+	renderpassbegininfo.renderArea.extent = m_swapchainExtent;
 
 	VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
 	renderpassbegininfo.clearValueCount = 1;
@@ -537,13 +537,13 @@ void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const ui
 	viewport.y = 0.f;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
-	viewport.width = (float)m_swapchainextent.width;
-	viewport.height = (float)m_swapchainextent.height;
+	viewport.width = (float)m_swapchainExtent.width;
+	viewport.height = (float)m_swapchainExtent.height;
 	vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = m_swapchainextent;
+	scissor.extent = m_swapchainExtent;
 	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
 
 
@@ -591,7 +591,7 @@ void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, RenderPass
 	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
 
 	renderpassbegininfo.renderArea.offset = { 0,0 };
-	renderpassbegininfo.renderArea.extent = m_swapchainextent;
+	renderpassbegininfo.renderArea.extent = m_swapchainExtent;
 
 	renderpassbegininfo.clearValueCount = 1;
 	renderpassbegininfo.pClearValues = &clearcolor;
@@ -711,7 +711,7 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 
 
 
-	if (vkQueueSubmit(m_graphicsqueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to submit graphics queue!");
 
@@ -732,7 +732,7 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 
 	presentinfo.pResults = nullptr;
 
-	VkResult result = vkQueuePresentKHR(m_presentqueue, &presentinfo);
+	VkResult result = vkQueuePresentKHR(m_presentQueue, &presentinfo);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
 	{
@@ -755,7 +755,7 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 void PersistanceVk::CreateAllocator()
 {
 	m_vmaalloccreateinfo.device = m_device;
-	m_vmaalloccreateinfo.physicalDevice = m_physicaldevice;
+	m_vmaalloccreateinfo.physicalDevice = m_physicalDevice;
 	m_vmaalloccreateinfo.instance = m_instance;
 	m_vmaalloccreateinfo.vulkanApiVersion = VK_API_VERSION_1_0;
 	m_vmaalloccreateinfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
@@ -803,8 +803,8 @@ void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, Vk
 	{
 		queuefamilyindices =
 		{
-			m_queuefamilyindices.graphicsfamily,
-			m_queuefamilyindices.transferfamily
+			m_queueFamilyIndices.graphicsfamily,
+			m_queueFamilyIndices.transferfamily
 
 		};
 
@@ -817,7 +817,7 @@ void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, Vk
 	else
 	{
 		imageinfo.queueFamilyIndexCount = 1;
-		imageinfo.pQueueFamilyIndices = &m_queuefamilyindices.graphicsfamily;
+		imageinfo.pQueueFamilyIndices = &m_queueFamilyIndices.graphicsfamily;
 	}
 
 	VmaAllocationCreateInfo allocationcreateinfo{};
@@ -851,8 +851,8 @@ void PersistanceVk::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags us
 	{
 		queuefamilyindices =
 		{
-			m_queuefamilyindices.graphicsfamily,
-			m_queuefamilyindices.transferfamily
+			m_queueFamilyIndices.graphicsfamily,
+			m_queueFamilyIndices.transferfamily
 
 		};
 
@@ -893,7 +893,7 @@ void PersistanceVk::CreateSyncObjects()
 	s_imageavailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	s_renderfinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	f_inflightfence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	f_imagesinflight.resize(m_swapchainimages.size(), VK_NULL_HANDLE);
+	f_imagesinflight.resize(m_swapchainImages.size(), VK_NULL_HANDLE);
 
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
@@ -912,7 +912,7 @@ void PersistanceVk::CleanUpSwapchain()
 	{
 		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 	}
-	for (const auto& imageviews : m_swapchainimageviews)
+	for (const auto& imageviews : m_swapchainImageViews)
 	{
 		vkDestroyImageView(m_device, imageviews, nullptr);
 
@@ -1051,8 +1051,8 @@ void PersistanceVk::SelectPhysicalDevice()
 			{
 				bestscore = score;
 
-				m_physicaldevice = physicaldevices[i];
-				m_queuefamilyindices = indices;
+				m_physicalDevice = physicaldevices[i];
+				m_queueFamilyIndices = indices;
 				
 				if (enablevalidationlayers)
 				{
@@ -1067,7 +1067,7 @@ void PersistanceVk::SelectPhysicalDevice()
 		}
 
 
-		if (m_physicaldevice == nullptr)
+		if (m_physicalDevice == nullptr)
 		{
 			throw std::runtime_error("Failed to find GPU");
 
@@ -1269,9 +1269,9 @@ void PersistanceVk::CreateLogicalDevice()
 
 	std::set<uint32_t>uniquequeuefamilies =
 	{
-		m_queuefamilyindices.graphicsfamily,
-		m_queuefamilyindices.presentfamily,
-		m_queuefamilyindices.transferfamily
+		m_queueFamilyIndices.graphicsfamily,
+		m_queueFamilyIndices.presentfamily,
+		m_queueFamilyIndices.transferfamily
 
 	};
 	queuecreateinfos.reserve(uniquequeuefamilies.size());
@@ -1337,15 +1337,15 @@ void PersistanceVk::CreateLogicalDevice()
 
 
 
-	if (vkCreateDevice(m_physicaldevice, &devicecreateinfo, nullptr, &m_device) != VK_SUCCESS)
+	if (vkCreateDevice(m_physicalDevice, &devicecreateinfo, nullptr, &m_device) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Could not create logical device");
 
 	}
 
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.graphicsfamily, 0, &m_graphicsqueue);
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.presentfamily, 0, &m_presentqueue);
-	vkGetDeviceQueue(m_device, m_queuefamilyindices.transferfamily, 0, &m_transferqueue);
+	vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsfamily, 0, &m_graphicsQueue);
+	vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentfamily, 0, &m_presentQueue);
+	vkGetDeviceQueue(m_device, m_queueFamilyIndices.transferfamily, 0, &m_transferQueue);
 
 }
 
@@ -1573,12 +1573,12 @@ void PersistanceVk::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const 
 
 VkExtent2D& PersistanceVk::GetSwapchainExtent()
 {
-	return m_swapchainextent;
+	return m_swapchainExtent;
 }
 
 VkFormat& PersistanceVk::GetSwapchainImageFormat()
 {
-	return m_swapchainimageformat;
+	return m_swapchainImageFormat;
 }
 
 uint32_t PersistanceVk::GetCurrentFrame()
@@ -1649,7 +1649,7 @@ uint32_t PersistanceVk::FindMemoryType(uint32_t typefilter, VkMemoryPropertyFlag
 {
 	VkPhysicalDeviceMemoryProperties memproperties;
 
-	vkGetPhysicalDeviceMemoryProperties(m_physicaldevice, &memproperties);
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memproperties);
 
 	for (uint32_t i = 0; i < memproperties.memoryTypeCount; i++)
 	{
@@ -2198,8 +2198,8 @@ FrameBufferHandle PersistanceVk::CreateFrameBuffersHandle()
 void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle)
 {
 	uint32_t imageidx = 0;
-	int width = m_swapchainextent.width;
-	int height = m_swapchainextent.height;
+	int width = m_swapchainExtent.width;
+	int height = m_swapchainExtent.height;
 	VkFormat format = VK_FORMAT_R8G8B8A8_SRGB; //could cause problems since its not the same as the swapchain one.
 	VkImageTiling tiling; tiling = VK_IMAGE_TILING_OPTIMAL;
 	VkImageUsageFlags usageflags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -2246,7 +2246,7 @@ void PersistanceVk::CreateFramebufferImageViews(FrameBufferHandle handle)
 
 	for (int i = 0; i < imagecount; i++)
 	{
-		mh_framebuffers.at(handle).imageviews[i] = CreateImageView(mh_framebuffers.at(handle).images[i], m_swapchainimageformat);
+		mh_framebuffers.at(handle).imageviews[i] = CreateImageView(mh_framebuffers.at(handle).images[i], m_swapchainImageFormat);
 
 	}
 
@@ -2269,8 +2269,8 @@ void PersistanceVk::CreateFramebuffers(FrameBufferHandle handle, const uint32_t 
 		framebufferinfo.layers = 1;
 		framebufferinfo.attachmentCount = 1;
 		framebufferinfo.pAttachments = attachments;
-		framebufferinfo.width = m_swapchainextent.width;
-		framebufferinfo.height = m_swapchainextent.height;
+		framebufferinfo.width = m_swapchainExtent.width;
+		framebufferinfo.height = m_swapchainExtent.height;
 
 		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &mh_framebuffers.at(handle).framebuffers[i]) != VK_SUCCESS)
 		{
@@ -2361,11 +2361,11 @@ void PersistanceVk::CreateTextureImage(TextureHandle handle, const char* imagesr
 		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferQueue);
 
-	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferQueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsQueue);
 
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 
@@ -2403,11 +2403,11 @@ void PersistanceVk::AddImageToTexture(TextureHandle handle, const char* imagesrc
 
 	stbi_image_free(pixels);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferQueue);
 
-	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferqueue);
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferQueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsqueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsQueue);
 
 	
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
@@ -2427,7 +2427,7 @@ void PersistanceVk::CreateTextureSampler(TextureSamplerHandle handle, VkFilter m
 {
 	VkPhysicalDeviceProperties properties{};
 
-	vkGetPhysicalDeviceProperties(m_physicaldevice, &properties);
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
 
 
 
@@ -2507,7 +2507,7 @@ void PersistanceVk::CreateVertexBuffer(BufferHandle handle, const void* buffer, 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 	mh_vertexbuffers.at(handle).size = buffersize;
 
-	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
+	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferQueue);
 	
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 }
@@ -2548,7 +2548,7 @@ void PersistanceVk::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 	mh_indexbuffers.at(handle).size = buffersize;
 
-	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferqueue);
+	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferQueue);
 
 	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
 }
