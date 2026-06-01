@@ -140,7 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\PersistanceVk.h" />
-    <ClInclude Include="src\DebugUtilsMessengerEXT.h" />
+    <ClInclude Include="src\Debug\DebugUtilsMessengerEXT.h" />
     <ClInclude Include="src\Objects\Shader.h" />
     <ClInclude Include="src\Objects\Vertex.h" />
     <ClInclude Include="src\PersistanceLib.h" />

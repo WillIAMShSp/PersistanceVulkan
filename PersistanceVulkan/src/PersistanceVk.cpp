@@ -166,65 +166,24 @@ void PersistanceVk::CreateSwapChain()
 
 	}
 
+
+
+
 	uint32_t swapchainimagecount = 0;
 
 	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, nullptr);
 
-	m_swapchainImages.resize(swapchainimagecount);
+	m_swapchainFramebuffers.images.resize(swapchainimagecount);
 
-	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, m_swapchainImages.data());
+	vkGetSwapchainImagesKHR(m_device, m_swapchain, &swapchainimagecount, m_swapchainFramebuffers.images.data());
 
 	m_swapchainImageFormat = surfaceformat.format;
 	
 	m_swapchainExtent = extent;
 
 
-
-
-
-
-
-
 }
 
-void PersistanceVk::CreateImageViews()
-{
-	m_swapchainImageViews.resize(m_swapchainImages.size());
-
-	for (int i = 0; i < m_swapchainImages.size(); i++)
-	{
-		m_swapchainImageViews[i] = CreateImageView(m_swapchainImages[i], m_swapchainImageFormat);
-	}
-}
-
-void PersistanceVk::CreateSwapchainFramebuffers(uint32_t renderpasshandle)
-{
-	m_swapchainframebuffers.resize(m_swapchainImageViews.size());
-	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
-
-	for (int i = 0; i < m_swapchainImageViews.size(); i++)
-	{
-
-		VkImageView attachments[] = { m_swapchainImageViews[i] }; //separate this into another map
-
-		VkFramebufferCreateInfo framebufferinfo{};
-		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
-		framebufferinfo.layers = 1;
-		framebufferinfo.attachmentCount = 1;
-		framebufferinfo.pAttachments = attachments;
-		framebufferinfo.width = m_swapchainExtent.width;
-		framebufferinfo.height = m_swapchainExtent.height;
-
-		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &m_swapchainframebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create framebuffer");
-
-		}
-
-
-	}
-}
 
 
 
@@ -240,7 +199,7 @@ void PersistanceVk::CreateCommandPools()
 		graphicspoolinfo.queueFamilyIndex = indices.graphicsfamily;
 		graphicspoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-		if (vkCreateCommandPool(m_device, &graphicspoolinfo, nullptr, &m_graphicscommandpool) != VK_SUCCESS)
+		if (vkCreateCommandPool(m_device, &graphicspoolinfo, nullptr, &m_graphicsCommandPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create the graphics command pool!");
 
@@ -255,7 +214,7 @@ void PersistanceVk::CreateCommandPools()
 		transferpoolinfo.queueFamilyIndex = indices.transferfamily;
 		transferpoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-		if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transfercommandpool) != VK_SUCCESS)
+		if (vkCreateCommandPool(m_device, &transferpoolinfo, nullptr, &m_transferCommandPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create the transfer command pool!");
 		}
@@ -268,8 +227,8 @@ void PersistanceVk::CreateCommandPools()
 
 DescriptorPoolHandle PersistanceVk::CreateDescriptorPoolHandle()
 {
-	uint32_t handle = m_descriptorpoolcount++;
-	mh_descriptorpools.emplace_back(DescriptorPool());
+	uint32_t handle = m_descriptorPoolHandleCount++;
+	mh_descriptorPools.emplace_back(DescriptorPool());
 
 	return handle;
 }
@@ -280,13 +239,13 @@ void PersistanceVk::AddDescriptorPoolSize(DescriptorPoolHandle handle, VkDescrip
 	size.descriptorCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	size.type = type;
 
-	mh_descriptorpools.at(handle).poolsizes.push_back(size);
+	mh_descriptorPools.at(handle).poolsizes.push_back(size);
 
 }
 
 void PersistanceVk::CreateDescriptorPool(DescriptorPoolHandle handle)
 {
-	std::vector<VkDescriptorPoolSize>& poolsizes = mh_descriptorpools.at(handle).poolsizes;
+	std::vector<VkDescriptorPoolSize>& poolsizes = mh_descriptorPools.at(handle).poolsizes;
 
 	VkDescriptorPoolCreateInfo poolinfo{};
 	poolinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -294,7 +253,7 @@ void PersistanceVk::CreateDescriptorPool(DescriptorPoolHandle handle)
 	poolinfo.pPoolSizes = poolsizes.data();
 	poolinfo.maxSets = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 
-	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &mh_descriptorpools.at(handle).pool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(m_device, &poolinfo, nullptr, &mh_descriptorPools.at(handle).pool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create descriptor pool!");
 
@@ -305,17 +264,17 @@ void PersistanceVk::CreateDescriptorPool(DescriptorPoolHandle handle)
 
 void PersistanceVk::CleanDescriptorPools()
 {
-	for (int i = 0; i < mh_descriptorpools.size(); i++) 
+	for (int i = 0; i < mh_descriptorPools.size(); i++) 
 	{
-		vkDestroyDescriptorPool(m_device, mh_descriptorpools[i].pool, nullptr);
+		vkDestroyDescriptorPool(m_device, mh_descriptorPools[i].pool, nullptr);
 
 	}
 }
 
 DescriptorSetHandle PersistanceVk::CreateDescriptorSetHandle()
 {
-	uint32_t handle = m_descriptorsetcount++;
-	mh_descriptorsets.emplace_back(DescriptorSet());
+	uint32_t handle = m_descriptorSetHandleCount++;
+	mh_descriptorSets.emplace_back(DescriptorSet());
 
 	return handle;
 }
@@ -323,18 +282,18 @@ DescriptorSetHandle PersistanceVk::CreateDescriptorSetHandle()
 void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t layouthandle, uint32_t poolhandle)
 {
 	// first we allocate descriptorsets for every possible frame in flight. 
-	std::vector<VkDescriptorSetLayout> layouts(static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT), mh_descriptorsetlayouts.at(layouthandle).layout);
+	std::vector<VkDescriptorSetLayout> layouts(static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT), mh_descriptorSetLayouts.at(layouthandle).layout);
 	VkDescriptorSetAllocateInfo allocateinfo{};
 	allocateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateinfo.descriptorPool = mh_descriptorpools.at(poolhandle).pool;
+	allocateinfo.descriptorPool = mh_descriptorPools.at(poolhandle).pool;
 	allocateinfo.descriptorSetCount = static_cast<uint32_t>(PersistanceLib::MAXFRAMESINFLIGHT);
 	allocateinfo.pSetLayouts = layouts.data();
 
 	// this is done by indexing into the unordered map of descriptorsetlayouts with the layouthandle variable
 
-	mh_descriptorsets.at(handle).descriptorsets.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	mh_descriptorSets.at(handle).descriptorsets.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
-	if (vkAllocateDescriptorSets(m_device, &allocateinfo, mh_descriptorsets.at(handle).descriptorsets.data()) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(m_device, &allocateinfo, mh_descriptorSets.at(handle).descriptorsets.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate descriptor set");
 	}
@@ -345,7 +304,7 @@ void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t la
 	// as of now we're only using bufferinfos and imageinfos.
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
 	{
-		std::vector<WriteDescriptorSet>& set = mh_descriptorsets.at(handle).writedescriptorsets;
+		std::vector<WriteDescriptorSet>& set = mh_descriptorSets.at(handle).writedescriptorsets;
 
 		std::vector<VkWriteDescriptorSet> writedescriptors{};
 		writedescriptors.resize(set.size());
@@ -355,7 +314,7 @@ void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t la
 		for (int w = 0; w < set.size(); w++) //for all write descriptors in our descriptorset
 		{
 			writedescriptors[w].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writedescriptors[w].dstSet = mh_descriptorsets.at(handle).descriptorsets[i];
+			writedescriptors[w].dstSet = mh_descriptorSets.at(handle).descriptorsets[i];
 			writedescriptors[w].dstArrayElement = set[w].arrayelement;
 			writedescriptors[w].descriptorCount = set[w].descriptorcount;
 			writedescriptors[w].descriptorType = set[w].descriptorType;
@@ -365,7 +324,7 @@ void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t la
 				bufferinfos.resize(set[w].descriptorcount);
 				for (int z = 0; z < bufferinfos.size(); z++) // for all bufferinfos specified in the descriptorCount variable
 				{
-					bufferinfos[z].buffer = mh_uniformbuffers.at(set[w].bufferinfo[z].uniformbufferhandle).buffers[i]; // we set the values stored in the bufferinfo structs inside writedescriptor struct
+					bufferinfos[z].buffer = mh_uniformBuffers.at(set[w].bufferinfo[z].uniformbufferhandle).buffers[i]; // we set the values stored in the bufferinfo structs inside writedescriptor struct
 					bufferinfos[z].offset = set[w].bufferinfo[z].offset;
 					bufferinfos[z].range = set[w].bufferinfo[z].range;
 				}
@@ -396,9 +355,9 @@ void PersistanceVk::CreateDescriptorSets(DescriptorSetHandle handle, uint32_t la
 
 WriteDescriptorSet* PersistanceVk::CreateWriteDescriptorSet(DescriptorSetHandle handle, uint32_t descriptorcount, uint32_t bindingidx, VkDescriptorType descriptortype, uint32_t* writedescriptorindex)
 {
-	uint32_t idx = mh_descriptorsets.at(handle).writedescriptorsets.size();
-	mh_descriptorsets.at(handle).writedescriptorsets.push_back(WriteDescriptorSet());
-	WriteDescriptorSet* set = &mh_descriptorsets.at(handle).writedescriptorsets[idx];
+	uint32_t idx = mh_descriptorSets.at(handle).writedescriptorsets.size();
+	mh_descriptorSets.at(handle).writedescriptorsets.push_back(WriteDescriptorSet());
+	WriteDescriptorSet* set = &mh_descriptorSets.at(handle).writedescriptorsets[idx];
 	set->bindingidx = bindingidx;
 	set->descriptorcount = descriptorcount;
 	set->descriptorType = descriptortype;
@@ -411,7 +370,7 @@ WriteDescriptorSet* PersistanceVk::CreateWriteDescriptorSet(DescriptorSetHandle 
 void PersistanceVk::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, uint32_t uniformbufferhandle, size_t offset, size_t range)
 {
 
-	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.size() > 0)
+	if (mh_descriptorSets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.size() > 0)
 	{
 		throw std::runtime_error("You already have an image info in this writedescriptorset");
 	}
@@ -421,13 +380,13 @@ void PersistanceVk::AddDescriptorBufferInfoToWriteDescriptorSet(DescriptorSetHan
 	info.range = range;
 	info.uniformbufferhandle = uniformbufferhandle;
 
-	mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.push_back(info);
+	mh_descriptorSets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.push_back(info);
 
 }
 
 void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHandle handle, uint32_t writedescriptorindex, VkImageLayout imagelayout, TextureHandle texturehandle, TextureSamplerHandle texturesamplerhandle)
 {
-	if (mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
+	if (mh_descriptorSets.at(handle).writedescriptorsets[writedescriptorindex].bufferinfo.size() > 0)
 	{
 		throw std::runtime_error("You already have a buffer info in this writedescriptorset");
 	}
@@ -435,16 +394,16 @@ void PersistanceVk::AddDescriptorImageInfoToWriteDescriptorSet(DescriptorSetHand
 	DescriptorImageInfo info;
 	info.imagelayout = imagelayout;
 	info.imageview = mh_textures.at(texturehandle).imageview;
-	info.sampler = mh_texturesamplers.at(texturesamplerhandle);
+	info.sampler = mh_textureSamplers.at(texturesamplerhandle);
 
-	mh_descriptorsets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.push_back(info);
+	mh_descriptorSets.at(handle).writedescriptorsets[writedescriptorindex].imageinfo.push_back(info);
 
 }
 
 BufferHandle PersistanceVk::CreateCommandBufferHandle()
 {
-	uint32_t handle = m_commandbuffercount++;
-	mh_commandbuffers.emplace_back(std::vector<VkCommandBuffer>());
+	uint32_t handle = m_commandBufferHandleCount++;
+	mh_commandBuffers.emplace_back(std::vector<VkCommandBuffer>());
 
 	return handle;
 }
@@ -452,7 +411,7 @@ BufferHandle PersistanceVk::CreateCommandBufferHandle()
 void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 {
 
-	mh_commandbuffers.at(handle).resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	mh_commandBuffers.at(handle).resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	VkCommandBufferAllocateInfo cmdbufferinfo{};
 	cmdbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -460,7 +419,7 @@ void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& comm
 	cmdbufferinfo.commandPool = commandpool;
 	cmdbufferinfo.level = level;
 
-	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, mh_commandbuffers.at(handle).data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &cmdbufferinfo, mh_commandBuffers.at(handle).data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command buffer");
 	}
@@ -470,19 +429,19 @@ void PersistanceVk::CreateCommandBuffer(BufferHandle handle, VkCommandPool& comm
 
 void PersistanceVk::StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle)
 {
-	if (m_drawingstarted)
+	if (m_currentlyDrawing)
 	{
 		std::cout << "Previous drawing not ended properly";
 	}
 	else 
 	{
-		m_drawingstarted = true;
+		m_currentlyDrawing = true;
 	}
 
-	vkWaitForFences(m_device, 1, &f_inflightfence[m_currentframe], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 	
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageavailable[m_currentframe], nullptr, &m_imageindex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], nullptr, &m_imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -492,81 +451,17 @@ void PersistanceVk::StartDrawing(BufferHandle commandbufferhandle, RenderPassHan
 	{
 		throw std::runtime_error("Failed to aquire swapchain image!");
 	}
-	if (f_imagesinflight[m_imageindex] != VK_NULL_HANDLE)
+	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
 	{
-		vkWaitForFences(m_device, 1, &f_imagesinflight[m_imageindex], true, UINT64_MAX);
+		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
 	}
-	f_imagesinflight[m_imageindex] = f_inflightfence[m_currentframe];
-	vkResetFences(m_device, 1, &f_inflightfence[m_currentframe]);
+	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
+	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 
-	vkResetCommandBuffer(mh_commandbuffers.at(commandbufferhandle)[m_currentframe], 0);
+	vkResetCommandBuffer(mh_commandBuffers.at(commandbufferhandle)[m_currentFrame], 0);
 
 }
 
-void PersistanceVk::RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle)
-{
-	VkCommandBufferBeginInfo cmdbufferbegininfo{};
-	cmdbufferbegininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdbufferbegininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	cmdbufferbegininfo.pInheritanceInfo = nullptr;
-
-	if (vkBeginCommandBuffer(commandbuffer, &cmdbufferbegininfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to begin command buffer!");
-
-	}
-
-	VkRenderPassBeginInfo renderpassbegininfo{};
-	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderpassbegininfo.framebuffer = m_swapchainframebuffers[swapchainimageindex];
-	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
-
-	renderpassbegininfo.renderArea.offset = { 0,0 };
-	renderpassbegininfo.renderArea.extent = m_swapchainExtent;
-
-	VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
-	renderpassbegininfo.clearValueCount = 1;
-	renderpassbegininfo.pClearValues = &clearcolor;
-
-
-	vkCmdBeginRenderPass(commandbuffer, &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
-
-
-	VkViewport viewport{};
-	viewport.x = 0.f;
-	viewport.y = 0.f;
-	viewport.minDepth = 0.f;
-	viewport.maxDepth = 1.f;
-	viewport.width = (float)m_swapchainExtent.width;
-	viewport.height = (float)m_swapchainExtent.height;
-	vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0,0 };
-	scissor.extent = m_swapchainExtent;
-	vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
-
-
-	vkCmdBindPipeline(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).pipeline);
-
-	VkBuffer buffers[] = { mh_vertexbuffers.at(vertexbufferhandle).buffer };//{m_vertexbuffer};
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers, offsets);
-	
-	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(indexbufferhandle).buffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdBindDescriptorSets(commandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mh_graphicspipelines.at(graphicspipelinehandle).layout, 0, 1, &mh_descriptorsets.at(descriptorsethandle).descriptorsets[m_currentframe], 0, nullptr);
-
-	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexbuffers.at(indexbufferhandle).size / sizeof(uint32_t)), 1, 0, 0, 0);
-
-	vkCmdEndRenderPass(commandbuffer);
-
-	if (vkEndCommandBuffer(commandbuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to record command buffer");
-
-	}
-}
 
 void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, VkCommandBufferUsageFlags flags)
 {
@@ -575,7 +470,7 @@ void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, VkComma
 	cmdbufferbegininfo.flags = flags;
 	cmdbufferbegininfo.pInheritanceInfo = nullptr;
 
-	if (vkBeginCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), &cmdbufferbegininfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), &cmdbufferbegininfo) != VK_SUCCESS)
 	{
 		std::cout << "Couldnt begin command buffer \n";
 		BREAK(0);
@@ -583,26 +478,26 @@ void PersistanceVk::BeginCommandBuffer(BufferHandle commandbufferhandle, VkComma
 	}
 }
 
-void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent)
+void PersistanceVk::BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, bool usingswapchainframebuffer, FramebufferHandle framebufferhandle, VkClearValue clearcolor, VkOffset2D offset, VkExtent2D extent)
 {
 	VkRenderPassBeginInfo renderpassbegininfo{};
 	renderpassbegininfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderpassbegininfo.framebuffer = m_swapchainframebuffers[m_imageindex];
-	renderpassbegininfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
+	renderpassbegininfo.framebuffer = usingswapchainframebuffer? m_swapchainFramebuffers.framebuffers[m_imageIndex] : mh_framebuffers.at(framebufferhandle).framebuffers[m_imageIndex];
+	renderpassbegininfo.renderPass = mh_renderPasses.at(renderpasshandle).renderpass;
 
-	renderpassbegininfo.renderArea.offset = { 0,0 };
-	renderpassbegininfo.renderArea.extent = m_swapchainExtent;
+	renderpassbegininfo.renderArea.offset = offset;
+	renderpassbegininfo.renderArea.extent = usingswapchainframebuffer? m_swapchainExtent : extent;
 
 	renderpassbegininfo.clearValueCount = 1;
 	renderpassbegininfo.pClearValues = &clearcolor;
 
 
-	vkCmdBeginRenderPass(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), &renderpassbegininfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void PersistanceVk::BindGraphicsPipeline(BufferHandle commandbufferhandle, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle)
 {
-	vkCmdBindPipeline(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), bindingpoint, mh_graphicspipelines.at(handle).pipeline);
+	vkCmdBindPipeline(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), bindingpoint, mh_graphicsPipelines.at(handle).pipeline);
 }
 
 void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent)
@@ -614,7 +509,7 @@ void PersistanceVk::SetViewport(BufferHandle commandbufferhandle, float xpos, fl
 	viewport.maxDepth = maxdepth;
 	viewport.width = (float)extent.width;
 	viewport.height = (float)extent.height;
-	vkCmdSetViewport(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), 0, 1, &viewport);
+	vkCmdSetViewport(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), 0, 1, &viewport);
 }
 
 void PersistanceVk::SetScissors(BufferHandle commandbufferhandle, VkOffset2D offset, VkExtent2D extent)
@@ -622,12 +517,12 @@ void PersistanceVk::SetScissors(BufferHandle commandbufferhandle, VkOffset2D off
 	VkRect2D scissor{};
 	scissor.offset = offset;
 	scissor.extent = extent;
-	vkCmdSetScissor(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), 0, 1, &scissor);
+	vkCmdSetScissor(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), 0, 1, &scissor);
 }
 
 void PersistanceVk::Draw(BufferHandle commandbufferhandle, Drawable drawsettings)
 {
-	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(m_currentframe);
+	VkCommandBuffer& commandbuffer = mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame);
 
 	BindGraphicsPipeline(commandbufferhandle, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
 
@@ -639,22 +534,22 @@ void PersistanceVk::Draw(BufferHandle commandbufferhandle, Drawable drawsettings
 	size_t vertexcount = 0;
 
 	for (size_t i = 0; i < buffercount; i++) {
-		buffers.emplace_back(mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
-		vertexcount += mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).size;
+		buffers.emplace_back(mh_vertexBuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
+		vertexcount += mh_vertexBuffers.at(drawsettings.GetVertexBufferHandles()[i]).size;
 	}
 
 	vertexcount /= sizeof(uint32_t);
 
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers.data(), drawsettings.GetVertexBufferOffsets().data());
 
-	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicsPipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorSets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentFrame], 0, nullptr);
 
-	vkCmdDraw(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe), vertexcount, 1, 0, 0);
+	vkCmdDraw(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame), vertexcount, 1, 0, 0);
 }
 
 void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, Drawable drawsettings)
 {
-	VkCommandBuffer& commandbuffer = mh_commandbuffers.at(commandbufferhandle).at(m_currentframe);
+	VkCommandBuffer& commandbuffer = mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame);
 
 	BindGraphicsPipeline(commandbufferhandle, drawsettings.GetGraphicsPipelineBindingPoint(), drawsettings.GetGraphicsPipelineHandle());
 
@@ -664,28 +559,28 @@ void PersistanceVk::DrawIndexed(BufferHandle commandbufferhandle, Drawable draws
 	buffers.reserve(buffercount);
 
 	for (size_t i = 0; i < buffercount; i++) {
-		buffers.emplace_back(mh_vertexbuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
+		buffers.emplace_back(mh_vertexBuffers.at(drawsettings.GetVertexBufferHandles()[i]).buffer);
 		
 	}
 
 	vkCmdBindVertexBuffers(commandbuffer, 0, 1, buffers.data(), drawsettings.GetVertexBufferOffsets().data());
 
-	vkCmdBindIndexBuffer(commandbuffer, mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandbuffer, mh_indexBuffers.at(drawsettings.GetIndexBufferHandle()).buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicspipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorsets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentframe], 0, nullptr);
+	vkCmdBindDescriptorSets(commandbuffer, drawsettings.GetGraphicsPipelineBindingPoint(), mh_graphicsPipelines.at(drawsettings.GetGraphicsPipelineHandle()).layout, 0, 1, &mh_descriptorSets.at(drawsettings.GetDescriptorSetHandle()).descriptorsets[m_currentFrame], 0, nullptr);
 
-	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexbuffers.at(drawsettings.GetIndexBufferHandle()).size/sizeof(uint32_t)), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandbuffer, static_cast<uint32_t> (mh_indexBuffers.at(drawsettings.GetIndexBufferHandle()).size/sizeof(uint32_t)), 1, 0, 0, 0);
 
 }
 
 void PersistanceVk::EndRenderPass(BufferHandle commandbufferhandle)
 {
-	vkCmdEndRenderPass(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe));
+	vkCmdEndRenderPass(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame));
 }
 
 void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle)
 {
-	if (vkEndCommandBuffer(mh_commandbuffers.at(commandbufferhandle).at(m_currentframe)) != VK_SUCCESS)
+	if (vkEndCommandBuffer(mh_commandBuffers.at(commandbufferhandle).at(m_currentFrame)) != VK_SUCCESS)
 	{
 		BREAK(0);
 	}
@@ -693,8 +588,8 @@ void PersistanceVk::EndCommandBuffer(BufferHandle commandbufferhandle)
 
 void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle)
 {
-	VkSemaphore waitsemaphores[] = { s_imageavailable[m_currentframe] };
-	VkSemaphore signalsemaphores[] = { s_renderfinished[m_currentframe] };
+	VkSemaphore waitsemaphores[] = { s_imageAvailable[m_currentFrame] };
+	VkSemaphore signalsemaphores[] = { s_renderFinished[m_currentFrame] };
 	VkPipelineStageFlags waitstages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 	VkSubmitInfo submitinfo{};
@@ -702,7 +597,7 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 
 	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitinfo.commandBufferCount = 1;
-	submitinfo.pCommandBuffers = &mh_commandbuffers.at(commandbufferhandle)[m_currentframe];
+	submitinfo.pCommandBuffers = &mh_commandBuffers.at(commandbufferhandle)[m_currentFrame];
 	submitinfo.waitSemaphoreCount = 1;
 	submitinfo.pWaitSemaphores = waitsemaphores;
 	submitinfo.pWaitDstStageMask = waitstages;
@@ -711,7 +606,7 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 
 
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitinfo, f_inflightfence[m_currentframe]) != VK_SUCCESS)
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitinfo, f_inFlightFence[m_currentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to submit graphics queue!");
 
@@ -728,16 +623,16 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 	presentinfo.swapchainCount = 1;
 	presentinfo.pSwapchains = swapchains;
 
-	presentinfo.pImageIndices = &m_imageindex;
+	presentinfo.pImageIndices = &m_imageIndex;
 
 	presentinfo.pResults = nullptr;
 
 	VkResult result = vkQueuePresentKHR(m_presentQueue, &presentinfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowresized)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowResized)
 	{
 		RecreateSwapchain(renderpasshandle);
-		m_windowresized = false;
+		m_windowResized = false;
 
 	}
 	else if (result != VK_SUCCESS)
@@ -746,27 +641,27 @@ void PersistanceVk::EndAndPresentDrawing(BufferHandle commandbufferhandle, Rende
 		BREAK;
 	}
 
-	m_currentframe = (m_currentframe + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
-	m_drawingstarted = false;
+	m_currentFrame = (m_currentFrame + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
+	m_currentlyDrawing = false;
 
 }
 
 
 void PersistanceVk::CreateAllocator()
 {
-	m_vmaalloccreateinfo.device = m_device;
-	m_vmaalloccreateinfo.physicalDevice = m_physicalDevice;
-	m_vmaalloccreateinfo.instance = m_instance;
-	m_vmaalloccreateinfo.vulkanApiVersion = VK_API_VERSION_1_0;
-	m_vmaalloccreateinfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+	m_vmaAllocCreateInfo.device = m_device;
+	m_vmaAllocCreateInfo.physicalDevice = m_physicalDevice;
+	m_vmaAllocCreateInfo.instance = m_instance;
+	m_vmaAllocCreateInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+	m_vmaAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
 
-	m_vmafunctions = {};
-	m_vmafunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-	m_vmafunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+	m_vmaFunctions = {};
+	m_vmaFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	m_vmaFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
 
-	m_vmaalloccreateinfo.pVulkanFunctions = &m_vmafunctions;
+	m_vmaAllocCreateInfo.pVulkanFunctions = &m_vmaFunctions;
 	
-	if (vmaCreateAllocator(&m_vmaalloccreateinfo, &m_vmaallocator) != VK_SUCCESS) 
+	if (vmaCreateAllocator(&m_vmaAllocCreateInfo, &m_vmaAllocator) != VK_SUCCESS) 
 	{
 		BREAK(0);
 	}
@@ -775,7 +670,7 @@ void PersistanceVk::CreateAllocator()
 
 void PersistanceVk::CleanAllocator()
 {
-	vmaDestroyAllocator(m_vmaallocator);
+	vmaDestroyAllocator(m_vmaAllocator);
 }
 
 void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
@@ -827,7 +722,7 @@ void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, Vk
 
 
 
-	if (vmaCreateImage(m_vmaallocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS) 
+	if (vmaCreateImage(m_vmaAllocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS) 
 	{
 		std::cout << "Failed to create image!";
 		BREAK(0);
@@ -869,7 +764,7 @@ void PersistanceVk::CreateBuffer(const VkDeviceSize& size, VkBufferUsageFlags us
 		VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	
-	if (vmaCreateBuffer(m_vmaallocator, &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
+	if (vmaCreateBuffer(m_vmaAllocator, &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
 	{
 		std::cout << "Failed to create buffer";
 		BREAK(0);
@@ -890,15 +785,15 @@ void PersistanceVk::CreateSyncObjects()
 	fencecreateinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fencecreateinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	s_imageavailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	s_renderfinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	f_inflightfence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	f_imagesinflight.resize(m_swapchainImages.size(), VK_NULL_HANDLE);
+	s_imageAvailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	s_renderFinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	f_inFlightFence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	f_imagesInFlight.resize(3/*m_swapchainImages.size()*/, VK_NULL_HANDLE);
 
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
-		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageavailable[i]) != VK_SUCCESS || vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_renderfinished[i]) != VK_SUCCESS || vkCreateFence(m_device, &fencecreateinfo, nullptr, &f_inflightfence[i]) != VK_SUCCESS)
+		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageAvailable[i]) != VK_SUCCESS || vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_renderFinished[i]) != VK_SUCCESS || vkCreateFence(m_device, &fencecreateinfo, nullptr, &f_inFlightFence[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Semaphores or fences could not be initialized!");
 		}
@@ -908,11 +803,11 @@ void PersistanceVk::CreateSyncObjects()
 
 void PersistanceVk::CleanUpSwapchain()
 {
-	for (auto framebuffer : m_swapchainframebuffers)
+	for (auto framebuffer : m_swapchainFramebuffers.framebuffers)
 	{
 		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 	}
-	for (const auto& imageviews : m_swapchainImageViews)
+	for (const auto& imageviews : m_swapchainFramebuffers.imageviews)
 	{
 		vkDestroyImageView(m_device, imageviews, nullptr);
 
@@ -1570,35 +1465,6 @@ void PersistanceVk::EndSingleTimeCommands(VkCommandBuffer& commandbuffer, const 
 
 }
 
-
-VkExtent2D& PersistanceVk::GetSwapchainExtent()
-{
-	return m_swapchainExtent;
-}
-
-VkFormat& PersistanceVk::GetSwapchainImageFormat()
-{
-	return m_swapchainImageFormat;
-}
-
-uint32_t PersistanceVk::GetCurrentFrame()
-{
-	return m_currentframe;
-}
-
-VkCommandPool& PersistanceVk::GetGraphicsCommandPool()
-{
-	return m_graphicscommandpool;
-}
-
-VkCommandPool& PersistanceVk::GetTransferCommandPool()
-{
-	return m_transfercommandpool;
-}
-
-
-
-
 void PersistanceVk::RecreateSwapchain(uint32_t renderpasshandle)
 {
 	int width = 0;
@@ -1612,18 +1478,44 @@ void PersistanceVk::RecreateSwapchain(uint32_t renderpasshandle)
 		glfwWaitEvents();
 
 	}
-	
+
 
 	vkDeviceWaitIdle(m_device);
 
 	CleanUpSwapchain();
 
 	CreateSwapChain();
-	CreateImageViews();
+	CreateSwapchainFramebufferImageViews();
 	CreateSwapchainFramebuffers(renderpasshandle);
 
 }
 
+
+VkExtent2D& PersistanceVk::GetSwapchainExtent()
+{
+	return m_swapchainExtent;
+}
+
+VkFormat& PersistanceVk::GetSwapchainImageFormat()
+{
+	return m_swapchainImageFormat;
+}
+
+uint32_t PersistanceVk::GetCurrentFrame()
+{
+	return m_currentFrame;
+}
+
+
+VkCommandPool& PersistanceVk::GetGraphicsCommandPool()
+{
+	return m_graphicsCommandPool;
+}
+
+VkCommandPool& PersistanceVk::GetTransferCommandPool()
+{
+	return m_transferCommandPool;
+}
 
 
 
@@ -1786,19 +1678,19 @@ VkImageView PersistanceVk::CreateImageView(VkImage& image, VkFormat format, VkIm
 
 RenderPassHandle PersistanceVk::CreateRenderPassHandle()
 {
-	uint32_t handle = m_renderpasscount++;
+	uint32_t handle = m_renderPassCount++;
 
-	mh_renderpasses.emplace_back(RenderPass());
+	mh_renderPasses.emplace_back(RenderPass());
 
 	return handle;
 }
 
 uint32_t PersistanceVk::CreateRenderPassColorAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
-	int index = mh_renderpasses.at(handle).colorattachments.size();
-	mh_renderpasses.at(handle).colorattachments.push_back(RenderPassAttachment());
+	int index = mh_renderPasses.at(handle).colorattachments.size();
+	mh_renderPasses.at(handle).colorattachments.push_back(RenderPassAttachment());
 
-	RenderPassAttachment& attachment = mh_renderpasses.at(handle).colorattachments[index];
+	RenderPassAttachment& attachment = mh_renderPasses.at(handle).colorattachments[index];
 
 	attachment.reference.attachment = index;
 	attachment.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1819,10 +1711,10 @@ uint32_t PersistanceVk::CreateRenderPassColorAttachment(RenderPassHandle handle,
 
 uint32_t PersistanceVk::CreateRenderPassDepthStencilAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
-	int index = mh_renderpasses.at(handle).depthstencilattachments.size();
-	mh_renderpasses.at(handle).depthstencilattachments.push_back(RenderPassAttachment());
+	int index = mh_renderPasses.at(handle).depthstencilattachments.size();
+	mh_renderPasses.at(handle).depthstencilattachments.push_back(RenderPassAttachment());
 
-	RenderPassAttachment& attachment = mh_renderpasses.at(handle).depthstencilattachments[index];
+	RenderPassAttachment& attachment = mh_renderPasses.at(handle).depthstencilattachments[index];
 
 	attachment.reference.attachment = index;
 	attachment.reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1842,10 +1734,10 @@ uint32_t PersistanceVk::CreateRenderPassDepthStencilAttachment(RenderPassHandle 
 
 uint32_t PersistanceVk::CreateRenderPassInputAttachment(RenderPassHandle handle, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkAttachmentLoadOp depthstencilloadop, VkAttachmentStoreOp depthstencilstoreop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
-	int index = mh_renderpasses.at(handle).inputattachments.size();
-	mh_renderpasses.at(handle).inputattachments.push_back(RenderPassAttachment());
+	int index = mh_renderPasses.at(handle).inputattachments.size();
+	mh_renderPasses.at(handle).inputattachments.push_back(RenderPassAttachment());
 
-	RenderPassAttachment& attachment = mh_renderpasses.at(handle).inputattachments[index];
+	RenderPassAttachment& attachment = mh_renderPasses.at(handle).inputattachments[index];
 
 	attachment.reference.attachment = index;
 	attachment.reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1867,10 +1759,10 @@ uint32_t PersistanceVk::CreateRenderPassInputAttachment(RenderPassHandle handle,
 
 uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
 {
-	int index = mh_renderpasses.at(handle).attachments.size();
-	mh_renderpasses.at(handle).attachments.push_back(RenderPassAttachment());
+	int index = mh_renderPasses.at(handle).attachments.size();
+	mh_renderPasses.at(handle).attachments.push_back(RenderPassAttachment());
 
-	RenderPassAttachment& attachment = mh_renderpasses.at(handle).attachments[index];
+	RenderPassAttachment& attachment = mh_renderPasses.at(handle).attachments[index];
 	
 	attachment.reference.attachment = index;
 	attachment.reference.layout = attachmentlayout;
@@ -1891,11 +1783,11 @@ uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkIm
 
 uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
 {
-	uint32_t descriptionindex = mh_renderpasses.at(handle).subpassdescription.size();
-	mh_renderpasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
-	VkSubpassDescription& description = mh_renderpasses.at(handle).subpassdescription.at(descriptionindex);
+	uint32_t descriptionindex = mh_renderPasses.at(handle).subpassdescription.size();
+	mh_renderPasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
+	VkSubpassDescription& description = mh_renderPasses.at(handle).subpassdescription.at(descriptionindex);
 
-	auto& attachments = mh_renderpasses.at(handle).attachments;
+	auto& attachments = mh_renderPasses.at(handle).attachments;
 
 
 
@@ -1928,8 +1820,8 @@ uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const 
 	}*/
 
 	//assigning attachments to the subpass description
-	description.colorAttachmentCount = (uint32_t)mh_renderpasses.at(handle).colorattachments.size();
-	description.pColorAttachments = &mh_renderpasses.at(handle).colorattachments[0].reference;
+	description.colorAttachmentCount = (uint32_t)mh_renderPasses.at(handle).colorattachments.size();
+	description.pColorAttachments = &mh_renderPasses.at(handle).colorattachments[0].reference;
 	description.inputAttachmentCount = inputattachmentcount;
 	description.pInputAttachments = inputattachments.data();
 	description.preserveAttachmentCount = preservedattachmentcount;
@@ -1945,9 +1837,9 @@ uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const 
 
 uint32_t PersistanceVk::CreateSubpassDependency(RenderPassHandle handle, uint32_t srcsubpass, uint32_t dstsubpass, VkPipelineStageFlags srcstagemask, VkPipelineStageFlags dststagemask, VkAccessFlags srcaccessmask, VkAccessFlags dstaccessmask)
 {
-	uint32_t dependencyindex = mh_renderpasses.at(handle).subpassdependencies.size();
-	mh_renderpasses.at(handle).subpassdependencies.push_back(VkSubpassDependency());
-	VkSubpassDependency& dependency = mh_renderpasses.at(handle).subpassdependencies.at(dependencyindex);
+	uint32_t dependencyindex = mh_renderPasses.at(handle).subpassdependencies.size();
+	mh_renderPasses.at(handle).subpassdependencies.push_back(VkSubpassDependency());
+	VkSubpassDependency& dependency = mh_renderPasses.at(handle).subpassdependencies.at(dependencyindex);
 
 
 	dependency.srcSubpass = srcsubpass;
@@ -1971,7 +1863,7 @@ void PersistanceVk::CreateRenderPass(RenderPassHandle handle, const uint32_t* at
 
 	for (int i = 0; i < attachmentcount; i++)
 	{
-		attachments.emplace_back(mh_renderpasses.at(handle).colorattachments[attachmentindicies[i]].description);
+		attachments.emplace_back(mh_renderPasses.at(handle).colorattachments[attachmentindicies[i]].description);
 
 	}
 
@@ -1981,14 +1873,14 @@ void PersistanceVk::CreateRenderPass(RenderPassHandle handle, const uint32_t* at
 	renderpasscreateinfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderpasscreateinfo.attachmentCount = attachmentcount;
 	renderpasscreateinfo.pAttachments = attachments.data();
-	renderpasscreateinfo.subpassCount = (uint32_t)mh_renderpasses.at(handle).subpassdescription.size();
-	renderpasscreateinfo.pSubpasses = mh_renderpasses.at(handle).subpassdescription.data();
+	renderpasscreateinfo.subpassCount = (uint32_t)mh_renderPasses.at(handle).subpassdescription.size();
+	renderpasscreateinfo.pSubpasses = mh_renderPasses.at(handle).subpassdescription.data();
 
-	renderpasscreateinfo.dependencyCount = (uint32_t)mh_renderpasses.at(handle).subpassdependencies.size();
-	renderpasscreateinfo.pDependencies = mh_renderpasses.at(handle).subpassdependencies.data();
+	renderpasscreateinfo.dependencyCount = (uint32_t)mh_renderPasses.at(handle).subpassdependencies.size();
+	renderpasscreateinfo.pDependencies = mh_renderPasses.at(handle).subpassdependencies.data();
 
 
-	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &mh_renderpasses.at(handle).renderpass) != VK_SUCCESS)
+	if (vkCreateRenderPass(m_device, &renderpasscreateinfo, nullptr, &mh_renderPasses.at(handle).renderpass) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create render pass!");
 
@@ -2001,7 +1893,7 @@ void PersistanceVk::CreateRenderPass(RenderPassHandle handle, const uint32_t* at
 
 void PersistanceVk::CleanRenderPass()
 {
-	for (RenderPass pass : mh_renderpasses) 
+	for (RenderPass pass : mh_renderPasses) 
 	{
 		vkDestroyRenderPass(m_device, pass.renderpass, nullptr);
 	}
@@ -2011,16 +1903,16 @@ void PersistanceVk::CleanRenderPass()
 
 DescriptorSetLayoutHandle PersistanceVk::CreateDescriptorSetLayoutHandle()
 {
-	uint32_t handle = m_dslhandlecount++;
+	uint32_t handle = m_DSLHandleCount++;
 
-	mh_descriptorsetlayouts.emplace_back(DescriptorSetLayout());
+	mh_descriptorSetLayouts.emplace_back(DescriptorSetLayout());
 
 	return handle;
 }
 
 void PersistanceVk::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, VkDescriptorSetLayoutBinding& binding)
 {
-	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
+	mh_descriptorSetLayouts.at(handle).bindings.push_back(binding);
 }
 
 void PersistanceVk::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, uint32_t bindingidx, VkDescriptorType descriptortype, VkShaderStageFlagBits shaderstage)
@@ -2032,7 +1924,7 @@ void PersistanceVk::AddDescriptorSetLayoutBinding(DescriptorSetHandle handle, ui
 	binding.stageFlags = shaderstage;
 	binding.pImmutableSamplers = 0;
 	
-	mh_descriptorsetlayouts.at(handle).bindings.push_back(binding);
+	mh_descriptorSetLayouts.at(handle).bindings.push_back(binding);
 	
 
 }
@@ -2044,10 +1936,10 @@ void PersistanceVk::CreateDescriptorSetLayout(DescriptorSetHandle handle)
 
 	VkDescriptorSetLayoutCreateInfo layoutinfo{};
 	layoutinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutinfo.bindingCount = static_cast<uint32_t>(mh_descriptorsetlayouts.at(handle).bindings.size());
-	layoutinfo.pBindings = mh_descriptorsetlayouts.at(handle).bindings.data();
+	layoutinfo.bindingCount = static_cast<uint32_t>(mh_descriptorSetLayouts.at(handle).bindings.size());
+	layoutinfo.pBindings = mh_descriptorSetLayouts.at(handle).bindings.data();
 
-	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &mh_descriptorsetlayouts.at(handle).layout) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(m_device, &layoutinfo, nullptr, &mh_descriptorSetLayouts.at(handle).layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create descriptor set layout!");
 	}
@@ -2059,17 +1951,17 @@ void PersistanceVk::CreateDescriptorSetLayout(DescriptorSetHandle handle)
 
 void PersistanceVk::CleanDescriptorSetLayout()
 {
-	for (int i = 0; i < mh_descriptorsetlayouts.size(); i++)
+	for (int i = 0; i < mh_descriptorSetLayouts.size(); i++)
 	{
-		vkDestroyDescriptorSetLayout(m_device, mh_descriptorsetlayouts[i].layout, nullptr);
+		vkDestroyDescriptorSetLayout(m_device, mh_descriptorSetLayouts[i].layout, nullptr);
 	}
 }
 
 GraphicsPipelineHandle PersistanceVk::CreateGraphicsPipelineHandle()
 {
-	uint32_t handle = m_pipelinecount++;
+	uint32_t handle = m_pipelineHandleCount++;
 
-	mh_graphicspipelines.emplace_back(GraphicsPipeline());
+	mh_graphicsPipelines.emplace_back(GraphicsPipeline());
 
 
 
@@ -2084,15 +1976,15 @@ GraphicsPipelineHandle PersistanceVk::CreateGraphicsPipelineHandle()
 void PersistanceVk::AddVertexStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
-	mh_graphicspipelines.at(handle).shader.GetVertexModule() = CreateShaderModule(shaderfile);
-	mh_graphicspipelines.at(handle).shader.AddVertexShaderStage();
+	mh_graphicsPipelines.at(handle).shader.GetVertexModule() = CreateShaderModule(shaderfile);
+	mh_graphicsPipelines.at(handle).shader.AddVertexShaderStage();
 }
 
 void PersistanceVk::AddFragmentStage(GraphicsPipelineHandle handle, const char* shaderpath)
 {
 	const auto shaderfile = ReadFile(shaderpath);
-	mh_graphicspipelines.at(handle).shader.GetFragmentModule() = CreateShaderModule(shaderfile);
-	mh_graphicspipelines.at(handle).shader.AddFragmentShaderStage();
+	mh_graphicsPipelines.at(handle).shader.GetFragmentModule() = CreateShaderModule(shaderfile);
+	mh_graphicsPipelines.at(handle).shader.AddFragmentShaderStage();
 }
 
 void PersistanceVk::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphicspipelinehandle, uint32_t descriptorsetbinding)
@@ -2101,11 +1993,11 @@ void PersistanceVk::CreateGraphicsPipelineLayout(GraphicsPipelineHandle graphics
 	VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo{};
 	pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelinelayoutcreateinfo.setLayoutCount = 1;
-	pipelinelayoutcreateinfo.pSetLayouts = &mh_descriptorsetlayouts.at(descriptorsetbinding).layout;
+	pipelinelayoutcreateinfo.pSetLayouts = &mh_descriptorSetLayouts.at(descriptorsetbinding).layout;
 	pipelinelayoutcreateinfo.pushConstantRangeCount = 0;
 	pipelinelayoutcreateinfo.pPushConstantRanges = nullptr;
 
-	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &mh_graphicspipelines.at(graphicspipelinehandle).layout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(m_device, &pipelinelayoutcreateinfo, nullptr, &mh_graphicsPipelines.at(graphicspipelinehandle).layout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
@@ -2131,8 +2023,8 @@ void PersistanceVk::CreateGraphicsPipeline(GraphicsPipelineHandle handle, Pipeli
 	
 
 	pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelinecreateinfo.stageCount = static_cast<uint32_t>(mh_graphicspipelines.at(handle).shader.GetStages().size());
-	pipelinecreateinfo.pStages = mh_graphicspipelines.at(handle).shader.GetStages().data();
+	pipelinecreateinfo.stageCount = static_cast<uint32_t>(mh_graphicsPipelines.at(handle).shader.GetStages().size());
+	pipelinecreateinfo.pStages = mh_graphicsPipelines.at(handle).shader.GetStages().data();
 
 
 	pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
@@ -2144,9 +2036,9 @@ void PersistanceVk::CreateGraphicsPipeline(GraphicsPipelineHandle handle, Pipeli
 	pipelinecreateinfo.pDepthStencilState = nullptr;
 
 
-	pipelinecreateinfo.layout = mh_graphicspipelines.at(handle).layout;
+	pipelinecreateinfo.layout = mh_graphicsPipelines.at(handle).layout;
 	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &dynamicstatecreateinfo : nullptr;
-	pipelinecreateinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
+	pipelinecreateinfo.renderPass = mh_renderPasses.at(renderpasshandle).renderpass;
 	pipelinecreateinfo.subpass = 0;
 
 	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -2154,7 +2046,7 @@ void PersistanceVk::CreateGraphicsPipeline(GraphicsPipelineHandle handle, Pipeli
 
 	pipelinecreateinfo.pNext = nullptr;
 
-	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_graphicspipelines.at(handle).pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &mh_graphicsPipelines.at(handle).pipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create the graphics pipeline");
 
@@ -2169,15 +2061,15 @@ void PersistanceVk::CreateGraphicsPipeline(GraphicsPipelineHandle handle, Pipeli
 void PersistanceVk::DestroyShaders(GraphicsPipelineHandle handle)
 {
 	
-	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetVertexModule(), nullptr);
-	vkDestroyShaderModule(m_device, mh_graphicspipelines.at(handle).shader.GetFragmentModule(), nullptr);
+	vkDestroyShaderModule(m_device, mh_graphicsPipelines.at(handle).shader.GetVertexModule(), nullptr);
+	vkDestroyShaderModule(m_device, mh_graphicsPipelines.at(handle).shader.GetFragmentModule(), nullptr);
 
 	// compute one goes here.
 }
 
 void PersistanceVk::CleanGraphicsPipelines()
 {
-	for (GraphicsPipeline pipeline : mh_graphicspipelines) 
+	for (GraphicsPipeline pipeline : mh_graphicsPipelines) 
 	{
 		vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
 		vkDestroyPipelineLayout(m_device, pipeline.layout, nullptr);
@@ -2186,46 +2078,17 @@ void PersistanceVk::CleanGraphicsPipelines()
 
 }
 
-FrameBufferHandle PersistanceVk::CreateFrameBuffersHandle()
+FramebufferHandle PersistanceVk::CreateFrameBuffersHandle()
 {
 	
 	mh_framebuffers.emplace_back(Framebuffer());
 	
-	return m_framebuffercount++;
+	return m_framebufferHandleCount++;
 
 }
 
-void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle)
-{
-	uint32_t imageidx = 0;
-	int width = m_swapchainExtent.width;
-	int height = m_swapchainExtent.height;
-	VkFormat format = VK_FORMAT_R8G8B8A8_SRGB; //could cause problems since its not the same as the swapchain one.
-	VkImageTiling tiling; tiling = VK_IMAGE_TILING_OPTIMAL;
-	VkImageUsageFlags usageflags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	VkMemoryPropertyFlags memoryproperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-
-	imageidx = (uint32_t)mh_framebuffers.at(handle).images.size();
-
-	mh_framebuffers.at(handle).images.emplace_back(VkImage());
-	////mh_framebuffers.at(handle).imagememory.emplace_back(VkDeviceMemory());
-	mh_framebuffers.at(handle).allocations.emplace_back(VmaAllocation());
-
-	VkImage& image = mh_framebuffers.at(handle).images[imageidx];
-	VmaAllocation& allocation = mh_framebuffers.at(handle).allocations[imageidx];
-	
-
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, image, allocation);
-
-	
-
-
-	
-
-}
  
-void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
+void PersistanceVk::CreateFramebufferImage(FramebufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties)
 {
 	uint32_t imageidx = 0;
 	mh_framebuffers.at(handle).images.push_back(VkImage());
@@ -2238,7 +2101,21 @@ void PersistanceVk::CreateFramebufferImage(FrameBufferHandle handle, int width, 
 
 }
 
-void PersistanceVk::CreateFramebufferImageViews(FrameBufferHandle handle)
+void PersistanceVk::CreateSwapchainFramebufferImageViews()
+{
+	size_t imagecount = m_swapchainFramebuffers.images.size();
+
+	m_swapchainFramebuffers.imageviews.resize(imagecount);
+
+	for (int i = 0; i < imagecount; i++)
+	{
+		m_swapchainFramebuffers.imageviews[i] = CreateImageView(m_swapchainFramebuffers.images[i], m_swapchainImageFormat);
+
+	}
+
+
+}
+void PersistanceVk::CreateFramebufferImageViews(FramebufferHandle handle, VkFormat format)
 {
 	size_t imagecount = mh_framebuffers.at(handle).images.size();
 
@@ -2246,31 +2123,57 @@ void PersistanceVk::CreateFramebufferImageViews(FrameBufferHandle handle)
 
 	for (int i = 0; i < imagecount; i++)
 	{
-		mh_framebuffers.at(handle).imageviews[i] = CreateImageView(mh_framebuffers.at(handle).images[i], m_swapchainImageFormat);
+		mh_framebuffers.at(handle).imageviews[i] = CreateImageView(mh_framebuffers.at(handle).images[i], format);
 
 	}
 
-
 }
-void PersistanceVk::CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle)
+void PersistanceVk::CreateSwapchainFramebuffers(const uint32_t renderpasshandle)
 {
-	size_t imageviewcount = mh_framebuffers.at(handle).imageviews.size();
-	mh_framebuffers.at(handle).framebuffers.resize(imageviewcount);
-	//using a handle, this would be replaced by a stored vector of framebuffers being resized according to the amount of framebuffers we want to make.
-
+	size_t imageviewcount = m_swapchainFramebuffers.imageviews.size();
+	m_swapchainFramebuffers.framebuffers.resize(imageviewcount);
+	
 	for (int i = 0; i < imageviewcount; i++)
 	{
 
-		VkImageView attachments[] = { mh_framebuffers.at(handle).imageviews[i] }; //separate this into another map
+		VkImageView attachments[] = { m_swapchainFramebuffers.imageviews[i] };
 
 		VkFramebufferCreateInfo framebufferinfo{};
 		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferinfo.renderPass = mh_renderpasses.at(renderpasshandle).renderpass;
+		framebufferinfo.renderPass = mh_renderPasses.at(renderpasshandle).renderpass;
 		framebufferinfo.layers = 1;
 		framebufferinfo.attachmentCount = 1;
 		framebufferinfo.pAttachments = attachments;
 		framebufferinfo.width = m_swapchainExtent.width;
 		framebufferinfo.height = m_swapchainExtent.height;
+
+		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &m_swapchainFramebuffers.framebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create framebuffer");
+
+		}
+	}
+
+}
+
+void PersistanceVk::CreateFramebuffers(FramebufferHandle handle, const uint32_t renderpasshandle, uint32_t width, uint32_t height, uint32_t layers)
+{
+	size_t imageviewcount = mh_framebuffers.at(handle).imageviews.size();
+	mh_framebuffers.at(handle).framebuffers.resize(imageviewcount);
+
+	for (int i = 0; i < imageviewcount; i++)
+	{
+
+		VkImageView attachments[] = { mh_framebuffers.at(handle).imageviews[i] };
+
+		VkFramebufferCreateInfo framebufferinfo{};
+		framebufferinfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferinfo.renderPass = mh_renderPasses.at(renderpasshandle).renderpass;
+		framebufferinfo.layers = layers;
+		framebufferinfo.attachmentCount = 1;
+		framebufferinfo.pAttachments = attachments;
+		framebufferinfo.width = width;
+		framebufferinfo.height = height;
 
 		if (vkCreateFramebuffer(m_device, &framebufferinfo, nullptr, &mh_framebuffers.at(handle).framebuffers[i]) != VK_SUCCESS)
 		{
@@ -2278,6 +2181,7 @@ void PersistanceVk::CreateFramebuffers(FrameBufferHandle handle, const uint32_t 
 
 		}
 	}
+
 }
 
 void PersistanceVk::CleanFramebuffers()
@@ -2296,7 +2200,7 @@ void PersistanceVk::CleanFramebuffers()
 		
 		for (int i = 0; i < buffer.images.size(); i++) 
 		{
-			vmaDestroyImage(m_vmaallocator, buffer.images[i], buffer.allocations[i]);
+			vmaDestroyImage(m_vmaAllocator, buffer.images[i], buffer.allocations[i]);
 		}
 		/*The reason as to why imageviews and images are deleted sepperately is because the developer
 		might not create an imageview for every image.*/
@@ -2308,7 +2212,7 @@ void PersistanceVk::CleanFramebuffers()
 
 uint32_t PersistanceVk::CreateTextureHandle()
 {
-	uint32_t handle = m_texturecount++;
+	uint32_t handle = m_textureHandleCount++;
 
 	mh_textures.emplace_back(Texture());
 
@@ -2350,9 +2254,9 @@ void PersistanceVk::CreateTextureImage(TextureHandle handle, const char* imagesr
 	void* data;
 	
 
-	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	vmaMapMemory(m_vmaAllocator, stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vmaUnmapMemory(m_vmaallocator, stagingalloc);
+	vmaUnmapMemory(m_vmaAllocator, stagingalloc);
 	
 	stbi_image_free(pixels);
 
@@ -2361,13 +2265,13 @@ void PersistanceVk::CreateTextureImage(TextureHandle handle, const char* imagesr
 		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
 
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferQueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transferCommandPool, m_transferQueue);
 
-	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferQueue);
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transferCommandPool, m_transferQueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsQueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicsCommandPool, m_graphicsQueue);
 
-	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	vmaDestroyBuffer(m_vmaAllocator, stagingbuffer, stagingalloc);
 
 	
 }
@@ -2397,28 +2301,28 @@ void PersistanceVk::AddImageToTexture(TextureHandle handle, const char* imagesrc
 
 	void* data;
 	
-	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	vmaMapMemory(m_vmaAllocator, stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vmaUnmapMemory(m_vmaallocator, stagingalloc);
+	vmaUnmapMemory(m_vmaAllocator, stagingalloc);
 
 	stbi_image_free(pixels);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transfercommandpool, m_transferQueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transferCommandPool, m_transferQueue);
 
-	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transfercommandpool, m_transferQueue);
+	CopyBuffertoImage(stagingbuffer, mh_textures.at(handle).image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), m_transferCommandPool, m_transferQueue);
 
-	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicscommandpool, m_graphicsQueue);
+	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_graphicsCommandPool, m_graphicsQueue);
 
 	
-	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	vmaDestroyBuffer(m_vmaAllocator, stagingbuffer, stagingalloc);
 	
 }
 
 TextureSamplerHandle PersistanceVk::CreateTextureSamplerHandle()
 {
-	uint32_t handle = m_texturesamplercount++;
+	uint32_t handle = m_textureSamplerHandleCount++;
 
-	mh_texturesamplers.emplace_back(VkSampler());
+	mh_textureSamplers.emplace_back(VkSampler());
 	
 	return handle;
 }
@@ -2457,7 +2361,7 @@ void PersistanceVk::CreateTextureSampler(TextureSamplerHandle handle, VkFilter m
 	samplerinfo.compareEnable = VK_FALSE;
 	samplerinfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	if (vkCreateSampler(m_device, &samplerinfo, nullptr, &mh_texturesamplers.at(handle)) != VK_SUCCESS)
+	if (vkCreateSampler(m_device, &samplerinfo, nullptr, &mh_textureSamplers.at(handle)) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create sampler");
 
@@ -2471,9 +2375,9 @@ void PersistanceVk::CleanTextures()
 {
 	for (int i = 0; i < mh_textures.size(); i++) {
 		vkDestroyImageView(m_device, mh_textures[i].imageview, nullptr);
-		vmaDestroyImage(m_vmaallocator, mh_textures[i].image, mh_textures[i].allocation);
+		vmaDestroyImage(m_vmaAllocator, mh_textures[i].image, mh_textures[i].allocation);
 	}
-	for (auto& sampler : mh_texturesamplers) 
+	for (auto& sampler : mh_textureSamplers) 
 	{
 		vkDestroySampler(m_device, sampler, nullptr);
 	}
@@ -2482,9 +2386,9 @@ void PersistanceVk::CleanTextures()
 
 BufferHandle PersistanceVk::CreateVertexBufferHandle()
 {
-	uint32_t handle = m_vertexbuffercount++;
+	uint32_t handle = m_vertexBufferHandleCount++;
 
-	mh_vertexbuffers.emplace_back(Buffer());
+	mh_vertexBuffers.emplace_back(Buffer());
 
 	return handle;
 }
@@ -2500,31 +2404,31 @@ void PersistanceVk::CreateVertexBuffer(BufferHandle handle, const void* buffer, 
 
 	void* data;
 
-	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	vmaMapMemory(m_vmaAllocator, stagingalloc, &data);
 	memcpy(data, buffer, buffersize);
-	vmaUnmapMemory(m_vmaallocator, stagingalloc);
+	vmaUnmapMemory(m_vmaAllocator, stagingalloc);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexbuffers.at(handle).buffer, mh_vertexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
-	mh_vertexbuffers.at(handle).size = buffersize;
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_vertexBuffers.at(handle).buffer, mh_vertexBuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
+	mh_vertexBuffers.at(handle).size = buffersize;
 
-	CopyBuffer(stagingbuffer, mh_vertexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferQueue);
+	CopyBuffer(stagingbuffer, mh_vertexBuffers.at(handle).buffer, buffersize, m_transferCommandPool, m_transferQueue);
 	
-	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	vmaDestroyBuffer(m_vmaAllocator, stagingbuffer, stagingalloc);
 }
 
 void PersistanceVk::CleanVertexBuffers()
 {
-	for (auto& vertexbuffer : mh_vertexbuffers) 
+	for (auto& vertexbuffer : mh_vertexBuffers) 
 	{
-		vmaDestroyBuffer(m_vmaallocator, vertexbuffer.buffer, vertexbuffer.allocation);	
+		vmaDestroyBuffer(m_vmaAllocator, vertexbuffer.buffer, vertexbuffer.allocation);	
 	}
 }
 
 uint32_t PersistanceVk::CreateIndexBufferHandle()
 {
-	uint32_t handle = m_indexbuffercount++;
+	uint32_t handle = m_indexBufferHandleCount++;
 
-	mh_indexbuffers.emplace_back(Buffer());
+	mh_indexBuffers.emplace_back(Buffer());
 	
 	return handle;
 }
@@ -2541,51 +2445,51 @@ void PersistanceVk::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_
 
 	void* data;
 
-	vmaMapMemory(m_vmaallocator, stagingalloc, &data);
+	vmaMapMemory(m_vmaAllocator, stagingalloc, &data);
 	memcpy(data, buffer, buffersize);
-	vmaUnmapMemory(m_vmaallocator, stagingalloc);
+	vmaUnmapMemory(m_vmaAllocator, stagingalloc);
 
-	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexbuffers.at(handle).buffer, mh_indexbuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
-	mh_indexbuffers.at(handle).size = buffersize;
+	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mh_indexBuffers.at(handle).buffer, mh_indexBuffers.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
+	mh_indexBuffers.at(handle).size = buffersize;
 
-	CopyBuffer(stagingbuffer, mh_indexbuffers.at(handle).buffer, buffersize, m_transfercommandpool, m_transferQueue);
+	CopyBuffer(stagingbuffer, mh_indexBuffers.at(handle).buffer, buffersize, m_transferCommandPool, m_transferQueue);
 
-	vmaDestroyBuffer(m_vmaallocator, stagingbuffer, stagingalloc);
+	vmaDestroyBuffer(m_vmaAllocator, stagingbuffer, stagingalloc);
 }
 
 void PersistanceVk::CleanIndexBuffers()
 {
-	for (auto& indexbuffer : mh_indexbuffers)
+	for (auto& indexbuffer : mh_indexBuffers)
 	{
-		vmaDestroyBuffer(m_vmaallocator, indexbuffer.buffer, indexbuffer.allocation);
+		vmaDestroyBuffer(m_vmaAllocator, indexbuffer.buffer, indexbuffer.allocation);
 
 	}
 }
 
 uint32_t PersistanceVk::CreateUniformBufferHandle()
 {
-	uint32_t handle = m_uniformbuffercount++;
-	mh_uniformbuffers.emplace_back(UniformBuffer());
+	uint32_t handle = m_uniformBufferHandleCount++;
+	mh_uniformBuffers.emplace_back(UniformBuffer());
 	return handle;
 }
 
 void PersistanceVk::CreateUniformBuffer(uint32_t handle, size_t buffersize)
 {
-	mh_uniformbuffers.at(handle).size = buffersize;
-	UniformBuffer& buffer = mh_uniformbuffers.at(handle);
+	mh_uniformBuffers.at(handle).size = buffersize;
+	UniformBuffer& buffer = mh_uniformBuffers.at(handle);
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		CreateBuffer(buffer.size , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer.buffers[i], buffer.allocations[i], VK_SHARING_MODE_CONCURRENT);
 		
-		vmaMapMemory(m_vmaallocator, buffer.allocations[i], &buffer.memorymaps[i]);
+		vmaMapMemory(m_vmaAllocator, buffer.allocations[i], &buffer.memorymaps[i]);
 	}
 }
 
 void PersistanceVk::UpdateUniformBuffer(uint32_t handle, const void* buffer, const uint32_t currentframe)
 {
 
-	UniformBuffer& uniformbuffer = mh_uniformbuffers.at(handle);
+	UniformBuffer& uniformbuffer = mh_uniformBuffers.at(handle);
 	
 
 	memcpy(uniformbuffer.memorymaps[currentframe], buffer, uniformbuffer.size);
@@ -2597,12 +2501,12 @@ void PersistanceVk::UpdateUniformBuffer(uint32_t handle, const void* buffer, con
 void PersistanceVk::CleanUniformBuffers()
 {
 
-	for (auto& uniformbuffer : mh_uniformbuffers) 
+	for (auto& uniformbuffer : mh_uniformBuffers) 
 	{
 		for (int j = 0; j < PersistanceLib::MAXFRAMESINFLIGHT; j++)
 		{
-			vmaUnmapMemory(m_vmaallocator, uniformbuffer.allocations[j]);
-			vmaDestroyBuffer(m_vmaallocator, uniformbuffer.buffers[j], uniformbuffer.allocations[j]);
+			vmaUnmapMemory(m_vmaAllocator, uniformbuffer.allocations[j]);
+			vmaDestroyBuffer(m_vmaAllocator, uniformbuffer.buffers[j], uniformbuffer.allocations[j]);
 
 		}
 	}

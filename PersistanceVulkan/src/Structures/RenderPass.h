@@ -25,5 +25,3 @@ struct RenderPass
 
 };
 
-
-

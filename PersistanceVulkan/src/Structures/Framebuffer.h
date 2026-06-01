@@ -12,6 +12,4 @@ struct Framebuffer {
 	std::vector<VkImage> images;
 	std::vector<VmaAllocation> allocations;
 
-
-
 };

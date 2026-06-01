@@ -29,7 +29,7 @@
 
 #include "../Settings/PipelineSettings.h"
 
-#include "DebugUtilsMessengerEXT.h"
+#include "Debug/DebugUtilsMessengerEXT.h"
 
 
 #include "Objects/Shader.h"
@@ -59,7 +59,6 @@
 #endif
 #endif
 
-typedef uint32_t FrameBufferHandle;
 #define BREAK __debugbreak();
 
 
@@ -162,7 +161,6 @@ private:
 		volkLoadDevice(m_device);
 		CreateAllocator();
 		CreateSwapChain();
-		CreateImageViews();
 		CreateCommandPools();
 		CreateSyncObjects();
 	}
@@ -249,8 +247,6 @@ private:
 
 	void CreateSwapChain();
 
-	void CreateImageViews();
-
 	void CreateCommandPools();
 
 	void CreateSyncObjects();
@@ -268,8 +264,6 @@ private:
 		void* pUserData);
 
 	void SetDebugCreateInfoStructVariables(VkDebugUtilsMessengerCreateInfoEXT& createinfo);
-
-
 
 	bool RateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle = nullptr);
 
@@ -337,11 +331,9 @@ private: //member variables
 	VkQueue m_transferQueue;
 	VkSurfaceKHR m_surface;
 	VkSwapchainKHR m_swapchain;
-	std::vector<VkImage> m_swapchainImages;
+	//std::vector<VkImage> m_swapchainImages;
 	VkFormat m_swapchainImageFormat;
 	VkExtent2D m_swapchainExtent;
-	std::vector<VkImageView> m_swapchainImageViews;
-	std::vector<VkFramebuffer> m_swapchainFramebuffers;
 	VkCommandPool m_graphicsCommandPool;
 	VkCommandPool m_transferCommandPool;
 
@@ -363,6 +355,7 @@ private: //member variables
 	std::vector<GraphicsPipeline> mh_graphicsPipelines;
 	uint32_t m_framebufferHandleCount = 0;
 	std::vector<Framebuffer> mh_framebuffers;
+	Framebuffer m_swapchainFramebuffers;
 	std::vector<Texture> mh_textures;
 	std::vector <VkSampler> mh_textureSamplers;
 	uint32_t m_textureHandleCount = 0;
@@ -456,7 +449,6 @@ public:
 		uint32_t subpassdescriptioncount,
 		const uint32_t* subpassdependencyindices,
 		uint32_t subpassdependencycount);
-	void CreateSwapchainFramebuffers(uint32_t renderpasshandle);
 
 	void CleanRenderPass();
 
@@ -481,12 +473,17 @@ public:
 
 	//Framebuffer modulation
 
-	FrameBufferHandle CreateFrameBuffersHandle();
+	FramebufferHandle CreateFrameBuffersHandle();
 
-	void CreateFramebufferImage(FrameBufferHandle handle);
-	void CreateFramebufferImage(FrameBufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties);
-	void CreateFramebufferImageViews(FrameBufferHandle handle);
-	void CreateFramebuffers(FrameBufferHandle handle, const uint32_t renderpasshandle);
+	
+	void CreateFramebufferImage(FramebufferHandle handle, int width, int height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageflags, VkMemoryPropertyFlags memoryproperties);
+	void CreateFramebufferImageViews(FramebufferHandle handle, VkFormat format);
+	void CreateFramebuffers(FramebufferHandle handle, const uint32_t renderpasshandle, uint32_t width, uint32_t height, uint32_t layers = 1);
+	
+	
+	void CreateSwapchainFramebufferImageViews();
+	void CreateSwapchainFramebuffers(const uint32_t renderpasshandle);
+
 
 	void CleanFramebuffers();
 
@@ -558,14 +555,11 @@ public:
 	void CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
 
 
-	// Record Command Buffer modulation
-
-	void RecordCommandBuffer(VkCommandBuffer& commandbuffer, const uint32_t& swapchainimageindex, const GraphicsPipelineHandle graphicspipelinehandle, const BufferHandle vertexbufferhandle, const BufferHandle indexbufferhandle, const DescriptorSetHandle descriptorsethandle, const RenderPassHandle renderpasshandle);
-
-
+	
+	
 	void StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle);
 	void BeginCommandBuffer(BufferHandle commandbufferhandle, VkCommandBufferUsageFlags flags);
-	void BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, VkClearValue clearcolor, VkRect2D offset, VkExtent2D extent);
+	void BeginRenderPass(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle, bool usingswapchainframebuffer, FramebufferHandle framebufferhandle, VkClearValue clearcolor, VkOffset2D offset, VkExtent2D extent);
 	void BindGraphicsPipeline(BufferHandle commandbufferhandle, VkPipelineBindPoint bindingpoint, GraphicsPipelineHandle handle);
 	void SetViewport(BufferHandle commandbufferhandle, float xpos, float ypos, float mindepth, float maxdepth, VkExtent2D extent);
 	void SetScissors(BufferHandle commandbufferhandle, VkOffset2D offset, VkExtent2D extent);
