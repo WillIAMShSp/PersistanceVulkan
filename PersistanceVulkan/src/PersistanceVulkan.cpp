@@ -3,15 +3,12 @@
 
 
 
+
 struct Vertex
 {
 	glm::vec2 position;
 	glm::vec3 color;
 	glm::vec2 uv;
-
-
-
-
 
 
 };
@@ -99,21 +96,6 @@ int main() {
 	engine.CreateSwapchainFramebuffers(renderpasshandle);
 	
 
-	RenderPassHandle secondRenderPass = engine.CreateRenderPassHandle();
-	uint32_t colorattachment2 = engine.CreateRenderPassColorAttachment(secondRenderPass, 
-		engine.GetSwapchainImageFormat(), 
-		VK_SAMPLE_COUNT_1_BIT, 
-		VK_ATTACHMENT_LOAD_OP_CLEAR, 
-		VK_ATTACHMENT_STORE_OP_STORE, 
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
-		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-	uint32_t subpassdescription2 = engine.CreateSubpassDescription(secondRenderPass, &colorattachment2, 1);
-	uint32_t subpassdependency2 = engine.CreateSubpassDependency(secondRenderPass, VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-	engine.CreateRenderPass(secondRenderPass, &colorattachment2, 1, &subpassdescription2, 1, &subpassdependency2, 1);
-
-	
-
-
 	
 	int descriptorsetlayouthandle;
 	descriptorsetlayouthandle = engine.CreateDescriptorSetLayoutHandle();
@@ -141,12 +123,7 @@ int main() {
 	settings.UseDynamicViewport();
 	engine.CreateGraphicsPipeline(pipeline, settings, renderpasshandle);
 
-	uint32_t pipeline2 = engine.CreateGraphicsPipelineHandle();
 	
-	engine.AddVertexStage(pipeline2, "res/Shaders/basicvert.spv"); /*Create shaders*/
-	engine.AddFragmentStage(pipeline2, "res/Shaders/basicfrag.spv"); //
-	engine.CreateGraphicsPipelineLayout(pipeline2, descriptorsetlayouthandle);
-	engine.CreateGraphicsPipeline(pipeline2, settings, secondRenderPass);
 	
 	uint32_t texturesamplerhandle = engine.CreateTextureSamplerHandle();
 	uint32_t texturehandle = engine.CreateTextureHandle();
@@ -202,18 +179,23 @@ int main() {
 		VkClearValue clearcolor = { {{0.f, 0.f, 0.f, 1.0f}} };
 		VkOffset2D offset = { 0,0 };
 
+	
+
+		//engine.TransitionImageLayout(framebuffer, engine.GetCurrentFrame(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		
+
+
 		engine.BeginRenderPass(commandbufferhandle, renderpasshandle, true, 0, clearcolor, offset, engine.GetSwapchainExtent());
 		engine.BindGraphicsPipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS, 0);
 		engine.SetViewport(commandbufferhandle, 0.f, 0.f, 0.f, 1.f, engine.GetSwapchainExtent());
 		engine.SetScissors(commandbufferhandle, offset, engine.GetSwapchainExtent());
 		engine.DrawIndexed(commandbufferhandle, drawing);
 		engine.EndRenderPass(commandbufferhandle);
-		/*engine.BeginRenderPass(commandbufferhandle, secondRenderPass, clearcolor, VkRect2D(), engine.GetSwapchainExtent());
+		
 
-		engine.SetViewport(commandbufferhandle, 0.f, 0.f, 0.f, 1.f, engine.GetSwapchainExtent());
-		engine.SetScissors(commandbufferhandle, offset, engine.GetSwapchainExtent());
+		
 
-		engine.EndRenderPass(commandbufferhandle);*/
+
 
 		engine.EndCommandBuffer(commandbufferhandle);
 		engine.EndAndPresentDrawing(commandbufferhandle, renderpasshandle);

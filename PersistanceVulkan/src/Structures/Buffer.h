@@ -10,3 +10,6 @@ struct Buffer {
 	VmaAllocation allocation;
 	size_t size;
 };
+
+
+static Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);

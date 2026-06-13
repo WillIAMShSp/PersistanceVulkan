@@ -673,7 +673,7 @@ void PersistanceVk::CleanAllocator()
 	vmaDestroyAllocator(m_vmaAllocator);
 }
 
-void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode)
+void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode, VkImageLayout initiallayout)
 {
 
 	VkImageCreateInfo imageinfo{};
@@ -686,7 +686,7 @@ void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, Vk
 	imageinfo.arrayLayers = 1;
 	imageinfo.format = format;
 	imageinfo.tiling = tiling;
-	imageinfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageinfo.initialLayout = initiallayout;
 	imageinfo.usage = usage;
 	imageinfo.sharingMode = sharingmode;
 	imageinfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -722,7 +722,7 @@ void PersistanceVk::CreateImage(const uint32_t& width, const uint32_t height, Vk
 
 
 
-	if (vmaCreateImage(m_vmaAllocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS) 
+	if (vmaCreateImage(m_vmaAllocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS)
 	{
 		std::cout << "Failed to create image!";
 		BREAK(0);
@@ -1517,6 +1517,81 @@ VkCommandPool& PersistanceVk::GetTransferCommandPool()
 	return m_transferCommandPool;
 }
 
+void PersistanceVk::TransitionImageLayout(BufferHandle imageHandle, uint32_t imageindex, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkCommandBuffer commandbuffer = BeginSingleTimeCommands(m_transferCommandPool);
+
+
+	VkPipelineStageFlags srcstage;
+	VkPipelineStageFlags dststage;
+
+
+
+	VkImageMemoryBarrier membarrier{};
+	membarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	membarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	membarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	membarrier.oldLayout = oldLayout;
+	membarrier.newLayout = newLayout;
+
+	membarrier.image = mh_framebuffers.at(imageHandle).images[imageindex];
+	membarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	membarrier.subresourceRange.baseArrayLayer = 0;
+	membarrier.subresourceRange.layerCount = 1;
+	membarrier.subresourceRange.baseMipLevel = 0;
+	membarrier.subresourceRange.levelCount = 1;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+
+		membarrier.srcAccessMask = 0;
+		membarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		srcstage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dststage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		membarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		membarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		srcstage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dststage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		membarrier.srcAccessMask = 0;
+		membarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+		srcstage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dststage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
+	else
+	{
+		throw std::invalid_argument("Layout unsupported!");
+
+	}
+
+
+	vkCmdPipelineBarrier(
+		commandbuffer,
+		srcstage, //todo
+		dststage, //todo
+		0, 0,
+		nullptr, 0,
+		nullptr, 1,
+		&membarrier
+	);
+
+	EndSingleTimeCommands(commandbuffer, m_transferCommandPool, m_transferQueue);
+
+
+}
+
 
 
 
@@ -1575,7 +1650,7 @@ void PersistanceVk::TransitionImageLayout(VkImage& image, const VkFormat& format
 	membarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	membarrier.oldLayout = oldlayout;
 	membarrier.newLayout = newlayout;
-
+	
 	membarrier.image = image;
 	membarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	membarrier.subresourceRange.baseArrayLayer = 0;
@@ -1603,6 +1678,11 @@ void PersistanceVk::TransitionImageLayout(VkImage& image, const VkFormat& format
 		dststage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
 
+	}
+	else if (oldlayout == VK_IMAGE_LAYOUT_UNDEFINED && newlayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) 
+	{
+		membarrier.srcAccessMask = 0;
+		membarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT; 
 	}
 	else
 	{
@@ -1757,29 +1837,29 @@ uint32_t PersistanceVk::CreateRenderPassInputAttachment(RenderPassHandle handle,
 
 
 
-uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
-{
-	int index = mh_renderPasses.at(handle).attachments.size();
-	mh_renderPasses.at(handle).attachments.push_back(RenderPassAttachment());
-
-	RenderPassAttachment& attachment = mh_renderPasses.at(handle).attachments[index];
-	
-	attachment.reference.attachment = index;
-	attachment.reference.layout = attachmentlayout;
-	
-	attachment.description.format = format;
-	attachment.description.samples = imagesamples;
-	attachment.description.loadOp = loadop;
-	attachment.description.storeOp = storeop;
-	attachment.description.initialLayout = initialimagelayout;
-	attachment.description.finalLayout = finalimagelayout;
-
-	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-	return index;
-
-}
+//uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
+//{
+//	int index = mh_renderPasses.at(handle).attachments.size();
+//	mh_renderPasses.at(handle).attachments.push_back(RenderPassAttachment());
+//
+//	RenderPassAttachment& attachment = mh_renderPasses.at(handle).attachments[index];
+//	
+//	attachment.reference.attachment = index;
+//	attachment.reference.layout = attachmentlayout;
+//	
+//	attachment.description.format = format;
+//	attachment.description.samples = imagesamples;
+//	attachment.description.loadOp = loadop;
+//	attachment.description.storeOp = storeop;
+//	attachment.description.initialLayout = initialimagelayout;
+//	attachment.description.finalLayout = finalimagelayout;
+//
+//	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+//	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+//
+//	return index;
+//
+//}
 
 uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
 {
@@ -1787,13 +1867,8 @@ uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const 
 	mh_renderPasses.at(handle).subpassdescription.push_back(VkSubpassDescription());
 	VkSubpassDescription& description = mh_renderPasses.at(handle).subpassdescription.at(descriptionindex);
 
-	auto& attachments = mh_renderPasses.at(handle).attachments;
 
 
-
-	if (depthandstencilattachmentindex != UINT32_MAX) {
-		description.pDepthStencilAttachment = &attachments[depthandstencilattachmentindex].reference;
-	}
 
 	
 	// Setting up attachment vectors
@@ -1803,21 +1878,6 @@ uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const 
 	inputattachments.reserve(inputattachmentcount);
 	
 
-
-	
-	// Assign attachment references to designated vectors
-	/*for (int i = 0; i < colorattachmentcount; i++) 
-	{
-		VkAttachmentReference& attachmentref = attachments[colorattachmentindices[i]].reference;
-		colorattachments.push_back(attachmentref);
-		
-	}
-	for (int i = 0; i < inputattachmentcount; i++) 
-	{
-		VkAttachmentReference& attachmentref = attachments[inputattachmentindices[i]].reference;
-		inputattachments.push_back(attachmentref);
-	
-	}*/
 
 	//assigning attachments to the subpass description
 	description.colorAttachmentCount = (uint32_t)mh_renderPasses.at(handle).colorattachments.size();
@@ -2097,7 +2157,7 @@ void PersistanceVk::CreateFramebufferImage(FramebufferHandle handle, int width, 
 
 	imageidx = (uint32_t)mh_framebuffers.at(handle).images.size() - 1;
 
-	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).allocations[imageidx] , VK_SHARING_MODE_CONCURRENT);
+	CreateImage(width, height, format, tiling, usageflags, memoryproperties, mh_framebuffers.at(handle).images[imageidx], mh_framebuffers.at(handle).allocations[imageidx], VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
 }
 
@@ -2224,7 +2284,7 @@ void PersistanceVk::CreateTextureImage(TextureHandle handle, int width, int heig
 {
 	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
+		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
 	mh_textures.at(handle).width = width;
 	mh_textures.at(handle).height = height;
@@ -2262,7 +2322,7 @@ void PersistanceVk::CreateTextureImage(TextureHandle handle, const char* imagesr
 
 	CreateImage(width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT);
+		mh_textures.at(handle).image, mh_textures.at(handle).allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
 
 	TransitionImageLayout(mh_textures.at(handle).image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_transferCommandPool, m_transferQueue);

@@ -10,8 +10,6 @@ struct RenderPass
 
 	VkRenderPass renderpass;
 	
-	std::vector<RenderPassAttachment> attachments;
-
 	std::vector<RenderPassAttachment> colorattachments;
 	
 	std::vector<RenderPassAttachment> depthstencilattachments;

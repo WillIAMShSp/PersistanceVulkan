@@ -2,6 +2,11 @@
 
 #include "PersistanceLib.h"
 
+
+#include <GLFW/glfw3.h>
+#include <iostream>
+
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec4.hpp>
@@ -62,37 +67,6 @@
 #define BREAK __debugbreak();
 
 
-
-const uint32_t screenwidth = 800;
-const uint32_t screenheight = 600;
-
-const std::vector<const char*> m_validationlayers = {
-	"VK_LAYER_KHRONOS_validation"
-};
-
-
-#ifdef NDEBUG
-const bool enablevalidationlayers = false;
-#else
-const bool enablevalidationlayers = true;
-#endif
-
-struct QueueFamilyIndices
-{
-	uint32_t graphicsfamily = -1;
-	uint32_t presentfamily = -1;
-	uint32_t computefamily = -1;
-	uint32_t transferfamily = -1;
-
-
-};
-struct SwapChainSupportDetails
-{
-	VkSurfaceCapabilitiesKHR surfacecapabilities;
-	std::vector<VkSurfaceFormatKHR> surfaceformat;
-	std::vector<VkPresentModeKHR> presentmode;
-
-};
 
 struct ModelViewProjectionBuffer
 {
@@ -306,7 +280,8 @@ private:
 		const VkMemoryPropertyFlags& properties,
 		VkImage& image,
 		VmaAllocation& allocation,
-		VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+		VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE, 
+		VkImageLayout initiallayout = VK_IMAGE_LAYOUT_UNDEFINED);
 
 	void CopyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue);
 
@@ -390,6 +365,8 @@ public:
 	uint32_t GetCurrentFrame();
 	VkCommandPool& GetGraphicsCommandPool();
 	VkCommandPool& GetTransferCommandPool();
+
+	void TransitionImageLayout(BufferHandle imageHandle, uint32_t imageindex, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	//RenderPass modulation	
 
