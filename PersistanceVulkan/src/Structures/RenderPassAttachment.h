@@ -38,6 +38,11 @@ struct AttachmentDescriptionList {
 	void add(RenderPassAttachment* attachments, uint32_t attachmentCount) 
 	{
 		descriptions.reserve(attachmentCount + descriptions.size());
+		for (int i = 0; i < attachmentCount; i++) 
+		{
+			descriptions.emplace_back(attachments[i].description);
+		}
+		
 	}
 
 	std::vector<VkAttachmentDescription> descriptions;

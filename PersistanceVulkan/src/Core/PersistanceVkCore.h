@@ -10,11 +10,10 @@
 #include "../Includes/stdLibIncludes.h"
 
 #include "stb_image.h"
-#include "./Structures/Framebuffer.h"
-
+#include "../Structures/Framebuffer.h"
+#include "../Structures/RenderPass.h"
 
 #include "Debug/DebugUtilsMessengerEXT.h"
-
 
 
 #define BREAK __debugbreak();
@@ -51,6 +50,8 @@ struct QueueFamilyIndices
 
 };
 
+
+
 class PersistanceVkCore
 {
 public:
@@ -69,6 +70,7 @@ public:
 	VkFormat m_swapchainImageFormat;
 	Framebuffer m_swapchainFramebuffers;
 	VkExtent2D m_swapchainExtent;
+	RenderPass m_mainRenderPass;
 	VkCommandPool m_graphicsCommandPool;
 	VkCommandPool m_transferCommandPool;
 
@@ -106,6 +108,10 @@ private:
 	void createSyncObjects();
 
 
+	void createMainRenderPass();
+	void createSwapchainImageViews();
+	void createSwapchainFramebuffers();
+
 	bool checkValidationLayers();
 	void setupDebugCallBack();
 
@@ -138,6 +144,6 @@ private:
 
 };
 
-static PersistanceVkCore core;
+inline PersistanceVkCore core;
 
 

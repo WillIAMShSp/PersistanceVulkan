@@ -5,6 +5,7 @@
 
 
 
+
 void Shader::AddVertexShaderStage()
 {
 	int index = m_stages.size();
@@ -46,3 +47,5 @@ void Shader::AddFragmentShaderStage()
 
 	}
 }
+
+

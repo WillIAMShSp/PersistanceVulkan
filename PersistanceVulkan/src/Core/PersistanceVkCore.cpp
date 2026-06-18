@@ -1,5 +1,9 @@
 #include "PersistanceVkCore.h"
 
+#include "./CoreUtils.h"
+#include "../Backend/RenderPass.h";
+#include "../Backend/RenderPassAttachment.h"
+
 /**
  * Initiates a GLFW window.
  * 
@@ -35,6 +39,8 @@ void PersistanceVkCore::initVulkan()
 	createSwapChain();
 	createCommandPools();
 	createSyncObjects();
+	createMainRenderPass();
+	createSwapchainFramebuffers();
 }
 
 /**
@@ -472,6 +478,84 @@ void PersistanceVkCore::createSyncObjects()
 		}
 
 	}
+}
+
+/**
+ * Creates the main renderpass for the engine.
+ * 
+ */
+void PersistanceVkCore::createMainRenderPass()
+{
+
+	RenderPassAttachment colorattachment = RenderPassFunc::createRenderPassAttachment(0, 
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
+		m_swapchainImageFormat, 
+		VK_SAMPLE_COUNT_1_BIT, 
+		VK_ATTACHMENT_LOAD_OP_CLEAR, 
+		VK_ATTACHMENT_STORE_OP_STORE, 
+		VK_IMAGE_LAYOUT_UNDEFINED, 
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	);
+
+	AttachmentReferenceList refList;
+	refList.add(&colorattachment, 1);
+	AttachmentDescriptionList desList;
+	desList.add(&colorattachment, 1);
+
+	VkSubpassDescription description = RenderPassFunc::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
+	VkSubpassDependency dependency = RenderPassFunc::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+	
+
+	m_mainRenderPass = RenderPassFunc::createRenderPass(&description, 1, &dependency, 1, desList);
+
+}
+
+/**
+ * @brief creates the swapchain image views
+ * 
+ */
+void PersistanceVkCore::createSwapchainImageViews()
+{
+	uint32_t size = m_swapchainFramebuffers.images.size();
+
+	m_swapchainFramebuffers.imageviews.resize(size);
+
+	for (int i = 0; i < size; i++) 
+	{
+		PersistanceUtils::createImageView(m_swapchainFramebuffers.images[i], m_swapchainImageFormat);
+
+	}
+	
+}
+
+void PersistanceVkCore::createSwapchainFramebuffers()
+{
+	uint32_t imageViewCount = m_swapchainFramebuffers.imageviews.size();
+
+	for (int i = 0; i < imageViewCount; i++)
+	{
+		VkImageView attachments[] = {
+			m_swapchainFramebuffers.imageviews[i]
+		};
+
+		VkFramebufferCreateInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		info.height = m_swapchainExtent.height;
+		info.width = m_swapchainExtent.width;
+		info.layers = 1;
+		info.renderPass = m_mainRenderPass.renderpass;
+		info.attachmentCount = 1;
+		info.pAttachments = attachments;
+		info.flags = 0;
+
+		if (vkCreateFramebuffer(m_device, &info, nullptr, &m_swapchainFramebuffers.framebuffers[i]) != VK_SUCCESS)
+		{
+			BREAK(1);
+		}
+
+
+	}
+
 }
 
 

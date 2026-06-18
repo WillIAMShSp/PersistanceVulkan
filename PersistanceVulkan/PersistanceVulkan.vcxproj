@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Backend\DescriptorSetLayout.cpp" />
     <ClCompile Include="src\Backend\RenderPass.cpp" />
     <ClCompile Include="src\Backend\RenderPassAttachment.cpp" />
     <ClCompile Include="src\Core\CoreUtils.cpp" />
@@ -144,8 +145,11 @@
     <ClCompile Include="src\Vendor\volk\volk.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Backend\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Backend\Framebuffer.h" />
     <ClInclude Include="src\Backend\RenderPass.h" />
     <ClInclude Include="src\Backend\RenderPassAttachment.h" />
+    <ClInclude Include="src\Backend\Shader.h" />
     <ClInclude Include="src\Core\CoreUtils.h" />
     <ClInclude Include="src\Core\PersistanceVkCore.h" />
     <ClInclude Include="src\Debug\DebugUtilsMessengerEXT.h" />

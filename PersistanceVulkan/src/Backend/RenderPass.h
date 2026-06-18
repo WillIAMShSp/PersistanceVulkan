@@ -2,9 +2,17 @@
 #include "../Core/PersistanceVkCore.h"
 #include "../Structures/RenderPass.h"
 
+namespace RenderPassFunc {
+	
+	
+	VkSubpassDescription createSubpassDescription(const AttachmentReferenceList* colorAttachments, const RenderPassAttachment* depthAndStencilAttachment, const AttachmentReferenceList* inputAttachments, const uint32_t* preserveAttachmentIndices, const uint32_t preserveAttachmentCount);
 
-VkSubpassDescription createSubpassDescription(const AttachmentReferenceList& colorAttachments, const RenderPassAttachment& depthAndStencilAttachment, const AttachmentReferenceList& inputAttachments, const uint32_t* preserveAttachmentIndices, const uint32_t preserveAttachmentCount);
+	VkSubpassDependency createSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags);
 
-VkSubpassDependency createSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags);
+	RenderPass createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments);
 
-RenderPass createRenderPass();
+	void cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count);
+
+
+};
+
