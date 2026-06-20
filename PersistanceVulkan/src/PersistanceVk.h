@@ -4,7 +4,6 @@
 
 
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 
 #define GLM_FORCE_RADIANS
@@ -394,14 +393,6 @@ public:
 		VkAttachmentStoreOp storeop,
 		VkAttachmentLoadOp depthstencilloadop,
 		VkAttachmentStoreOp depthstencilstoreop,
-		VkImageLayout initialimagelayout,
-		VkImageLayout finalimagelayout);
-	uint32_t CreateRenderpassAttachment(RenderPassHandle handle,
-		VkImageLayout attachmentlayout,
-		VkFormat format,
-		VkSampleCountFlagBits imagesamples,
-		VkAttachmentLoadOp loadop,
-		VkAttachmentStoreOp storeop,
 		VkImageLayout initialimagelayout,
 		VkImageLayout finalimagelayout);
 	uint32_t CreateSubpassDescription(RenderPassHandle handle,

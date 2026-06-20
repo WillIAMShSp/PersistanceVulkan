@@ -1836,31 +1836,6 @@ uint32_t PersistanceVk::CreateRenderPassInputAttachment(RenderPassHandle handle,
 }
 
 
-
-//uint32_t PersistanceVk::CreateRenderpassAttachment(RenderPassHandle handle, VkImageLayout attachmentlayout, VkFormat format, VkSampleCountFlagBits imagesamples, VkAttachmentLoadOp loadop, VkAttachmentStoreOp storeop, VkImageLayout initialimagelayout, VkImageLayout finalimagelayout)
-//{
-//	int index = mh_renderPasses.at(handle).attachments.size();
-//	mh_renderPasses.at(handle).attachments.push_back(RenderPassAttachment());
-//
-//	RenderPassAttachment& attachment = mh_renderPasses.at(handle).attachments[index];
-//	
-//	attachment.reference.attachment = index;
-//	attachment.reference.layout = attachmentlayout;
-//	
-//	attachment.description.format = format;
-//	attachment.description.samples = imagesamples;
-//	attachment.description.loadOp = loadop;
-//	attachment.description.storeOp = storeop;
-//	attachment.description.initialLayout = initialimagelayout;
-//	attachment.description.finalLayout = finalimagelayout;
-//
-//	attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//	attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//
-//	return index;
-//
-//}
-
 uint32_t PersistanceVk::CreateSubpassDescription(RenderPassHandle handle, const uint32_t* colorattachmentindices, size_t colorattachmentcount, const uint32_t depthandstencilattachmentindex, const uint32_t* inputattachmentindices, const uint32_t inputattachmentcount, const uint32_t* preserveattachmentindices, const uint32_t preservedattachmentcount)
 {
 	uint32_t descriptionindex = mh_renderPasses.at(handle).subpassdescription.size();
@@ -2498,7 +2473,6 @@ void PersistanceVk::CreateIndexBuffer(BufferHandle handle, void* buffer, uint32_
 	VkDeviceSize buffersize = sizeof(uint32_t) * indexcount;
 
 	VkBuffer stagingbuffer;
-	VkDeviceMemory stagingbuffermem;
 	VmaAllocation stagingalloc;
 
 	CreateBuffer(buffersize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingbuffer, stagingalloc, VK_SHARING_MODE_CONCURRENT);

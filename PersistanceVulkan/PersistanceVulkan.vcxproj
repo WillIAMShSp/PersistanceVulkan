@@ -131,9 +131,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Backend\DescriptorPool.cpp" />
     <ClCompile Include="src\Backend\DescriptorSetLayout.cpp" />
+    <ClCompile Include="src\Backend\GraphicsPipeline.cpp" />
+    <ClCompile Include="src\Backend\IndexBuffer.cpp" />
     <ClCompile Include="src\Backend\RenderPass.cpp" />
     <ClCompile Include="src\Backend\RenderPassAttachment.cpp" />
+    <ClCompile Include="src\Backend\BackendShader.cpp" />
+    <ClCompile Include="src\Backend\Texture.cpp" />
+    <ClCompile Include="src\Backend\TextureSampler.cpp" />
+    <ClCompile Include="src\Backend\UniformBuffer.cpp" />
+    <ClCompile Include="src\Backend\VertexBuffer.cpp" />
     <ClCompile Include="src\Core\CoreUtils.cpp" />
     <ClCompile Include="src\Core\PersistanceVkCore.cpp" />
     <ClCompile Include="src\Objects\Shader.cpp" />
@@ -145,11 +153,18 @@
     <ClCompile Include="src\Vendor\volk\volk.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Backend\DescriptorPool.h" />
     <ClInclude Include="src\Backend\DescriptorSetLayout.h" />
     <ClInclude Include="src\Backend\Framebuffer.h" />
+    <ClInclude Include="src\Backend\GraphicsPipeline.h" />
+    <ClInclude Include="src\Backend\IndexBuffer.h" />
     <ClInclude Include="src\Backend\RenderPass.h" />
     <ClInclude Include="src\Backend\RenderPassAttachment.h" />
     <ClInclude Include="src\Backend\Shader.h" />
+    <ClInclude Include="src\Backend\Texture.h" />
+    <ClInclude Include="src\Backend\TextureSampler.h" />
+    <ClInclude Include="src\Backend\UniformBuffer.h" />
+    <ClInclude Include="src\Backend\VertexBuffer.h" />
     <ClInclude Include="src\Core\CoreUtils.h" />
     <ClInclude Include="src\Core\PersistanceVkCore.h" />
     <ClInclude Include="src\Debug\DebugUtilsMessengerEXT.h" />

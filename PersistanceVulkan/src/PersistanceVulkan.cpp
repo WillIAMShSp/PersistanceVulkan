@@ -5,7 +5,13 @@
 #include "./Backend/RenderPass.h";
 #include "./Backend/RenderPassAttachment.h"
 #include "./Backend/DescriptorSetLayout.h"
-
+#include "./Backend/GraphicsPipeline.h"
+#include "./Backend/TextureSampler.h"
+#include "./Backend/Texture.h"
+#include "./Backend/VertexBuffer.h"
+#include "./Backend/IndexBuffer.h"
+#include "./Backend/DescriptorPool.h"
+#include "./Backend/UniformBuffer.h"
 
 
 
@@ -35,7 +41,7 @@ void MVP()
 
 	mvp.model = glm::mat4(1.0);
 	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	mvp.projection = glm::perspective(45.f, ((float)engine.GetSwapchainExtent().width / (float)engine.GetSwapchainExtent().height), 0.1f, 100.f);
+	mvp.projection = glm::perspective(45.f, ((float)core.m_swapchainExtent.width) / ((float)core.m_swapchainExtent.height), 0.1f, 100.f);
 
 	mvp.projection[1][1] *= -1;
 	buf = mvp;
@@ -43,12 +49,12 @@ void MVP()
 //test\\\
 
 
-//const std::vector<Vertex> vertices = {
-//{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-//{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-//{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-//{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-//};
+const std::vector<Vertex> vertices = {
+{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+};
 const std::vector<uint32_t> indices =
 {
 	0, 1, 2, 2, 3, 0
@@ -56,12 +62,12 @@ const std::vector<uint32_t> indices =
 };
 
 
-const std::vector<float> vertices = {
+/*const std::vector<float> vertices = {
 -0.1f, -0.1f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
 0.1f, -0.1f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
 0.1f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 -0.1f, 0.1f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
-};
+};*/
 
 Drawable drawing;
 
@@ -76,7 +82,7 @@ int main() {
 	core.init();
 	
 
-	RenderPassAttachment attachment = RenderPassFunc::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat, 
+	RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat, 
 		VK_SAMPLE_COUNT_1_BIT, 
 		VK_ATTACHMENT_LOAD_OP_CLEAR, 
 		VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -87,14 +93,73 @@ int main() {
 	AttachmentDescriptionList disList;
 	disList.add(&attachment, 1);
 
-	VkSubpassDescription description = RenderPassFunc::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
+	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
 
-	VkSubpassDependency dependency = RenderPassFunc::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 	
-	RenderPass renderpass = RenderPassFunc::createRenderPass(&description, 1, &dependency, 1, disList);
+	RenderPass renderpass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, disList);
 
-	VkDescriptorSetLayoutBinding binding = DescriptorSetLayoutFunc::createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-	VkDescriptorSetLayout layout = DescriptorSetLayoutFunc::createDescriptorSetLayout(&binding, 1);
+	VkDescriptorSetLayoutBinding bindings[2] = {
+	PersistanceBackend::createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT),
+	PersistanceBackend::createDescriptorSetLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+
+	};
+	VkDescriptorSetLayout layout = PersistanceBackend::createDescriptorSetLayout(&bindings[0], 2);
+
+
+	PipelineSettings settings;
+
+	
+
+	
+
+
+	VertexInputStateLayout vertexbufferlayout;
+	vertexbufferlayout.push<glm::vec2>();/*Configure vertex array layout*/
+	vertexbufferlayout.push<glm::vec3>();//
+	vertexbufferlayout.push<glm::vec2>();//
+	settings.CreateVertexInputState(vertexbufferlayout);
+	settings.DefineInputAssemblyState();
+	settings.CreateStaticViewPort();
+	settings.ConfigureRasterizationStage();
+	settings.ConfigureMultisample();
+	settings.ConfigureColorBlend();
+	settings.UseDynamicViewport();
+
+	PersistanceBackend::Shader shader;
+	shader.createShaderStage("res/Shaders/basicvert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shader.createShaderStage("res/Shaders/basicfrag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+
+
+	VkPipelineLayout pipelayout = PersistanceBackend::createPipelineLayout(&layout, 1, nullptr, 0);
+	VkPipeline graphicsPipeline = PersistanceBackend::createGraphicsPipeline(pipelayout, shader, settings, renderpass);
+
+	
+	Texture texture = PersistanceBackend::createTexture("res/Textures/Placeholder.png");
+	VkSampler sampler = PersistanceBackend::createTextureSampler();
+
+	Buffer vertexBuffer = PersistanceBackend::createVertexBuffer(vertices.data(), sizeof(vertices[0]), vertices.size());
+	Buffer indexBuffer = PersistanceBackend::createIndexBuffer(indices.data(), sizeof(indices[0]), indices.size());
+
+	
+	DescriptorPoolSizeList desPoolList;
+	
+	VkDescriptorPoolSize uniformBufferSize = PersistanceBackend::createDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+	VkDescriptorPoolSize samplerSize = PersistanceBackend::createDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+	desPoolList.add(&uniformBufferSize, 1);
+	desPoolList.add(&samplerSize, 1);
+
+	VkDescriptorPool descriptorPool = PersistanceBackend::createDescriptorPool(desPoolList);
+
+
+
+	UniformBuffer uniformBuffer = PersistanceBackend::createUniformBuffer(sizeof(ModelViewProjectionBuffer));
+	PersistanceBackend::updateUniformBuffers(uniformBuffer, &buf, sizeof(ModelViewProjectionBuffer));
+
+
+	
 
 
 

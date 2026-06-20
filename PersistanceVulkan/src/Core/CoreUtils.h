@@ -29,7 +29,7 @@ namespace PersistanceUtils {
 	VkCommandBuffer beginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	void endSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue);
 
-	static std::vector<char> readFile(const char* filepath);
+	std::vector<char> readFile(const char* filepath);
 	VkShaderModule createShaderModule(std::vector<char>& shaderFile);
 
 	VkImageView createImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect = VK_IMAGE_ASPECT_COLOR_BIT);

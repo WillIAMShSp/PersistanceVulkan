@@ -487,7 +487,7 @@ void PersistanceVkCore::createSyncObjects()
 void PersistanceVkCore::createMainRenderPass()
 {
 
-	RenderPassAttachment colorattachment = RenderPassFunc::createRenderPassAttachment(0, 
+	RenderPassAttachment colorattachment = PersistanceBackend::createRenderPassAttachment(0, 
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
 		m_swapchainImageFormat, 
 		VK_SAMPLE_COUNT_1_BIT, 
@@ -502,11 +502,11 @@ void PersistanceVkCore::createMainRenderPass()
 	AttachmentDescriptionList desList;
 	desList.add(&colorattachment, 1);
 
-	VkSubpassDescription description = RenderPassFunc::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
-	VkSubpassDependency dependency = RenderPassFunc::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
+	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
 	
 
-	m_mainRenderPass = RenderPassFunc::createRenderPass(&description, 1, &dependency, 1, desList);
+	m_mainRenderPass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, desList);
 
 }
 

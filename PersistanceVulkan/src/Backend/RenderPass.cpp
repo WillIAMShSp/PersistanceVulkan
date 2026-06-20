@@ -10,7 +10,7 @@
  * \param preserveAttachmentCount the amount of attachment indices
  * \return a subpass description.
  */
-VkSubpassDescription RenderPassFunc::createSubpassDescription(const AttachmentReferenceList* colorAttachments, const RenderPassAttachment* depthAndStencilAttachment, const AttachmentReferenceList* inputAttachments, const uint32_t* preserveAttachmentIndices, const uint32_t preserveAttachmentCount)
+VkSubpassDescription PersistanceBackend::createSubpassDescription(const AttachmentReferenceList* colorAttachments, const RenderPassAttachment* depthAndStencilAttachment, const AttachmentReferenceList* inputAttachments, const uint32_t* preserveAttachmentIndices, const uint32_t preserveAttachmentCount)
 {
 	VkSubpassDescription description{};
 
@@ -54,7 +54,7 @@ VkSubpassDescription RenderPassFunc::createSubpassDescription(const AttachmentRe
  * \param dependencyFlags
  * \return 
  */
-VkSubpassDependency RenderPassFunc::createSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags)
+VkSubpassDependency PersistanceBackend::createSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags)
 {
 	VkSubpassDependency dependency{};
 
@@ -80,7 +80,7 @@ VkSubpassDependency RenderPassFunc::createSubpassDependency(uint32_t srcSubpass,
  * \param renderPassAttachments
  * \return 
  */
-RenderPass RenderPassFunc::createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments)
+RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments)
 {
 	RenderPass renderPassObject;
 	VkRenderPass& renderPass = renderPassObject.renderpass;
@@ -108,7 +108,7 @@ RenderPass RenderPassFunc::createRenderPass(const VkSubpassDescription* subpasse
 	return renderPassObject;
 }
 
-void RenderPassFunc::cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count)
+void PersistanceBackend::cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count)
 {
 	for (int i = 0; i < count; i++) {
 		vkDestroyRenderPass(core.m_device, renderPass[i].renderpass, nullptr);
