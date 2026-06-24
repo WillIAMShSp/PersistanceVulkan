@@ -521,9 +521,6 @@ public:
 
 	BufferHandle CreateCommandBufferHandle();
 	void CreateCommandBuffer(BufferHandle handle, VkCommandPool& commandpool, VkCommandBufferLevel level);
-
-
-	
 	
 	void StartDrawing(BufferHandle commandbufferhandle, RenderPassHandle renderpasshandle);
 	void BeginCommandBuffer(BufferHandle commandbufferhandle, VkCommandBufferUsageFlags flags);

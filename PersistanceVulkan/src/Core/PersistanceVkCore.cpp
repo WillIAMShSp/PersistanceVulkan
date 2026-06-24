@@ -558,6 +558,15 @@ void PersistanceVkCore::createSwapchainFramebuffers()
 
 }
 
+void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
+{
+	VkOffset2D offset{0,0};
+	VkClearValue clearValue{};
+	clearValue.color = { 0,0,0,1 };
+	clearValue.depthStencil = { 0,0 };
+	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValue);
+}
+
 
 /*
 * 

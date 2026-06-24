@@ -93,6 +93,18 @@ public:
 		initWindow();
 		initVulkan();
 	}
+	bool isRunning()
+	{
+		return !glfwWindowShouldClose(m_window);
+	}
+	void pollEvents()
+	{
+		glfwPollEvents();
+	}
+	void waitForDeviceIdle()
+	{
+		vkDeviceWaitIdle(m_device);
+	}
 
 private:
 	void initWindow();
@@ -111,6 +123,9 @@ private:
 	void createMainRenderPass();
 	void createSwapchainImageViews();
 	void createSwapchainFramebuffers();
+	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
+	
+
 
 	bool checkValidationLayers();
 	void setupDebugCallBack();

@@ -131,8 +131,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Backend\CommandBuffer.cpp" />
     <ClCompile Include="src\Backend\DescriptorPool.cpp" />
+    <ClCompile Include="src\Backend\DescriptorSet.cpp" />
     <ClCompile Include="src\Backend\DescriptorSetLayout.cpp" />
+    <ClCompile Include="src\Backend\Framebuffer.cpp" />
     <ClCompile Include="src\Backend\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Backend\IndexBuffer.cpp" />
     <ClCompile Include="src\Backend\RenderPass.cpp" />
@@ -153,7 +156,9 @@
     <ClCompile Include="src\Vendor\volk\volk.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Backend\CommandBuffer.h" />
     <ClInclude Include="src\Backend\DescriptorPool.h" />
+    <ClInclude Include="src\Backend\DescriptorSet.h" />
     <ClInclude Include="src\Backend\DescriptorSetLayout.h" />
     <ClInclude Include="src\Backend\Framebuffer.h" />
     <ClInclude Include="src\Backend\GraphicsPipeline.h" />

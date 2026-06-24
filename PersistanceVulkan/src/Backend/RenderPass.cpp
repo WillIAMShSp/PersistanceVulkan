@@ -108,6 +108,26 @@ RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subp
 	return renderPassObject;
 }
 
+
+void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, VkClearValue clearValue)
+{
+	VkRenderPassBeginInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	info.clearValueCount = 1;
+	info.pClearValues = &clearValue;
+	info.framebuffer = framebuffer.framebuffers[core.m_currentFrame];
+	info.renderArea.extent = extent;
+	info.renderArea.offset = offset;
+	info.renderPass = renderPass.renderpass;
+	
+	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void PersistanceBackend::endRenderPass(VkCommandBuffer& commandBuffer)
+{
+	vkCmdEndRenderPass(commandBuffer);
+}
+
 void PersistanceBackend::cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count)
 {
 	for (int i = 0; i < count; i++) {

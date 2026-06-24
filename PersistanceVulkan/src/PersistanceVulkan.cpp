@@ -12,6 +12,9 @@
 #include "./Backend/IndexBuffer.h"
 #include "./Backend/DescriptorPool.h"
 #include "./Backend/UniformBuffer.h"
+#include "./Backend/DescriptorSet.h"
+#include "./Backend/Framebuffer.h"
+#include "./Backend/CommandBuffer.h"
 
 
 
@@ -108,12 +111,7 @@ int main() {
 
 
 	PipelineSettings settings;
-
 	
-
-	
-
-
 	VertexInputStateLayout vertexbufferlayout;
 	vertexbufferlayout.push<glm::vec2>();/*Configure vertex array layout*/
 	vertexbufferlayout.push<glm::vec3>();//
@@ -153,14 +151,34 @@ int main() {
 
 	VkDescriptorPool descriptorPool = PersistanceBackend::createDescriptorPool(desPoolList);
 
-
-
 	UniformBuffer uniformBuffer = PersistanceBackend::createUniformBuffer(sizeof(ModelViewProjectionBuffer));
 	PersistanceBackend::updateUniformBuffers(uniformBuffer, &buf, sizeof(ModelViewProjectionBuffer));
 
 
-	
+	VkWriteDescriptorSet writeDescriptors[2];
+	std::vector<VkDescriptorSet> descriptorSet = PersistanceBackend::allocateDescriptorSet(descriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, layout);
+	std::vector<VkDescriptorBufferInfo> uniformBufferinfo = PersistanceBackend::createDescriptorBufferInfo(uniformBuffer.buffers.data(), uniformBuffer.buffers.size(), 0, sizeof(ModelViewProjectionBuffer));
+	writeDescriptors[0] = PersistanceBackend::createWriteDescriptorSet(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, uniformBufferinfo.data(), nullptr, 0);
+	std::vector<VkDescriptorImageInfo> imageInfo = PersistanceBackend::createDescriptorImageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texture.imageview, sampler);
+	writeDescriptors[1] = PersistanceBackend::createWriteDescriptorSet(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, nullptr, imageInfo.data(), 0);
 
+	PersistanceBackend::updateDescriptorSets(descriptorSet, writeDescriptors, 2);
+
+	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass.renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+	while (core.isRunning()) 
+	{
+		core.pollEvents();
+
+		
+
+
+
+
+	}
+	core.waitForDeviceIdle();
 
 
  //   engine.Init();
@@ -260,7 +278,7 @@ int main() {
 	//drawing.SetIndexBufferHandle(indexbufferhndl);
 	//drawing.SetGraphicsPipelineBindingPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
- //   while (engine.IsRunning()) 
+    //while (engine.IsRunning()) 
  //   {
  //       engine.PollEvents();
 
