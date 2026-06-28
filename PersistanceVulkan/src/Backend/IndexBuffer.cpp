@@ -21,6 +21,8 @@ Buffer PersistanceBackend::createIndexBuffer(const void* buffer, const size_t el
 
 	PersistanceUtils::copyBuffer(stagingBuffer.buffer, indexBuffer.buffer, bufferSize, core.m_transferCommandPool, core.m_transferQueue);
 
+	indexBuffer.size = bufferSize;
+
 	vmaDestroyBuffer(core.m_vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
 	return indexBuffer;

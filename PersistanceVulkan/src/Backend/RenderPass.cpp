@@ -115,7 +115,7 @@ void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderP
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	info.clearValueCount = 1;
 	info.pClearValues = &clearValue;
-	info.framebuffer = framebuffer.framebuffers[core.m_currentFrame];
+	info.framebuffer = framebuffer.framebuffers[core.m_imageIndex];
 	info.renderArea.extent = extent;
 	info.renderArea.offset = offset;
 	info.renderPass = renderPass.renderpass;

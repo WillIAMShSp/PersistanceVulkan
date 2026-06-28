@@ -160,6 +160,7 @@
     <ClInclude Include="src\Backend\DescriptorPool.h" />
     <ClInclude Include="src\Backend\DescriptorSet.h" />
     <ClInclude Include="src\Backend\DescriptorSetLayout.h" />
+    <ClInclude Include="src\Backend\Drawing.h" />
     <ClInclude Include="src\Backend\Framebuffer.h" />
     <ClInclude Include="src\Backend\GraphicsPipeline.h" />
     <ClInclude Include="src\Backend\IndexBuffer.h" />
@@ -201,11 +202,8 @@
     <ClInclude Include="src\Vendor\volk\volk.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\Shaders\basicfrag.spv" />
     <None Include="res\Shaders\BasicFragment.frag" />
-    <None Include="res\Shaders\basicvert.spv" />
     <None Include="res\Shaders\BasicVertex.vert" />
-    <None Include="res\Shaders\compile.bat" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Textures\Placeholder.png" />

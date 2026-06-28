@@ -23,6 +23,8 @@ Buffer PersistanceBackend::createVertexBuffer(const void* buffer, const size_t e
 
 	vmaDestroyBuffer(core.m_vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
+	vertexBuffer.size = bufferSize;
+
 	return vertexBuffer;
 
 }

@@ -20,6 +20,7 @@ layout(binding = 0) uniform ModelViewProjectionBuffer
 
 
 void main() {
+    
     gl_Position = mvp.projection * mvp.view * mvp.model * vec4(position, 0.0, 1.0);
     fragColor = color;
     uvcords = uv;

@@ -63,11 +63,11 @@ class PipelineSettings
 public:
 	PipelineSettings() = default;
 	
-	void CreateVertexInputState(VertexInputStateLayout& layout);
-	void DefineInputAssemblyState(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 primitiverestart = VK_FALSE);
-	void CreateStaticViewPort();
-	void ConfigureRasterizationStage();
-	void ConfigureRasterizationStage( 
+	void createVertexInputState(VertexInputStateLayout& layout);
+	void defineInputAssemblyState(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 primitiverestart = VK_FALSE);
+	void createStaticViewPortAndScissors(uint32_t xPos, uint32_t yPos, float minDepth, float maxDepth, VkExtent2D viewportExtent, VkExtent2D scissorsExtent, VkOffset2D scissorsOffset);
+	void configureRasterizationStage();
+	void configureRasterizationStage( 
 		VkPolygonMode polygonmode, 
 		VkCullModeFlagBits cullmode, 
 		VkFrontFace frontface,
@@ -75,9 +75,9 @@ public:
 		float linewidth = 1.0f,
 		VkBool32 rasterizerdiscard = VK_FALSE
 	);
-	void ConfigureRasterizationDepthBias(VkBool32 depthbiasenable, VkBool32 depthbiasclamp, float depthbiasslopefactor, float depthbiasconstantfactor);
-	void ConfigureMultisample();
-	void ConfigureMultisample(
+	void configureRasterizationDepthBias(VkBool32 depthbiasenable, VkBool32 depthbiasclamp, float depthbiasslopefactor, float depthbiasconstantfactor);
+	void configureMultisample();
+	void configureMultisample(
 		VkBool32 sampleshading,
 		VkSampleCountFlagBits rasterizationsamples,
 		float minsampleshading = 1.0f,
@@ -85,8 +85,8 @@ public:
 		VkBool32 alphatocoverage = VK_FALSE,
 		VkBool32 alphatoone = VK_FALSE
 	);
-	void ConfigureColorBlend();
-	void ConfigureColorBlend(
+	void configureColorBlend();
+	void configureColorBlend(
 		VkColorComponentFlagBits colorcomponents, 
 		VkBool32 enableblend, 
 		VkBlendOp colorblend, 
@@ -95,47 +95,49 @@ public:
 		VkBlendFactor dstcolorblendfactor
 		);
 
-	void UseDynamicViewport(); 
+	void useDynamicViewport(); 
 	
 
 public:
-	const VkPipelineVertexInputStateCreateInfo& GetVertexInputStateCreateInfo()
+	const VkPipelineVertexInputStateCreateInfo& getVertexInputStateCreateInfo()
 	{
-		return m_vertexinputstatecreateinfo;
+		return m_vertexInputStateCreateInfo;
 	}
-	const VkPipelineInputAssemblyStateCreateInfo& GetInputAssemblyStateCreateInfo()
+	const VkPipelineInputAssemblyStateCreateInfo& getInputAssemblyStateCreateInfo()
 	{
-		return m_inputassemblystatecreateinfo;
+		return m_inputAssemblyStateCreateInfo;
 	}
-	const VkPipelineViewportStateCreateInfo& Getviewportcreateinfo()
+	const VkPipelineViewportStateCreateInfo& getViewportCreateInfo()
 	{
-		return m_viewportcreateinfo;
+		return m_viewportCreateInfo;
 	}
-	const VkPipelineRasterizationStateCreateInfo& GetRasterCreateInfo()
+	const VkPipelineRasterizationStateCreateInfo& getRasterCreateInfo()
 	{
-		return m_rastercreateinfo;
+		return m_rasterCreateInfo;
 	}
-	const VkPipelineMultisampleStateCreateInfo& GetMultisampleCreateInfo()
+	const VkPipelineMultisampleStateCreateInfo& getMultisampleCreateInfo()
 	{
-		return m_multisamplecreateinfo;
+		return m_multisampleCreateInfo;
 	}
-	const VkPipelineColorBlendStateCreateInfo& GetColorBlendCreateInfo()
+	const VkPipelineColorBlendStateCreateInfo& getColorBlendCreateInfo()
 	{
-		return m_colorblendcreateinfo;
+		return m_colorBlendCreateInfo;
 	}
 	
 	bool m_usedynamicstate = false;
 
 private:
-	std::vector<VkVertexInputAttributeDescription> m_attributedescription{};
-	VkVertexInputBindingDescription m_bindingdescription{};
-	VkPipelineVertexInputStateCreateInfo m_vertexinputstatecreateinfo{};
-	VkPipelineInputAssemblyStateCreateInfo m_inputassemblystatecreateinfo{};
-	VkPipelineViewportStateCreateInfo m_viewportcreateinfo{};
-	VkPipelineRasterizationStateCreateInfo m_rastercreateinfo{};
-	VkPipelineMultisampleStateCreateInfo m_multisamplecreateinfo{};
-	VkPipelineColorBlendAttachmentState m_colorblendattachment{};
-	VkPipelineColorBlendStateCreateInfo m_colorblendcreateinfo{};
+	std::vector<VkVertexInputAttributeDescription> m_attributeDescription{};
+	VkVertexInputBindingDescription m_bindingDescription{};
+	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo{};
+	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCreateInfo{};
+	VkViewport m_staticViewport;
+	VkRect2D m_staticScissors;
+	VkPipelineViewportStateCreateInfo m_viewportCreateInfo{};
+	VkPipelineRasterizationStateCreateInfo m_rasterCreateInfo{};
+	VkPipelineMultisampleStateCreateInfo m_multisampleCreateInfo{};
+	VkPipelineColorBlendAttachmentState m_colorBlendAttachment{};
+	VkPipelineColorBlendStateCreateInfo m_colorBlendCreateInfo{};
 	
 
 };

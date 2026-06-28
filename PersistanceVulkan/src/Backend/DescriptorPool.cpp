@@ -6,10 +6,9 @@
 VkDescriptorPoolSize PersistanceBackend::createDescriptorPoolSize(VkDescriptorType type)
 {
 	VkDescriptorPoolSize size;
-
-	size.descriptorCount = PersistanceLib::MAXFRAMESINFLIGHT;
+	
 	size.type = type;
-
+	size.descriptorCount = PersistanceLib::MAXFRAMESINFLIGHT;
 	return size;
 
 

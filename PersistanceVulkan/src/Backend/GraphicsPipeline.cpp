@@ -50,12 +50,12 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 	pipelinecreateinfo.pStages = shader.stages.data();
 
 
-	pipelinecreateinfo.pVertexInputState = &settings.GetVertexInputStateCreateInfo();
-	pipelinecreateinfo.pInputAssemblyState = &settings.GetInputAssemblyStateCreateInfo();
-	pipelinecreateinfo.pViewportState = &settings.Getviewportcreateinfo();
-	pipelinecreateinfo.pRasterizationState = &settings.GetRasterCreateInfo();
-	pipelinecreateinfo.pMultisampleState = &settings.GetMultisampleCreateInfo();
-	pipelinecreateinfo.pColorBlendState = &settings.GetColorBlendCreateInfo();
+	pipelinecreateinfo.pVertexInputState = &settings.getVertexInputStateCreateInfo();
+	pipelinecreateinfo.pInputAssemblyState = &settings.getInputAssemblyStateCreateInfo();
+	pipelinecreateinfo.pViewportState = &settings.getViewportCreateInfo();
+	pipelinecreateinfo.pRasterizationState = &settings.getRasterCreateInfo();
+	pipelinecreateinfo.pMultisampleState = &settings.getMultisampleCreateInfo();
+	pipelinecreateinfo.pColorBlendState = &settings.getColorBlendCreateInfo();
 	pipelinecreateinfo.pDepthStencilState = nullptr;
 
 
@@ -75,6 +75,6 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 
 	}
 
-
+	return graphicsPipeline;
 
 }

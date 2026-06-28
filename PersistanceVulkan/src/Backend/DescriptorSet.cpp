@@ -70,6 +70,29 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 	return imageInfos;
 }
 
+std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler)
+{
+	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
+	{
+		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
+		BREAK(0);
+	}
+
+	std::vector<VkDescriptorImageInfo> imageInfos;
+	imageInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
+	{
+		imageInfos[i].imageLayout = imageLayout;
+		imageInfos[i].imageView = imageViews[i];
+		imageInfos[i].sampler = sampler;
+
+	}
+
+	return imageInfos;
+}
+
+
 void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount)
 {
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 

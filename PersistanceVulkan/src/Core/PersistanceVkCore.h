@@ -12,6 +12,8 @@
 #include "stb_image.h"
 #include "../Structures/Framebuffer.h"
 #include "../Structures/RenderPass.h"
+#include "../Structures/Buffer.h"
+#include "../Structures/Drawable.h"
 
 #include "Debug/DebugUtilsMessengerEXT.h"
 
@@ -123,9 +125,16 @@ private:
 	void createMainRenderPass();
 	void createSwapchainImageViews();
 	void createSwapchainFramebuffers();
-	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
-	
+	void recreateSwapchain();
+	void cleanUpSwapchain();
 
+public:
+	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
+	void startDrawing();
+	void endDrawingandPresent(VkCommandBuffer& commandBuffer);
+	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
+	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);
+private:
 
 	bool checkValidationLayers();
 	void setupDebugCallBack();

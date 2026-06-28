@@ -40,6 +40,7 @@ void PersistanceVkCore::initVulkan()
 	createCommandPools();
 	createSyncObjects();
 	createMainRenderPass();
+	createSwapchainImageViews();
 	createSwapchainFramebuffers();
 }
 
@@ -522,7 +523,7 @@ void PersistanceVkCore::createSwapchainImageViews()
 
 	for (int i = 0; i < size; i++) 
 	{
-		PersistanceUtils::createImageView(m_swapchainFramebuffers.images[i], m_swapchainImageFormat);
+		m_swapchainFramebuffers.imageviews[i] = PersistanceUtils::createImageView(m_swapchainFramebuffers.images[i], m_swapchainImageFormat);
 
 	}
 	
@@ -531,6 +532,8 @@ void PersistanceVkCore::createSwapchainImageViews()
 void PersistanceVkCore::createSwapchainFramebuffers()
 {
 	uint32_t imageViewCount = m_swapchainFramebuffers.imageviews.size();
+	m_swapchainFramebuffers.framebuffers.resize(imageViewCount);
+
 
 	for (int i = 0; i < imageViewCount; i++)
 	{
@@ -558,6 +561,47 @@ void PersistanceVkCore::createSwapchainFramebuffers()
 
 }
 
+void PersistanceVkCore::recreateSwapchain()
+{
+	int width = 0;
+	int height = 0;
+
+	glfwGetWindowSize(m_window, &width, &height);
+
+	while (width == 0 || height == 0)
+	{
+		glfwGetWindowSize(m_window, &width, &height);
+		glfwWaitEvents();
+
+	}
+
+
+	vkDeviceWaitIdle(m_device);
+
+	cleanUpSwapchain();
+
+	createSwapChain();
+	createSwapchainImageViews();
+	createSwapchainFramebuffers();
+
+
+}
+
+void PersistanceVkCore::cleanUpSwapchain()
+{
+
+	for (auto framebuffer : m_swapchainFramebuffers.framebuffers)
+	{
+		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+	}
+	for (const auto& imageviews : m_swapchainFramebuffers.imageviews)
+	{
+		vkDestroyImageView(m_device, imageviews, nullptr);
+	}
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+
+}
+
 void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 {
 	VkOffset2D offset{0,0};
@@ -565,6 +609,130 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 	clearValue.color = { 0,0,0,1 };
 	clearValue.depthStencil = { 0,0 };
 	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValue);
+}
+
+void PersistanceVkCore::startDrawing()
+{
+	if (m_currentlyDrawing)
+	{
+		std::cout << "Previous drawing not ended properly";
+	}
+	else
+	{
+		m_currentlyDrawing = true;
+	}
+
+	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
+
+
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], nullptr, &m_imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapchain();
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("Failed to aquire swapchain image!");
+	}
+	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
+	{
+		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
+	}
+	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
+	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
+
+}
+
+void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer& commandBuffer)
+{
+
+	VkSemaphore waitsemaphores[] = { s_imageAvailable[m_currentFrame] };
+	VkSemaphore signalsemaphores[] = { s_renderFinished[m_currentFrame] };
+	VkPipelineStageFlags waitstages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	VkSubmitInfo submitinfo{};
+
+
+	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitinfo.commandBufferCount = 1;
+	submitinfo.pCommandBuffers = &commandBuffer;
+	submitinfo.waitSemaphoreCount = 1;
+	submitinfo.pWaitSemaphores = waitsemaphores;
+	submitinfo.pWaitDstStageMask = waitstages;
+	submitinfo.signalSemaphoreCount = 1;
+	submitinfo.pSignalSemaphores = signalsemaphores;
+
+
+
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitinfo, f_inFlightFence[m_currentFrame]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to submit graphics queue!");
+
+	}
+
+	VkSwapchainKHR swapchains[] = { m_swapchain };
+
+	VkPresentInfoKHR presentinfo{};
+	presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentinfo.waitSemaphoreCount = 1;
+	presentinfo.pWaitSemaphores = signalsemaphores;
+
+	presentinfo.swapchainCount = 1;
+	presentinfo.pSwapchains = swapchains;
+
+	presentinfo.pImageIndices = &m_imageIndex;
+
+	presentinfo.pResults = nullptr;
+
+	VkResult result = vkQueuePresentKHR(m_presentQueue, &presentinfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowResized)
+	{
+		recreateSwapchain();
+		m_windowResized = false;
+
+	}
+	else if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to present queue!";
+		BREAK;
+	}
+
+	m_currentFrame = (m_currentFrame + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
+	m_currentlyDrawing = false;
+
+}
+
+void PersistanceVkCore::bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+}
+
+void PersistanceVkCore::drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount)
+{
+
+	
+	std::vector<VkBuffer> buffers;
+	buffers.reserve(vertexBufferCount);
+
+	for (size_t i = 0; i < vertexBufferCount; i++) {
+		buffers.emplace_back(vertexBuffers[i].buffer);
+
+	}
+
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, vertexBufferCount, buffers.data(), offsets);
+
+	vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, descriptorSetCount, descriptorSets, 0, nullptr);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexBuffer.size / sizeof(uint32_t)), 1, 0, 0, 0);
+
+
 }
 
 
