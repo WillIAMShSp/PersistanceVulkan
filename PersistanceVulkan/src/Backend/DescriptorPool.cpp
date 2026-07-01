@@ -56,7 +56,7 @@ VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList
 
 }
 
-void PersistanceBackend::cleanUpDescriptorPool(VkDescriptorPool* descriptorPools, const uint32_t descriptorPoolCount)
+void PersistanceBackend::cleanUpDescriptorPools(VkDescriptorPool* descriptorPools, const uint32_t descriptorPoolCount)
 {
 
 	for (int i = 0; i < descriptorPoolCount; i++) 

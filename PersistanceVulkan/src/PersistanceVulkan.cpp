@@ -296,11 +296,25 @@ int main() {
 	core.waitForDeviceIdle();
 
 	PersistanceBackend::cleanUpRenderPasses(&renderpass, 1);
-	PersistanceBackend::cleanUpDescriptorPool(&fullQuadDescriptorPool,1);
-	PersistanceBackend::cleanUpDescriptorPool(&descriptorPool, 1);
+	PersistanceBackend::cleanUpDescriptorPools(&fullQuadDescriptorPool,1);
+	PersistanceBackend::cleanUpDescriptorPools(&descriptorPool, 1);
 	PersistanceBackend::cleanUpFramebuffers(&framebuffer, 1);
 	PersistanceBackend::cleanUpGraphicsPipeline(&graphicsPipeline, 1);
 	PersistanceBackend::cleanUpGraphicsPipeline(&fullQuadGraphicsPipeline, 1);
+	PersistanceBackend::cleanUpIndexBuffers(&indexBuffer, 1);
+	PersistanceBackend::cleanUpIndexBuffers(&fullQuadIndexBuffer, 1);
+	PersistanceBackend::cleanUpVertexBuffers(&vertexBuffer, 1);
+	PersistanceBackend::cleanUpVertexBuffers(&fullQuadVertexBuffer, 1);
+	PersistanceBackend::cleanUpDescriptorSetLayouts(&layout, 1);
+	PersistanceBackend::cleanUpDescriptorSetLayouts(&fullQuadDescriptorSetLayout, 1);
+	PersistanceBackend::cleanUpTextures(&texture, 1);
+	PersistanceBackend::cleanUpTextureSamplers(&sampler, 1);
+	PersistanceBackend::cleanUpUniformBuffers(&uniformBuffer, 1);
+	PersistanceBackend::cleanUpPipelineLayouts(&pipelayout, 1);
+	PersistanceBackend::cleanUpPipelineLayouts(&fullQuadGraphicsPipelineLayout, 1);
+
+
+
 	
 
 	core.finalize();

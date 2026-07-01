@@ -16,7 +16,7 @@ namespace PersistanceBackend
 
 	VkDescriptorPool createDescriptorPool(DescriptorPoolSizeList& list);
 
-	void cleanUpDescriptorPool(VkDescriptorPool* descriptorPools, const uint32_t descriptorPoolCount);
+	void cleanUpDescriptorPools(VkDescriptorPool* descriptorPools, const uint32_t descriptorPoolCount);
 
 
 }

@@ -24,6 +24,8 @@ namespace PersistanceBackend
 
 	void cleanUpGraphicsPipeline(VkPipeline* pipelines, const uint32_t pipelineCount);
 
+	void cleanUpPipelineLayouts(VkPipelineLayout* layouts, const uint32_t layoutCount);
+
 }
 
 

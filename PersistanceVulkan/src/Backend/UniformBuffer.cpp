@@ -55,6 +55,7 @@ void PersistanceBackend::cleanUpUniformBuffers(UniformBuffer* buffers, const uin
 	{
 		for (uint32_t b = 0; b < buffers[i].buffers.size(); b++) 
 		{
+			vmaUnmapMemory(core.m_vmaAllocator, buffers[i].allocations[b]);
 			vmaDestroyBuffer(core.m_vmaAllocator, buffers[i].buffers[b], buffers[i].allocations[b]);
 		
 		}

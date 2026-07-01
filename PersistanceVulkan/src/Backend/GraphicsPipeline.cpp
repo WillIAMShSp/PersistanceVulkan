@@ -103,6 +103,11 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 
 	}
 
+	for (auto modules : shader.shaderModules) 
+	{
+		vkDestroyShaderModule(core.m_device, modules, nullptr);
+	}
+
 	return graphicsPipeline;
 
 }
@@ -120,4 +125,18 @@ void PersistanceBackend::cleanUpGraphicsPipeline(VkPipeline* pipelines, const ui
 		vkDestroyPipeline(core.m_device, pipelines[i], nullptr);
 	}
 
+}
+
+/**
+ * @brief Destroys provided pipeline layouts.
+ * 
+ * @param layouts
+ * @param layoutCount
+ */
+void PersistanceBackend::cleanUpPipelineLayouts(VkPipelineLayout* layouts, const uint32_t layoutCount)
+{
+	for (uint32_t i = 0; i < layoutCount; i++) 
+	{
+		vkDestroyPipelineLayout(core.m_device, layouts[i], nullptr);
+	}
 }
