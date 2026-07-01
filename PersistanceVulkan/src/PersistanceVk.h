@@ -141,14 +141,12 @@ private:
 	
 	void CleanUp()
 	{
-
-
 		CleanUpSwapchain();
-
 
 		CleanTextures();
 		
 		CleanDescriptorPools();
+		
 		CleanDescriptorSetLayout();
 
 		CleanUniformBuffers();

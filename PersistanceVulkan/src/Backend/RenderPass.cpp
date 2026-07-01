@@ -1,14 +1,22 @@
+/*****************************************************************//**
+ * @file   RenderPass.cpp
+ * @brief  Function definitions for subpass description, subpass dependency and renderpass creation, initialization, finalization and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
 #include "RenderPass.h"
 
+
 /**
- * creates a subpass description.
+ * @brief Creates a subpass description.
  * 
- * \param colorAttachments the list of type AttachmentReferenceList of the subpass color attachment references
- * \param depthAndStencilAttachment the depth and stencil attachment
- * \param inputAttachments the list of type AttachmentReferenceList of the subpass input attachment references
- * \param preserveAttachmentIndices the list of type const int* of preserve attachment indices
- * \param preserveAttachmentCount the amount of attachment indices
- * \return a subpass description.
+ * @param colorAttachments the list of type AttachmentReferenceList of the subpass color attachment references
+ * @param depthAndStencilAttachment the depth and stencil attachment
+ * @param inputAttachments the list of type AttachmentReferenceList of the subpass input attachment references
+ * @param preserveAttachmentIndices the list of type const int* of preserve attachment indices
+ * @param preserveAttachmentCount the amount of attachment indices
+ * @return A subpass description.
  */
 VkSubpassDescription PersistanceBackend::createSubpassDescription(const AttachmentReferenceList* colorAttachments, const RenderPassAttachment* depthAndStencilAttachment, const AttachmentReferenceList* inputAttachments, const uint32_t* preserveAttachmentIndices, const uint32_t preserveAttachmentCount)
 {
@@ -42,17 +50,21 @@ VkSubpassDescription PersistanceBackend::createSubpassDescription(const Attachme
 
 }
 
+
+
 /**
- * Creates a subpass dependency.
+ * @brief Creates a subpass dependency.
  * 
- * \param srcSubpass which subpass comes before this dependency (example: the first subpass)
- * \param dstSubpass which subpass comes after this dependency (example: second subpass)
- * \param srcAccessMask 
- * \param dstAccessMask 
- * \param srcStageMask
- * \param dstStageMask
- * \param dependencyFlags
- * \return 
+ * @param srcSubpass Which subpass comes before this dependency (example: the first subpass)
+ * @param dstSubpass Which subpass comes after this dependency (example: second subpass)
+ * @param srcAccessMask Is a bitmask of VkAccessFlagBits specifying a source access mask.
+ * @param dstAccessMask Is a bitmask of VkAccessFlagBits specifying a destination access mask.
+ * @param srcStageMask  Is a bitmask of VkPipelineStageFlagBits specifying the source stage mask. 
+ * If set to VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, it is equivalent to setting it to VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT.
+ * @param dstStageMask Is a bitmask of VkPipelineStageFlagBits specifying the destination stage mask.
+ * If set to VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, it is equivalent to setting it to VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT.
+ * @param dependencyFlags
+ * @return 
  */
 VkSubpassDependency PersistanceBackend::createSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags)
 {
@@ -70,15 +82,18 @@ VkSubpassDependency PersistanceBackend::createSubpassDependency(uint32_t srcSubp
 }
 
 
+
+
 /**
- * Creates a renderpass.
+ * @brief Creates a render pass.
+ * Breaks if renderpass creation is unsuccessful.
  * 
- * \param subpasses the subpass descriptions
- * \param subpassCount the amount of subpasses
- * \param subpassDependency
- * \param dependencyCount
- * \param renderPassAttachments
- * \return 
+ * @param subpasses The subpass descriptions
+ * @param subpassCount The amount of subpasses
+ * @param subpassDependency An array of subpass dependencies.
+ * @param dependencyCount The amount of subpass dependencies.
+ * @param renderPassAttachments A list of renderpass attachment descriptions.
+ * @return A renderpass.
  */
 RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments)
 {
@@ -109,6 +124,16 @@ RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subp
 }
 
 
+/**
+ * @brief Begins a specified render pass on a specified command buffer.
+ * 
+ * @param commandBuffer The command buffer to begin the render pass on.
+ * @param renderPass The render pass initialized.
+ * @param framebuffer The render pass framebuffer
+ * @param offset The offset of the render pass area.
+ * @param extent The extent of the render pass area.
+ * @param clearValue The render pass clear value.
+ */
 void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, VkClearValue clearValue)
 {
 	VkRenderPassBeginInfo info{};
@@ -123,11 +148,22 @@ void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderP
 	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+/**
+ * @brief Ends a renderpass on the specified command bufffer.
+ * 
+ * @param commandBuffer Command buffer specified.
+ */
 void PersistanceBackend::endRenderPass(VkCommandBuffer& commandBuffer)
 {
 	vkCmdEndRenderPass(commandBuffer);
 }
 
+/**
+ * @brief Cleans up provided render passes.
+ * 
+ * @param renderPass the render passes provided.
+ * @param count The amount of render passes provided.
+ */
 void PersistanceBackend::cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count)
 {
 	for (int i = 0; i < count; i++) {

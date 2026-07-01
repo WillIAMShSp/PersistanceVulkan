@@ -1,3 +1,11 @@
+/*****************************************************************//**
+ * @file   RenderPass.h
+ * @brief  Function declarations for render pass creation, initialization, finalization and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #pragma once
 #include "../Core/PersistanceVkCore.h"
 #include "../Structures/RenderPass.h"

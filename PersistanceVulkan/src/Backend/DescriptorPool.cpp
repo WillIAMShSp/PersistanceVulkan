@@ -1,8 +1,20 @@
+/*****************************************************************//**
+ * @file   DescriptorPool.cpp
+ * @brief  The function definitions for descriptor pool creation and destruction
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
 #include "DescriptorPool.h"
 #include "../Core/PersistanceVkCore.h"
 
 
-
+/**
+ * @brief Create a descriptor pool size.
+ * 
+ * @param type The type of descriptor the size is for.
+ * @return a descriptor pool size
+ */
 VkDescriptorPoolSize PersistanceBackend::createDescriptorPoolSize(VkDescriptorType type)
 {
 	VkDescriptorPoolSize size;
@@ -14,6 +26,12 @@ VkDescriptorPoolSize PersistanceBackend::createDescriptorPoolSize(VkDescriptorTy
 
 }
 
+/**
+ * @brief creates a descriptor pool.
+ * 
+ * @param list A list of descriptor pool sizes.
+ * @return The resulting descriptor pool.
+ */
 VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList& list)
 {
 	VkDescriptorPool pool;
@@ -35,5 +53,15 @@ VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList
 
 	return pool;
 
+
+}
+
+void PersistanceBackend::cleanUpDescriptorPool(VkDescriptorPool* descriptorPools, const uint32_t descriptorPoolCount)
+{
+
+	for (int i = 0; i < descriptorPoolCount; i++) 
+	{
+		vkDestroyDescriptorPool(core.m_device, descriptorPools[i], nullptr);
+	}
 
 }

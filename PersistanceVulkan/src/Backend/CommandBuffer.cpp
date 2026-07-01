@@ -1,7 +1,21 @@
+/*****************************************************************//**
+ * @file   CommandBuffer.cpp
+ * @brief  Function definitions for command buffer creation, initialization, finalization and reset.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
 #include "CommandBuffer.h"
 #include "../Core/PersistanceVkCore.h"
 
 
+/**
+ * @brief Allocates a command buffer within a command pool and returns it.
+ * 
+ * @param commandPool The command pool from which to allocate the command buffer
+ * @param commandBufferLevel The command buffer level i.e Primary or Secondary
+ * @return 
+ */
 VkCommandBuffer PersistanceBackend::allocateCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel commandBufferLevel)
 {
 	VkCommandBuffer commandBuffer;
@@ -17,16 +31,15 @@ VkCommandBuffer PersistanceBackend::allocateCommandBuffer(VkCommandPool commandP
 	{
 		BREAK(0);
 	}
-
 	return commandBuffer;
 
 }
 
 /**
- * Begins a command buffer.
+ * @brief Begins a command buffer.
  * 
- * @param commandBuffer the command buffer to initialize.
- * @param usageFlags options for the command buffer utilization.
+ * @param commandBuffer The command buffer to initialize.
+ * @param usageFlags Flags defining the command buffer usage.
  */
 void PersistanceBackend::beginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags)
 {
@@ -44,10 +57,11 @@ void PersistanceBackend::beginCommandBuffer(VkCommandBuffer commandBuffer, VkCom
 
 }
 
-/// <summary>
-/// Ends a command Buffer
-/// </summary>
-/// <param name="commandBuffer"> command buffer to end</param>
+/**
+ * @brief Ends a command buffer.
+ * 
+ * @param commandBuffer The ended command buffer.
+ */
 void PersistanceBackend::endCommandBuffer(VkCommandBuffer commandBuffer)
 {
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -55,6 +69,11 @@ void PersistanceBackend::endCommandBuffer(VkCommandBuffer commandBuffer)
 	};
 }
 
+/**
+ * @brief Resets a command buffer.
+ * 
+ * @param commandBuffer The reset command buffer.
+ */
 void PersistanceBackend::resetCommandBuffer(VkCommandBuffer commandBuffer)
 {
 	vkResetCommandBuffer(commandBuffer, 0);

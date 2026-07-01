@@ -1,3 +1,11 @@
+/*****************************************************************//**
+ * @file   TextureSampler.h
+ * @brief  Function declaration for texture sampler creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #pragma once
 #include "PersistanceLib.h"
 
@@ -14,6 +22,8 @@ namespace PersistanceBackend
 		float minlod = 0.0f,
 		float maxlod = 0.0f,
 		bool anisotropy = false);
+
+	void cleanUpTextureSamplers(VkSampler* samplers, const uint32_t samplerCount);
 	
 
 

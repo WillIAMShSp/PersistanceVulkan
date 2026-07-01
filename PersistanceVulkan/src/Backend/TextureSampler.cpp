@@ -1,6 +1,31 @@
+/*****************************************************************//**
+ * @file   TextureSampler.cpp
+ * @brief  Function definition for texture sampler creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #include "TextureSampler.h"
 #include "../Core/PersistanceVkCore.h"
 
+/**
+ * @brief Creates a texture sampler.
+ * Breaks if texture sampler creation unsuccessful.
+ * 
+ * @param magfilter
+ * @param minfilter
+ * @param addressmodeU
+ * @param addressmodeV
+ * @param addressmodeW
+ * @param bordercolor
+ * @param mipmapmode
+ * @param miplodbias
+ * @param minlod
+ * @param maxlod
+ * @param anisotropy
+ * @return A sampler with the provided settings.
+ */
 VkSampler PersistanceBackend::createTextureSampler(VkFilter magfilter, VkFilter minfilter, VkSamplerAddressMode addressmodeU, VkSamplerAddressMode addressmodeV, VkSamplerAddressMode addressmodeW, VkBorderColor bordercolor, VkSamplerMipmapMode mipmapmode, float miplodbias, float minlod, float maxlod, bool anisotropy)
 {
 
@@ -40,9 +65,24 @@ VkSampler PersistanceBackend::createTextureSampler(VkFilter magfilter, VkFilter 
 
 	if (vkCreateSampler(core.m_device, &samplerinfo, nullptr, &sampler) != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create sampler");
+		std::cout << "Failed to create texture sampler \n";
+		BREAK(0);
 
 	}
 
 	return sampler;
+}
+
+/**
+ * @brief Destroys specified texture samplers.
+ * 
+ * @param samplers Specified samplers.
+ * @param samplerCount Amount of samplers.
+ */
+void PersistanceBackend::cleanUpTextureSamplers(VkSampler* samplers, const uint32_t samplerCount)
+{
+	for (uint32_t i = 0; i < samplerCount; i++) 
+	{
+		vkDestroySampler(core.m_device, samplers[i], nullptr);
+	}
 }

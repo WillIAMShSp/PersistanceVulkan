@@ -1,6 +1,21 @@
+/*****************************************************************//**
+ * @file   Texture.cpp
+ * @brief  Function definitions for texture creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #include "Texture.h"
 #include "../Core/CoreUtils.h"
 
+/**
+ * @brief Creates a texture with the specified image path.
+ * Breaks if texture creation unsuccessful.
+ * 
+ * @param imagePath The path of the texture image.
+ * @return A texture with the image found in the path.
+ */
 Texture PersistanceBackend::createTexture(const char* imagePath)
 {
 	Texture finalTexture;
@@ -49,6 +64,21 @@ Texture PersistanceBackend::createTexture(const char* imagePath)
 
 	return finalTexture;
 
+}
+
+/**
+ * @brief Cleans up specified textures, including their images and image views.
+ * 
+ * @param textures Specified textures in an array.
+ * @param textureCount The amount of textures in the texture array.
+ */
+void PersistanceBackend::cleanUpTextures(Texture* textures, const uint32_t textureCount)
+{
+	for (uint32_t i = 0; i < textureCount; i++) 
+	{
+		vmaDestroyImage(core.m_vmaAllocator, textures[i].image, textures[i].allocation);
+		vkDestroyImageView(core.m_device, textures[i].imageview, nullptr);
+	}
 }
 
 

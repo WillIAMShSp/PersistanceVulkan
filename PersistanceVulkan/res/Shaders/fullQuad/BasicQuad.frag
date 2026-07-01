@@ -9,6 +9,8 @@ layout(binding = 0) uniform sampler2D texsampler;
 
 void main() {
 
-    outColor = texture(texsampler, uvcords);
+    vec4 texColor = vec4(texture(texsampler, uvcords));
+    outColor = vec4(1.0-texColor.r, 1.0-texColor.g, 1.0-texColor.b, 1.0);
+
     //outColor = vec4(0.0, 1.0, 0.2, 1.0);
 }

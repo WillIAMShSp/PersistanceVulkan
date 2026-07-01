@@ -1,8 +1,17 @@
+/*****************************************************************//**
+ * @file   Framebuffer.cpp
+ * @brief  Function definition for framebuffer creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #include "Framebuffer.h"
 
 #include "../Core/CoreUtils.h"
+
 /**
- * creates as many framebuffers as the max frames in flight and assigns them to an object.
+ * @brief Creates a framebuffer.
  * 
  * @param renderpass the renderpass this framebuffer will be made for.
  * @param width the width of the framebuffer image.
@@ -46,4 +55,26 @@ Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint
 	return framebuffer;
 
 	
+}
+
+/**
+ * @brief Destroys all framebuffers specified together with their images, allocations, and image views.
+ * 
+ * @param framebuffers Framebuffers specified.
+ * @param framebufferCount The ammount of framebuffers.
+ */
+void PersistanceBackend::cleanUpFramebuffers(Framebuffer* framebuffers, const uint32_t framebufferCount)
+{
+	for (uint32_t i = 0; i < framebufferCount; i++) 
+	{
+		for (auto framebuffer : framebuffers[i].framebuffers) 
+		{
+			vkDestroyFramebuffer(core.m_device, framebuffer, nullptr);
+		}
+		for (uint32_t j = 0; j < framebuffers[i].images.size(); j++)
+		{
+			vmaDestroyImage(core.m_vmaAllocator, framebuffers[i].images[j], framebuffers[i].allocations[j]);
+			vkDestroyImageView(core.m_device, framebuffers[i].imageviews[j], nullptr);
+		}
+	}
 }

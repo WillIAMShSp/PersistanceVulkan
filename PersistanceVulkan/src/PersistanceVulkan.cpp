@@ -288,12 +288,22 @@ int main() {
 		
 		
 		PersistanceBackend::endCommandBuffer(commandBuffer);
-		core.endDrawingandPresent(commandBuffer);
+		core.endDrawingandPresent( &commandBuffer, 1);
 
 
 
 	}
 	core.waitForDeviceIdle();
+
+	PersistanceBackend::cleanUpRenderPasses(&renderpass, 1);
+	PersistanceBackend::cleanUpDescriptorPool(&fullQuadDescriptorPool,1);
+	PersistanceBackend::cleanUpDescriptorPool(&descriptorPool, 1);
+	PersistanceBackend::cleanUpFramebuffers(&framebuffer, 1);
+	PersistanceBackend::cleanUpGraphicsPipeline(&graphicsPipeline, 1);
+	PersistanceBackend::cleanUpGraphicsPipeline(&fullQuadGraphicsPipeline, 1);
+	
+
+	core.finalize();
 
 
  //   engine.Init();

@@ -1,7 +1,25 @@
+/*****************************************************************//**
+ * @file   GraphicsPipeline.cpp
+ * @brief  Function definitions for graphics pipeline creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #include "GraphicsPipeline.h"
 
 
-
+/**
+ * @brief Creates a pipeline layout.
+ * Breaks if the pipeline layout creation is unsuccessful.
+ * 
+ * @param layouts Descriptor set layouts assigned to the pipeline.
+ * @param layoutCount The amount of descriptor set layouts.
+ * @param pushConstantRanges is a pointer to an array of VkPushConstantRange structures defining a set of push constant ranges for use in a single pipeline layout. In addition to descriptor set layouts, 
+ * a pipeline layout also describes how many push constants can be accessed by each stage of the pipeline.
+ * @param pushConstangRangeCount Is the number of push constant ranges included in the pipeline layout
+ * @return A pipeline layout.
+ */
 VkPipelineLayout PersistanceBackend::createPipelineLayout(const VkDescriptorSetLayout* layouts, const uint32_t layoutCount, const VkPushConstantRange* pushConstantRanges, const uint32_t pushConstangRangeCount)
 {
 	
@@ -23,6 +41,16 @@ VkPipelineLayout PersistanceBackend::createPipelineLayout(const VkDescriptorSetL
 	return layout;
 }
 
+/**
+ * @brief Creates a graphics pipeline.
+ * Breaks if graphics pipeline creation is unsuccessful.
+ * 
+ * @param layout The pipeline's layout.
+ * @param shader The shader associated with the created graphics pipeline.
+ * @param settings The pipeline settings.
+ * @param renderPass The renderpass associated with the created graphics pipeline.
+ * @return A VkPipeline with the created graphics pipeline.
+ */
 VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, RenderPass& renderPass)
 {
 	VkPipeline graphicsPipeline;
@@ -76,5 +104,20 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 	}
 
 	return graphicsPipeline;
+
+}
+
+/**
+ * @brief Destroys provided pipelines.
+ * 
+ * @param pipelines 
+ * @param pipelineCount
+ */
+void PersistanceBackend::cleanUpGraphicsPipeline(VkPipeline* pipelines, const uint32_t pipelineCount)
+{
+	for (uint32_t i = 0; i < pipelineCount; i++) 
+	{
+		vkDestroyPipeline(core.m_device, pipelines[i], nullptr);
+	}
 
 }

@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   RenderPassAttachment.h
+ * @brief  Function declaration for render pass attachment creation.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
 #pragma once
 
 #include "../Structures/RenderPassAttachment.h"

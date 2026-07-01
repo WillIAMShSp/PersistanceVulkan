@@ -1,6 +1,22 @@
+/*****************************************************************//**
+ * @file   VertexBuffer.cpp
+ * @brief  Function definitions for vertex buffer creation and destruction.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
+
 #include "VertexBuffer.h"
 #include "../Core/CoreUtils.h"
 
+/**
+ * @brief Creates a vertex buffer.
+ * 
+ * @param buffer The created vertex buffer's data.
+ * @param elementSize The size of an element in the data.
+ * @param elementCount The amount of elements in the data.
+ * @return The created vertex buffer.
+ */
 Buffer PersistanceBackend::createVertexBuffer(const void* buffer, const size_t elementSize, const uint32_t elementCount)
 {
 	Buffer vertexBuffer;
@@ -27,4 +43,19 @@ Buffer PersistanceBackend::createVertexBuffer(const void* buffer, const size_t e
 
 	return vertexBuffer;
 
+}
+
+/**
+ * @brief Destroys all the vertex buffers specified..
+ * 
+ * @param buffers Vertex buffers specified.
+ * @param bufferCount The amount of vertex buffers.
+ */
+void PersistanceBackend::cleanUpVertexBuffers(Buffer* buffers, const uint32_t bufferCount)
+{
+	for (uint32_t i = 0; i < bufferCount; i++) 
+	{
+		vmaDestroyBuffer(core.m_vmaAllocator, buffers[i].buffer, buffers[i].allocation);
+	
+	}
 }

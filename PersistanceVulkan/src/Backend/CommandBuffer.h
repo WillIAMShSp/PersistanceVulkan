@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   CommandBuffer.h
+ * @brief  Function definitions for command buffer creation, initialization, finalization and reset.
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-30-2026
+ *********************************************************************/
 #pragma once
 #include "../PersistanceLib.h"
 

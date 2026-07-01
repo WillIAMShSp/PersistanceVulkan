@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * @file   PersistanceVkCore.h
+ * @brief  This is the core file for the PersistanceVulkan Framwework
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-29-2026
+ *********************************************************************/
 #pragma once
 #include "./PersistanceLib.h"
 
@@ -23,6 +30,9 @@
 const uint32_t screenwidth = 800;
 const uint32_t screenheight = 600;
 
+/**
+ * @brief A string containing the validation layers.
+ */
 const std::vector<const char*> m_validationlayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
@@ -33,6 +43,9 @@ const bool enablevalidationlayers = false;
 const bool enablevalidationlayers = true;
 #endif
 
+/**
+ * @brief This struct provides the surface characteristics for the swapchain.
+ */
 struct SwapChainSupportDetails
 {
 	VkSurfaceCapabilitiesKHR surfacecapabilities;
@@ -41,7 +54,9 @@ struct SwapChainSupportDetails
 
 };
 
-
+/**
+ * @brief Provides the queue family indices for a device.
+ */
 struct QueueFamilyIndices
 {
 	uint32_t graphicsfamily = -1;
@@ -53,7 +68,11 @@ struct QueueFamilyIndices
 };
 
 
-
+/**
+ * @brief Manages core resources required to set up and implement Vulkan like a Vulkan Device, 
+ * memory management, window creation through GLFW, Swapchain images, framebuffers, and renderpass, 
+ * as well as validation layers.
+ */
 class PersistanceVkCore
 {
 public:
@@ -112,6 +131,7 @@ private:
 	void initWindow();
 	void initVulkan();
 
+	//Create
 	void createInstance();
 	void createSurface();
 	void selectPhysicalDevice();
@@ -126,14 +146,24 @@ private:
 	void createSwapchainImageViews();
 	void createSwapchainFramebuffers();
 	void recreateSwapchain();
+	
+	
+	//Destroy and clean up
 	void cleanUpSwapchain();
+	void cleanUpMainRenderPass();
+	void cleanUpSyncObjects();
+	void cleanUpCommandPools();
+	void cleanUpAllocator();
+
+
 
 public:
 	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
 	void startDrawing();
-	void endDrawingandPresent(VkCommandBuffer& commandBuffer);
+	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
 	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);
+	void finalize();
 private:
 
 	bool checkValidationLayers();

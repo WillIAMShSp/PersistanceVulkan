@@ -1,3 +1,11 @@
+/*****************************************************************//**
+ * @file   PersistanceVkCore.cpp
+ * @brief  This is the implementation file for the functions in PersistanceVkCore.h
+ * 
+ * @author Luis Camilo Alvarez Carrau
+ * @date   6-29-2026
+ *********************************************************************/
+
 #include "PersistanceVkCore.h"
 
 #include "./CoreUtils.h"
@@ -5,7 +13,7 @@
 #include "../Backend/RenderPassAttachment.h"
 
 /**
- * Initiates a GLFW window.
+ * @brief Initializes a GLFW window
  * 
  */
 void PersistanceVkCore::initWindow()
@@ -24,7 +32,10 @@ void PersistanceVkCore::initWindow()
 	glfwSetWindowSizeCallback(m_window, resizeWindowCallback);
 
 }
-
+/**
+ * @brief Initializes a Vulkan instance, surface, device, memory allocator, sync objects and a swapchain with framebuffers and a renderpass.
+ * 
+ */
 void PersistanceVkCore::initVulkan()
 {
 	volkInitialize();
@@ -45,7 +56,8 @@ void PersistanceVkCore::initVulkan()
 }
 
 /**
- * Creates a Vulkan instance
+ * @brief Creates a vulkan instance.
+ * 
  */
 void PersistanceVkCore::createInstance()
 {
@@ -114,7 +126,7 @@ void PersistanceVkCore::createInstance()
 }
 
 /**
- * Creates the surface needed as context for the Vulkan application.
+ * @brief Creates a Vulkan surface with the GLFW window.
  * 
  */
 void PersistanceVkCore::createSurface()
@@ -129,7 +141,7 @@ void PersistanceVkCore::createSurface()
 
 
 /**
- * Selects the most competent physical device to use vulkan with.
+ * @brief Selects the physical device with the most supported necessary features.
  * 
  */
 void PersistanceVkCore::selectPhysicalDevice()
@@ -196,8 +208,9 @@ void PersistanceVkCore::selectPhysicalDevice()
 
 
 }
+
 /**
- * Creates a logical device from the selected physical device.
+ * @brief Creates a Vulkan logical device for the selected physical device.
  * 
  */
 void PersistanceVkCore::createLogicalDevice()
@@ -287,7 +300,7 @@ void PersistanceVkCore::createLogicalDevice()
 }
 
 /**
- * Creates a Vulkan Memory Allocator.
+ * @brief Creates a Vulkan Memory Allocator through the VMA library.
  * 
  */
 void PersistanceVkCore::createAllocator()
@@ -312,7 +325,7 @@ void PersistanceVkCore::createAllocator()
 }
 
 /**
- * Creates a swapchain.
+ * @brief Creates the swapchain and its images.
  * 
  */
 void PersistanceVkCore::createSwapChain()
@@ -411,7 +424,7 @@ void PersistanceVkCore::createSwapChain()
 }
 
 /**
- * Creates the Vulkan command pools.
+ * @brief Creates the Vulkan Command Pools.
  * 
  */
 void PersistanceVkCore::createCommandPools()
@@ -450,7 +463,7 @@ void PersistanceVkCore::createCommandPools()
 }
 
 /**
- * Creates syncronization semaphores and fences.
+ * @brief Creates sync objects like Semaphores and Fences.
  * 
  */
 void PersistanceVkCore::createSyncObjects()
@@ -482,7 +495,7 @@ void PersistanceVkCore::createSyncObjects()
 }
 
 /**
- * Creates the main renderpass for the engine.
+ * @brief Creates the main renderpass.
  * 
  */
 void PersistanceVkCore::createMainRenderPass()
@@ -529,6 +542,11 @@ void PersistanceVkCore::createSwapchainImageViews()
 	
 }
 
+
+/**
+ * @brief Creates the swapchain framebuffers\.
+ * 
+ */
 void PersistanceVkCore::createSwapchainFramebuffers()
 {
 	uint32_t imageViewCount = m_swapchainFramebuffers.imageviews.size();
@@ -561,6 +579,10 @@ void PersistanceVkCore::createSwapchainFramebuffers()
 
 }
 
+/**
+ * @brief Recreates the swapchain and framebuffers.
+ * 
+ */
 void PersistanceVkCore::recreateSwapchain()
 {
 	int width = 0;
@@ -587,6 +609,10 @@ void PersistanceVkCore::recreateSwapchain()
 
 }
 
+/**
+ * @brief Cleans up the swapchain resources i.e. the framebuffers and imageviews.
+ *
+ */
 void PersistanceVkCore::cleanUpSwapchain()
 {
 
@@ -601,7 +627,46 @@ void PersistanceVkCore::cleanUpSwapchain()
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
 }
+void PersistanceVkCore::cleanUpMainRenderPass()
+{
+	vkDestroyRenderPass(m_device, m_mainRenderPass.renderpass, nullptr);
 
+}
+void PersistanceVkCore::cleanUpSyncObjects()
+{
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
+	{
+		vkDestroySemaphore(m_device, s_imageAvailable[i], nullptr);
+		vkDestroySemaphore(m_device, s_renderFinished[i], nullptr);
+		vkDestroyFence(m_device, f_inFlightFence[i], nullptr);
+
+	}
+}
+/**
+ * @brief Cleans up command pools.
+ * 
+ */
+void PersistanceVkCore::cleanUpCommandPools()
+{
+	vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
+	vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
+
+}
+
+/**
+ * @brief Cleans up the VMA memory allocator.
+ * 
+ */
+void PersistanceVkCore::cleanUpAllocator()
+{
+	vmaDestroyAllocator(m_vmaAllocator);
+}
+
+/**
+ * @brief Begin the main renderpass on a specified command buffer.
+ * 
+ * @param commandBuffer the specified command buffer
+ */
 void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 {
 	VkOffset2D offset{0,0};
@@ -611,6 +676,16 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValue);
 }
 
+
+/**
+ * @brief Prepares the next swapchain image to be presented unto.
+ * Manages the following:
+ * -Waits for the inflight fence
+ * -Acquires the next image in the swapchain
+ * -Recreates the swapchain in case the image is outdated.
+ * -Resets the fences
+ * 
+ */
 void PersistanceVkCore::startDrawing()
 {
 	if (m_currentlyDrawing)
@@ -644,7 +719,8 @@ void PersistanceVkCore::startDrawing()
 
 }
 
-void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer& commandBuffer)
+/**  */
+void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount)
 {
 
 	VkSemaphore waitsemaphores[] = { s_imageAvailable[m_currentFrame] };
@@ -655,8 +731,8 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer& commandBuffer)
 
 
 	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitinfo.commandBufferCount = 1;
-	submitinfo.pCommandBuffers = &commandBuffer;
+	submitinfo.commandBufferCount = commandBufferCount;
+	submitinfo.pCommandBuffers = commandBuffers;
 	submitinfo.waitSemaphoreCount = 1;
 	submitinfo.pWaitSemaphores = waitsemaphores;
 	submitinfo.pWaitDstStageMask = waitstages;
@@ -731,6 +807,35 @@ void PersistanceVkCore::drawIndexed(VkCommandBuffer& commandBuffer, const Buffer
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, descriptorSetCount, descriptorSets, 0, nullptr);
 
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexBuffer.size / sizeof(uint32_t)), 1, 0, 0, 0);
+
+
+}
+
+void PersistanceVkCore::finalize()
+{
+	cleanUpSwapchain();
+	cleanUpMainRenderPass();
+	cleanUpSyncObjects();
+	cleanUpCommandPools();
+	cleanUpAllocator();
+
+
+	vkDestroyDevice(m_device, nullptr);
+
+	if (enablevalidationlayers)
+	{
+		DebugUtilsMessengerEXT::Destroy(m_instance, m_debugMessenger, nullptr);
+	}
+
+	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
+	vkDestroyInstance(m_instance, nullptr);
+
+	glfwDestroyWindow(m_window);
+
+	glfwTerminate();
+
+
 
 
 }
