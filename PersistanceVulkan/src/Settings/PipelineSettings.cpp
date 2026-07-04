@@ -104,6 +104,22 @@ void PipelineSettings::configureRasterizationDepthBias(VkBool32 depthbiasenable,
 
 }
 
+void PipelineSettings::configureDepthStencilState(VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp, VkBool32 depthBoundsTestEnable, float minDepthBounds, float maxDepthBounds, VkBool32 stencilTestEnable, VkStencilOpState front, VkStencilOpState back)
+{
+	m_depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	m_depthStencilCreateInfo.depthTestEnable = depthTestEnable;
+	m_depthStencilCreateInfo.depthWriteEnable = depthWriteEnable;
+	m_depthStencilCreateInfo.depthCompareOp = depthCompareOp;
+	m_depthStencilCreateInfo.depthBoundsTestEnable = depthBoundsTestEnable ;
+	m_depthStencilCreateInfo.minDepthBounds = minDepthBounds;
+	m_depthStencilCreateInfo.maxDepthBounds = maxDepthBounds;
+	m_depthStencilCreateInfo.stencilTestEnable = stencilTestEnable;
+	m_depthStencilCreateInfo.front = front;
+	m_depthStencilCreateInfo.back = back;
+
+
+}
+
 void PipelineSettings::configureMultisample()
 {
 	m_multisampleCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

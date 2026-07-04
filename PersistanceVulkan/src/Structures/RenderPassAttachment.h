@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PersistanceLib.h"
+#include "../PersistanceLib.h"
 #include <vector>
 
 struct RenderPassAttachment 
@@ -38,7 +38,7 @@ struct AttachmentDescriptionList {
 	void add(RenderPassAttachment* attachments, uint32_t attachmentCount) 
 	{
 		descriptions.reserve(attachmentCount + descriptions.size());
-		for (int i = 0; i < attachmentCount; i++) 
+		for (uint32_t i = 0; i < attachmentCount; i++) 
 		{
 			descriptions.emplace_back(attachments[i].description);
 		}
@@ -46,5 +46,26 @@ struct AttachmentDescriptionList {
 	}
 
 	std::vector<VkAttachmentDescription> descriptions;
+};
+
+
+class AttachmentList {
+public:
+	AttachmentList() = default;
+
+	AttachmentReferenceList& getReferenceList() 
+	{
+		return m_refList;
+	};
+
+	AttachmentDescriptionList& getDescriptionList() 
+	{
+		return m_descriptionList;
+	}
+private:
+
+	AttachmentReferenceList m_refList;
+	AttachmentDescriptionList m_descriptionList;
+
 };
  

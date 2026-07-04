@@ -132,14 +132,16 @@ RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subp
  * @param framebuffer The render pass framebuffer
  * @param offset The offset of the render pass area.
  * @param extent The extent of the render pass area.
- * @param clearValue The render pass clear value.
+ * @param clearValues The render pass clear values, one per attachment. 
+ * Note, clear values must be in the same order as their attachments in the renderpass.
+ * @param clearValueCount the amount of clear values
  */
-void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, VkClearValue clearValue)
+void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount)
 {
 	VkRenderPassBeginInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	info.clearValueCount = 1;
-	info.pClearValues = &clearValue;
+	info.clearValueCount = clearValueCount;
+	info.pClearValues = clearValues;
 	info.framebuffer = framebuffer.framebuffers[core.m_imageIndex];
 	info.renderArea.extent = extent;
 	info.renderArea.offset = offset;

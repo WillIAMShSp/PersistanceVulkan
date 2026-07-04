@@ -23,7 +23,7 @@
  * @param imageMemoryProperties the framebuffer image's memory properties.
  * @return the fully created framebuffers
  */
-Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint32_t width, uint32_t height, uint32_t layers, VkFormat imageFormat, VkImageTiling imageTiling, VkImageUsageFlags imageUsageFlags, VkMemoryPropertyFlags imageMemoryProperties)
+Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint32_t width, uint32_t height, uint32_t layers, VkFormat imageFormat, VkImageTiling imageTiling, VkImageUsageFlags imageUsageFlags, VkMemoryPropertyFlags imageMemoryProperties, VkImageView* depthAndStencilImageView)
 {
 	Framebuffer framebuffer;
 
@@ -34,18 +34,29 @@ Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint
 	framebuffer.imageviews.resize(imageCount);
 	framebuffer.framebuffers.resize(imageCount);
 
-	for (int i = 0; i < imageCount; i++) 
+	for (uint32_t i = 0; i < imageCount; i++) 
 	{
 		PersistanceUtils::createImage(width, height, imageFormat, imageTiling, imageUsageFlags, imageMemoryProperties, framebuffer.images[i], framebuffer.allocations[i], VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 		
 		framebuffer.imageviews[i] = PersistanceUtils::createImageView(framebuffer.images[i], imageFormat);
 
+
+		std::vector<VkImageView> attachments;
+		attachments.push_back(framebuffer.imageviews[i]);
+
+		if (depthAndStencilImageView != nullptr) 
+		{
+			attachments.push_back(*depthAndStencilImageView);
+
+		}
+		
+
 		VkFramebufferCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		info.width = width;
 		info.height = height;
-		info.attachmentCount = 1;
-		info.pAttachments = &framebuffer.imageviews[i];
+		info.attachmentCount = static_cast<uint32_t>(attachments.size());
+		info.pAttachments = attachments.data();
 		info.layers = layers;
 		info.renderPass = renderpass;
 		

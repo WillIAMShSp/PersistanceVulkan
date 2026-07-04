@@ -335,3 +335,60 @@ VkImageView PersistanceUtils::createImageView(VkImage& image, VkFormat format, V
 
 	return imageview;
 }
+
+
+
+/**
+ * @brief Finds a supported image format out of a pool of candidates with specified features depending on tiling and on the selected physical device.
+ * 
+ * Breaks if no supported image format found.
+ * 
+ * @param candidates A pool of format candidates.
+ * @param tiling The tiling mode of the requiring image.
+ * @param features Are the features the format must support to be eligible.
+ * @return The supported format.
+ */
+VkFormat PersistanceUtils::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+	for (auto candidate : candidates) {
+		VkFormatProperties formatProperties;
+
+		vkGetPhysicalDeviceFormatProperties(core.m_physicalDevice, candidate, &formatProperties);
+
+		if (tiling == VK_IMAGE_TILING_LINEAR && (features & formatProperties.linearTilingFeatures) == features) {
+			return candidate;
+		}
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (features & formatProperties.optimalTilingFeatures) == features) {
+			return candidate;
+		}
+	}
+
+	std::cout << "\nNo supported Format found\n";
+	BREAK;
+}
+
+
+/**
+ * @brief Finds the most appropiate depth format for the selected physical device.
+ * 
+ * @return The depth format.
+ */
+VkFormat PersistanceUtils::findDepthFormat()
+{
+	return findSupportedFormat(
+		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+	);
+}
+
+/**
+ * @brief Evaluates wether or not a provided depth format supports the stencil component.
+ * 
+ * @param format 
+ * @return True if the provided format does support the stencil component, false otherwise.
+ */
+bool PersistanceUtils::hasStencilComponent(VkFormat format)
+{
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}

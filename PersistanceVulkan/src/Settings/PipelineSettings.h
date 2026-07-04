@@ -1,5 +1,5 @@
 #pragma once
-#include "PersistanceLib.h"
+#include "../PersistanceLib.h"
 #include <iostream>
 #include <vector>
 
@@ -76,6 +76,16 @@ public:
 		VkBool32 rasterizerdiscard = VK_FALSE
 	);
 	void configureRasterizationDepthBias(VkBool32 depthbiasenable, VkBool32 depthbiasclamp, float depthbiasslopefactor, float depthbiasconstantfactor);
+	void configureDepthStencilState(
+		VkBool32 depthTestEnable, 
+		VkBool32 depthWriteEnable, 
+		VkCompareOp depthCompareOp, 
+		VkBool32 depthBoundsTestEnable = VK_FALSE, 
+		float minDepthBounds = 0.f, 
+		float maxDepthBounds = 1.0f, 
+		VkBool32 stencilTestEnable = VK_FALSE, 
+		VkStencilOpState front = {}, 
+		VkStencilOpState back = {});
 	void configureMultisample();
 	void configureMultisample(
 		VkBool32 sampleshading,
@@ -123,6 +133,10 @@ public:
 	{
 		return m_colorBlendCreateInfo;
 	}
+	const VkPipelineDepthStencilStateCreateInfo& getDepthStencilCreateInfo() 
+	{
+		return m_depthStencilCreateInfo;
+	}
 	
 	bool m_usedynamicstate = false;
 
@@ -131,10 +145,11 @@ private:
 	VkVertexInputBindingDescription m_bindingDescription{};
 	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo{};
 	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCreateInfo{};
-	VkViewport m_staticViewport;
-	VkRect2D m_staticScissors;
+	VkViewport m_staticViewport{};
+	VkRect2D m_staticScissors{};
 	VkPipelineViewportStateCreateInfo m_viewportCreateInfo{};
 	VkPipelineRasterizationStateCreateInfo m_rasterCreateInfo{};
+	VkPipelineDepthStencilStateCreateInfo m_depthStencilCreateInfo{};
 	VkPipelineMultisampleStateCreateInfo m_multisampleCreateInfo{};
 	VkPipelineColorBlendAttachmentState m_colorBlendAttachment{};
 	VkPipelineColorBlendStateCreateInfo m_colorBlendCreateInfo{};

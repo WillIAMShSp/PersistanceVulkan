@@ -7,9 +7,8 @@
  *********************************************************************/
 
 #pragma once
-#include "PersistanceLib.h"
+#include "../PersistanceLib.h"
 #include "../Core/PersistanceVkCore.h"
-#include "../Structures/GraphicsPipeline.h"
 #include "./Shader.h"
 #include "../Settings/PipelineSettings.h"
 #include "../Structures/RenderPass.h"

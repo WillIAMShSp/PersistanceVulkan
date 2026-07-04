@@ -124,7 +124,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\GLFW;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -147,8 +147,6 @@
     <ClCompile Include="src\Backend\VertexBuffer.cpp" />
     <ClCompile Include="src\Core\CoreUtils.cpp" />
     <ClCompile Include="src\Core\PersistanceVkCore.cpp" />
-    <ClCompile Include="src\Objects\Shader.cpp" />
-    <ClCompile Include="src\PersistanceVk.cpp" />
     <ClCompile Include="src\PersistanceVulkan.cpp" />
     <ClCompile Include="src\Settings\PipelineSettings.cpp" />
     <ClCompile Include="src\Structures\Buffer.cpp" />
@@ -160,7 +158,6 @@
     <ClInclude Include="src\Backend\DescriptorPool.h" />
     <ClInclude Include="src\Backend\DescriptorSet.h" />
     <ClInclude Include="src\Backend\DescriptorSetLayout.h" />
-    <ClInclude Include="src\Backend\Drawing.h" />
     <ClInclude Include="src\Backend\Framebuffer.h" />
     <ClInclude Include="src\Backend\GraphicsPipeline.h" />
     <ClInclude Include="src\Backend\IndexBuffer.h" />
@@ -176,26 +173,17 @@
     <ClInclude Include="src\Debug\DebugUtilsMessengerEXT.h" />
     <ClInclude Include="src\Includes\glmIncludes.h" />
     <ClInclude Include="src\Includes\stdLibIncludes.h" />
-    <ClInclude Include="src\Objects\Shader.h" />
-    <ClInclude Include="src\Objects\Vertex.h" />
     <ClInclude Include="src\PersistanceLib.h" />
-    <ClInclude Include="src\PersistanceVk.h" />
     <ClInclude Include="src\Settings\PipelineSettings.h" />
     <ClInclude Include="src\Structures\Buffer.h" />
-    <ClInclude Include="src\Structures\DescriptorBufferInfo.h" />
-    <ClInclude Include="src\Structures\DescriptorImageInfo.h" />
     <ClInclude Include="src\Structures\DescriptorPool.h" />
-    <ClInclude Include="src\Structures\DescriptorSet.h" />
     <ClInclude Include="src\Structures\DescriptorSetLayout.h" />
     <ClInclude Include="src\Structures\Drawable.h" />
     <ClInclude Include="src\Structures\Framebuffer.h" />
-    <ClInclude Include="src\Structures\GraphicsPipeline.h" />
     <ClInclude Include="src\Structures\RenderPass.h" />
     <ClInclude Include="src\Structures\RenderPassAttachment.h" />
-    <ClInclude Include="src\Structures\SubpassData.h" />
     <ClInclude Include="src\Structures\Texture.h" />
     <ClInclude Include="src\Structures\UniformBuffer.h" />
-    <ClInclude Include="src\Structures\WriteDesciptorSet.h" />
     <ClInclude Include="src\Vendor\stb_image.h" />
     <ClInclude Include="src\Vendor\vma\vk_mem_alloc.h" />
     <ClInclude Include="src\Vendor\vma\VmaUsage.h" />

@@ -1,4 +1,4 @@
-#include "./PersistanceVkCore.h";
+#include "./PersistanceVkCore.h"
 
 
 namespace PersistanceUtils {
@@ -34,5 +34,8 @@ namespace PersistanceUtils {
 
 	VkImageView createImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect = VK_IMAGE_ASPECT_COLOR_BIT);
 
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	VkFormat findDepthFormat();
+	bool hasStencilComponent(VkFormat format);
 
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "PersistanceLib.h"
+#include "../PersistanceLib.h"
 #include <vector>
 
 typedef uint32_t DescriptorPoolHandle;
@@ -14,7 +14,7 @@ struct DescriptorPoolSizeList {
 
 	void add(VkDescriptorPoolSize* sizes, uint32_t count) 
 	{
-		for (int i = 0; i < count; i++) 
+		for (uint32_t i = 0; i < count; i++) 
 		{
 			this->sizes.push_back(sizes[i]);
 		}

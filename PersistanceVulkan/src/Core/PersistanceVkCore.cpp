@@ -6,11 +6,24 @@
  * @date   6-29-2026
  *********************************************************************/
 
-#include "PersistanceVkCore.h"
+#include "./PersistanceVkCore.h"
 
 #include "./CoreUtils.h"
-#include "../Backend/RenderPass.h";
+#include "../Backend/RenderPass.h"
 #include "../Backend/RenderPassAttachment.h"
+
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../Vendor/stb_image.h"
+
+
+#define VMA_IMPLEMENTATION
+
+
+#define VOLK_IMPLEMENTATION
+
+
+
 
 /**
  * @brief Initializes a GLFW window
@@ -33,7 +46,7 @@ void PersistanceVkCore::initWindow()
 
 }
 /**
- * @brief Initializes a Vulkan instance, surface, device, memory allocator, sync objects and a swapchain with framebuffers and a renderpass.
+ * @brief Initializes a Vulkan instance, surface, device, memory allocator, and sync objects
  * 
  */
 void PersistanceVkCore::initVulkan()
@@ -50,9 +63,7 @@ void PersistanceVkCore::initVulkan()
 	createSwapChain();
 	createCommandPools();
 	createSyncObjects();
-	createMainRenderPass();
-	createSwapchainImageViews();
-	createSwapchainFramebuffers();
+	
 }
 
 /**
@@ -497,8 +508,9 @@ void PersistanceVkCore::createSyncObjects()
 /**
  * @brief Creates the main renderpass.
  * 
+ * @param doDepthTesting Will the main renderpass require depth testing.
  */
-void PersistanceVkCore::createMainRenderPass()
+void PersistanceVkCore::createSwapchainRenderPass()
 {
 
 	RenderPassAttachment colorattachment = PersistanceBackend::createRenderPassAttachment(0, 
@@ -510,15 +522,29 @@ void PersistanceVkCore::createMainRenderPass()
 		VK_IMAGE_LAYOUT_UNDEFINED, 
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 	);
+	RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	
 
 	AttachmentReferenceList refList;
 	refList.add(&colorattachment, 1);
 	AttachmentDescriptionList desList;
 	desList.add(&colorattachment, 1);
 
-	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
-	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+	if (m_depthTesting) 
+	{
+		desList.add(&depthAttachment, 1);
+	}
 	
+	RenderPassAttachment* pDepthAttachment = m_depthTesting ? &depthAttachment : nullptr;
+
+	VkPipelineStageFlags srcStageFlags = m_depthTesting ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkPipelineStageFlags dstStageFlags = m_depthTesting ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	VkAccessFlags srcAccessFlags = m_depthTesting ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0;
+	VkAccessFlags dstAccessFlags = m_depthTesting ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, pDepthAttachment, nullptr, nullptr, 0);
+	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, srcAccessFlags, dstAccessFlags, srcStageFlags, dstStageFlags, 0);
 
 	m_mainRenderPass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, desList);
 
@@ -530,11 +556,11 @@ void PersistanceVkCore::createMainRenderPass()
  */
 void PersistanceVkCore::createSwapchainImageViews()
 {
-	uint32_t size = m_swapchainFramebuffers.images.size();
+	size_t size = m_swapchainFramebuffers.images.size();
 
 	m_swapchainFramebuffers.imageviews.resize(size);
 
-	for (int i = 0; i < size; i++) 
+	for (uint32_t i = 0; i < size; i++) 
 	{
 		m_swapchainFramebuffers.imageviews[i] = PersistanceUtils::createImageView(m_swapchainFramebuffers.images[i], m_swapchainImageFormat);
 
@@ -547,17 +573,23 @@ void PersistanceVkCore::createSwapchainImageViews()
  * @brief Creates the swapchain framebuffers\.
  * 
  */
-void PersistanceVkCore::createSwapchainFramebuffers()
+void PersistanceVkCore::createSwapchainFramebuffers(VkImageView* depthBufferImageView)
 {
-	uint32_t imageViewCount = m_swapchainFramebuffers.imageviews.size();
+	size_t imageViewCount = m_swapchainFramebuffers.imageviews.size();
 	m_swapchainFramebuffers.framebuffers.resize(imageViewCount);
 
 
-	for (int i = 0; i < imageViewCount; i++)
+	for (uint32_t i = 0; i < imageViewCount; i++)
 	{
-		VkImageView attachments[] = {
+		std::vector<VkImageView> attachments = {
 			m_swapchainFramebuffers.imageviews[i]
 		};
+		
+		if (depthBufferImageView != nullptr) 
+		{
+			attachments.push_back(*depthBufferImageView);
+		}
+		
 
 		VkFramebufferCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -565,8 +597,8 @@ void PersistanceVkCore::createSwapchainFramebuffers()
 		info.width = m_swapchainExtent.width;
 		info.layers = 1;
 		info.renderPass = m_mainRenderPass.renderpass;
-		info.attachmentCount = 1;
-		info.pAttachments = attachments;
+		info.attachmentCount = static_cast<uint32_t>(attachments.size());
+		info.pAttachments = attachments.data();
 		info.flags = 0;
 
 		if (vkCreateFramebuffer(m_device, &info, nullptr, &m_swapchainFramebuffers.framebuffers[i]) != VK_SUCCESS)
@@ -577,6 +609,23 @@ void PersistanceVkCore::createSwapchainFramebuffers()
 
 	}
 
+}
+
+/**
+ * @brief Creates a depth buffer image and image view for the swapchain renderpass.
+ * 
+ */
+void PersistanceVkCore::createSwapchainDepthBuffer()
+{
+	VkImage& depthImage = m_swapchainDepthBuffer.image;
+	VmaAllocation& depthAllocation = m_swapchainDepthBuffer.allocation;
+
+
+	VkFormat format = PersistanceUtils::findDepthFormat();
+
+	PersistanceUtils::createImage(m_swapchainExtent.width, m_swapchainExtent.height, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthAllocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
+
+	m_swapchainDepthBuffer.imageview = PersistanceUtils::createImageView(depthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 /**
@@ -604,7 +653,10 @@ void PersistanceVkCore::recreateSwapchain()
 
 	createSwapChain();
 	createSwapchainImageViews();
-	createSwapchainFramebuffers();
+	createSwapchainDepthBuffer();
+
+	VkImageView* depthBufferImageView = m_depthTesting ? &m_swapchainDepthBuffer.imageview : nullptr;
+	createSwapchainFramebuffers(depthBufferImageView);
 
 
 }
@@ -624,9 +676,20 @@ void PersistanceVkCore::cleanUpSwapchain()
 	{
 		vkDestroyImageView(m_device, imageviews, nullptr);
 	}
+
+	if (m_depthTesting) 
+	{
+		vmaDestroyImage(m_vmaAllocator, m_swapchainDepthBuffer.image, m_swapchainDepthBuffer.allocation);
+		vkDestroyImageView(m_device, m_swapchainDepthBuffer.imageview, nullptr);
+	}
+
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 
 }
+/**
+ * @brief Destroys the main renderpass resource.
+ * 
+ */
 void PersistanceVkCore::cleanUpMainRenderPass()
 {
 	vkDestroyRenderPass(m_device, m_mainRenderPass.renderpass, nullptr);
@@ -663,6 +726,29 @@ void PersistanceVkCore::cleanUpAllocator()
 }
 
 /**
+ * @brief Creates the swapchain render pass, imageviews and framebuffers with the specified settings.
+ * 
+ * @param doDepthTesting Is depth testing needed.
+ */
+void PersistanceVkCore::createMainRenderSetup(bool doDepthTesting)
+{
+	m_depthTesting = doDepthTesting;
+		
+	if (m_depthTesting) {
+		
+		createSwapchainDepthBuffer();
+	}
+	VkImageView* depthBufferImageView = m_depthTesting ?  &m_swapchainDepthBuffer.imageview : nullptr;
+
+
+	createSwapchainRenderPass();
+	createSwapchainImageViews();
+	createSwapchainFramebuffers(depthBufferImageView);
+
+
+}
+
+/**
  * @brief Begin the main renderpass on a specified command buffer.
  * 
  * @param commandBuffer the specified command buffer
@@ -670,10 +756,18 @@ void PersistanceVkCore::cleanUpAllocator()
 void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 {
 	VkOffset2D offset{0,0};
-	VkClearValue clearValue{};
-	clearValue.color = { 0,0,0,1 };
-	clearValue.depthStencil = { 0,0 };
-	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValue);
+	VkClearValue colorClearValue{};
+	colorClearValue.color = { 0,0,0,1 };
+	
+	VkClearValue clearValues[2];
+
+	clearValues[0].color = { 0,0,0,1 };
+	clearValues[1].depthStencil = { 1.0f, 0};
+	
+	
+	uint32_t clearValueCount = m_depthTesting ? 2 : 1;
+
+	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValues, clearValueCount);
 }
 
 

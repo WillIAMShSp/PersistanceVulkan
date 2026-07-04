@@ -18,9 +18,6 @@
     <ClCompile Include="src\PersistanceVulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Objects\Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Settings\PipelineSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,9 +31,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Structures\Buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\PersistanceVk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\CoreUtils.cpp">
@@ -95,12 +89,6 @@
     <ClInclude Include="src\Settings\PipelineSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Objects\Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Objects\Vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\PersistanceLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -113,15 +101,6 @@
     <ClInclude Include="src\Structures\DescriptorPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Structures\DescriptorBufferInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Structures\DescriptorImageInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Structures\WriteDesciptorSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Structures\DescriptorSetLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -131,16 +110,10 @@
     <ClInclude Include="src\Structures\RenderPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Structures\DescriptorSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Vendor\volk\volk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Structures\Buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Structures\GraphicsPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Structures\Framebuffer.h">
@@ -158,9 +131,6 @@
     <ClInclude Include="src\Core\PersistanceVkCore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PersistanceVk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Core\CoreUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -168,9 +138,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Backend\RenderPass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Structures\SubpassData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Includes\glmIncludes.h">
@@ -213,9 +180,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Backend\CommandBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Backend\Drawing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,7 +6,7 @@
  * @date   6-29-2026
  *********************************************************************/
 #pragma once
-#include "./PersistanceLib.h"
+#include "../PersistanceLib.h"
 
 
 #define GLFW_INCLUDE_VULKAN
@@ -16,13 +16,14 @@
 #include "../Includes/glmIncludes.h"
 #include "../Includes/stdLibIncludes.h"
 
-#include "stb_image.h"
+#include "../Vendor/stb_image.h"
 #include "../Structures/Framebuffer.h"
 #include "../Structures/RenderPass.h"
 #include "../Structures/Buffer.h"
+#include "../Structures/Texture.h"
 #include "../Structures/Drawable.h"
 
-#include "Debug/DebugUtilsMessengerEXT.h"
+#include "../Debug/DebugUtilsMessengerEXT.h"
 
 
 #define BREAK __debugbreak();
@@ -90,6 +91,8 @@ public:
 	VkSwapchainKHR m_swapchain;
 	VkFormat m_swapchainImageFormat;
 	Framebuffer m_swapchainFramebuffers;
+	Texture m_swapchainDepthBuffer;
+	bool m_depthTesting = false;
 	VkExtent2D m_swapchainExtent;
 	RenderPass m_mainRenderPass;
 	VkCommandPool m_graphicsCommandPool;
@@ -142,9 +145,10 @@ private:
 	void createSyncObjects();
 
 
-	void createMainRenderPass();
+	void createSwapchainRenderPass();
 	void createSwapchainImageViews();
-	void createSwapchainFramebuffers();
+	void createSwapchainFramebuffers(VkImageView* depthBufferImageView);
+	void createSwapchainDepthBuffer();
 	void recreateSwapchain();
 	
 	
@@ -158,6 +162,7 @@ private:
 
 
 public:
+	void createMainRenderSetup(bool doDepthTesting);
 	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
 	void startDrawing();
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);

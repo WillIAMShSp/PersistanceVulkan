@@ -19,7 +19,7 @@ namespace PersistanceBackend {
 
 	RenderPass createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments);
 
-	void beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, VkClearValue clearValue);
+	void beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount);
 
 	void endRenderPass(VkCommandBuffer& commandBuffer);
 
