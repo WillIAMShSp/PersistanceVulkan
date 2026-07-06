@@ -107,7 +107,7 @@ int main() {
 
 	core.init();
 	
-	core.createMainRenderSetup(true);
+	core.createMainRenderSetup(false);
 
 	RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat, 
 		VK_SAMPLE_COUNT_1_BIT, 

@@ -51,6 +51,20 @@ void PersistanceUtils::createBuffer(const VkDeviceSize& size, VkBufferUsageFlags
 
 }
 
+/**
+ * @brief Creates an image with the provided arguments.
+ * 
+ * @param width The image width.
+ * @param height The image height.
+ * @param format The image format.
+ * @param tiling The image tiling i.e. Linear or Optimal.
+ * @param usage How the image will be used.
+ * @param properties Image memory properties.
+ * @param image The image created.
+ * @param allocation The image allocation.
+ * @param sharingmode The sharing mode.
+ * @param initiallayout The image initial layout.
+ */
 void PersistanceUtils::createImage(const uint32_t& width, const uint32_t height, VkFormat format, VkImageTiling tiling, const VkImageUsageFlags& usage, const VkMemoryPropertyFlags& properties, VkImage& image, VmaAllocation& allocation, VkSharingMode sharingmode, VkImageLayout initiallayout)
 {
 	VkImageCreateInfo imageinfo{};
@@ -106,14 +120,25 @@ void PersistanceUtils::createImage(const uint32_t& width, const uint32_t height,
 	}
 }
 
-void PersistanceUtils::copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue)
+/**
+ * @brief Copies a source buffer into a destination buffer, where both buffers live in the GPU.
+ * 
+ * @param srcbuffer The source buffer.
+ * @param dstbuffer The destination buffer.
+ * @param size The size of the region of the source buffer to be copied.
+ * @param commandpool The command pool from which to execute this copy.
+ * @param submitqueue The submit queue submiting this execution.
+ * @param srcoffset The offset of the start of the data copied from the source buffer.
+ * @param dstoffset The offset of the start of the copied region in the destination buffer.
+ */
+void PersistanceUtils::copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue, VkDeviceSize srcoffset, VkDeviceSize dstoffset)
 {
 	VkCommandBuffer commandbuffer = beginSingleTimeCommands(commandpool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 
 	VkBufferCopy copyregion{};
-	copyregion.srcOffset = 0;
-	copyregion.dstOffset = 0;
+	copyregion.srcOffset = srcoffset;
+	copyregion.dstOffset = dstoffset;
 	copyregion.size = size;
 	vkCmdCopyBuffer(commandbuffer, srcbuffer, dstbuffer, 1, &copyregion);
 
@@ -121,6 +146,16 @@ void PersistanceUtils::copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDe
 
 }
 
+/**
+ * @brief Copies a buffer to an image.
+ * 
+ * @param buffer The source buffer.
+ * @param image The destination image.
+ * @param width The image width.
+ * @param height The image height.
+ * @param commandpool The command pool from which this copy is executed.
+ * @param submitqueue The submit queue submitting this execution.
+ */
 void PersistanceUtils::copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue)
 {
 	VkCommandBuffer commandbuffer = beginSingleTimeCommands(commandpool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -190,10 +225,14 @@ void PersistanceUtils::transitionImageLayout(VkImage& image, const VkFormat& for
 
 
 	}
-	else if (oldlayout == VK_IMAGE_LAYOUT_UNDEFINED && newlayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	else if (oldlayout == VK_IMAGE_LAYOUT_UNDEFINED && newlayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 	{
 		membarrier.srcAccessMask = 0;
-		membarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		membarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		srcstage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dststage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
 	}
 	else
 	{

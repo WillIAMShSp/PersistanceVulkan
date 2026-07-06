@@ -677,11 +677,11 @@ void PersistanceVkCore::cleanUpSwapchain()
 		vkDestroyImageView(m_device, imageviews, nullptr);
 	}
 
-	if (m_depthTesting) 
-	{
-		vmaDestroyImage(m_vmaAllocator, m_swapchainDepthBuffer.image, m_swapchainDepthBuffer.allocation);
-		vkDestroyImageView(m_device, m_swapchainDepthBuffer.imageview, nullptr);
-	}
+	
+	
+	vmaDestroyImage(m_vmaAllocator, m_swapchainDepthBuffer.image, m_swapchainDepthBuffer.allocation);
+	vkDestroyImageView(m_device, m_swapchainDepthBuffer.imageview, nullptr);
+	
 
 	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 

@@ -22,7 +22,7 @@ namespace PersistanceUtils {
 		VkSharingMode sharingmode, 
 		VkImageLayout initiallayout);
 
-	void copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue);
+	void copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue, VkDeviceSize srcoffset = VkDeviceSize(0), VkDeviceSize dstoffset = VkDeviceSize(0));
 	void copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue);
 	void transitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue);
 
