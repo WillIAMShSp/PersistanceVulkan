@@ -133,9 +133,9 @@ public:
 	{
 		return m_colorBlendCreateInfo;
 	}
-	const VkPipelineDepthStencilStateCreateInfo& getDepthStencilCreateInfo() 
+	const VkPipelineDepthStencilStateCreateInfo* getDepthStencilCreateInfo() 
 	{
-		return m_depthStencilCreateInfo;
+		return m_pDepthStencilCreateInfo;
 	}
 	
 	bool m_usedynamicstate = false;
@@ -150,6 +150,7 @@ private:
 	VkPipelineViewportStateCreateInfo m_viewportCreateInfo{};
 	VkPipelineRasterizationStateCreateInfo m_rasterCreateInfo{};
 	VkPipelineDepthStencilStateCreateInfo m_depthStencilCreateInfo{};
+	VkPipelineDepthStencilStateCreateInfo* m_pDepthStencilCreateInfo = nullptr;
 	VkPipelineMultisampleStateCreateInfo m_multisampleCreateInfo{};
 	VkPipelineColorBlendAttachmentState m_colorBlendAttachment{};
 	VkPipelineColorBlendStateCreateInfo m_colorBlendCreateInfo{};

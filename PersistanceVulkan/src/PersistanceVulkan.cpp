@@ -114,15 +114,17 @@ int main() {
 		VK_ATTACHMENT_LOAD_OP_CLEAR, 
 		VK_ATTACHMENT_STORE_OP_STORE,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	
+	RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
 	AttachmentReferenceList refList;
 	refList.add(attachment);
 	AttachmentDescriptionList disList;
 	disList.add(&attachment, 1);
+	disList.add(&depthAttachment, 1);
 
-	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, nullptr, nullptr, nullptr, 0);
+	VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, &depthAttachment, nullptr, nullptr, 0);
 
-	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0);
+	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0);
 	
 	RenderPass renderpass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, disList);
 
@@ -157,7 +159,7 @@ int main() {
 	shader.createShaderStage("res/Shaders/basicfrag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	VkPipelineLayout pipelayout = PersistanceBackend::createPipelineLayout(&layout, 1, nullptr, 0);
-	VkPipeline graphicsPipeline = PersistanceBackend::createGraphicsPipeline(pipelayout, shader, settings, core.m_mainRenderPass);
+	VkPipeline graphicsPipeline = PersistanceBackend::createGraphicsPipeline(pipelayout, shader, settings, renderpass);
 
 	
 	Texture texture = PersistanceBackend::createTexture("res/Textures/Placeholder.png");
@@ -193,13 +195,16 @@ int main() {
 	
 	PersistanceBackend::updateDescriptorSets(descriptorSet, writeDescriptors, 2);
 
-	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass.renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	Texture depthTexture;
+
+	PersistanceUtils::createImage(core.m_swapchainExtent.width, core.m_swapchainExtent.height, PersistanceUtils::findDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthTexture.image, depthTexture.allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
+
+	depthTexture.imageview = PersistanceUtils::createImageView(depthTexture.image, PersistanceUtils::findDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
 
-	
+	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass.renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
 
 	VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
 
 #pragma region fullQuadTest
 
@@ -216,7 +221,6 @@ int main() {
 	fullQuadPipeSettings.defineInputAssemblyState();
 	fullQuadPipeSettings.createStaticViewPortAndScissors(0, 0, 0.f, 1.f, core.m_swapchainExtent, core.m_swapchainExtent, { 0,0 });
 	fullQuadPipeSettings.configureRasterizationStage();
-	fullQuadPipeSettings.configureDepthStencilState(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
 	fullQuadPipeSettings.configureMultisample();
 	fullQuadPipeSettings.configureColorBlend();
 
@@ -257,23 +261,12 @@ int main() {
 		PersistanceBackend::beginCommandBuffer(commandBuffer, 0);
 		
 		
-
-		VkClearValue clearValue;
-		clearValue.color = { 0,0,0,0 };
+		VkClearValue clearValues[2];
+		clearValues[0].color = { 0.0f,0.0f,0.0f,0.0f };
+		clearValues[1].depthStencil = { 1.f, 0 };
 		
-	/*	PersistanceBackend::beginRenderPass(commandBuffer, renderpass, framebuffer, {0,0}, core.m_swapchainExtent, clearValue);
+		PersistanceBackend::beginRenderPass(commandBuffer, renderpass, framebuffer, {0,0}, core.m_swapchainExtent, clearValues, 2);
 		
-		PersistanceBackend::endRenderPass(commandBuffer);*/
-
-
-
-
-		core.beginMainRenderPass(commandBuffer);
-		/*core.bindGraphicsPipeline(commandBuffer, fullQuadGraphicsPipeline);
-		core.drawIndexed(commandBuffer, &fullQuadVertexBuffer, 1, &offsets, fullQuadIndexBuffer, fullQuadGraphicsPipeline, fullQuadGraphicsPipelineLayout, &fullQuadDescriptorSet[core.m_currentFrame], 1);*/
-		///////////////////
-
-
 		VkDeviceSize offsets = 0;
 
 		core.bindGraphicsPipeline(commandBuffer, graphicsPipeline);
@@ -286,7 +279,14 @@ int main() {
 		core.drawIndexed(commandBuffer, &vertexBuffer, 1, &offsets, indexBuffer, graphicsPipeline, pipelayout, &descriptorSet[core.m_currentFrame], 1);
 
 
-		////////////
+		PersistanceBackend::endRenderPass(commandBuffer);
+
+
+
+
+		core.beginMainRenderPass(commandBuffer);
+		core.bindGraphicsPipeline(commandBuffer, fullQuadGraphicsPipeline);
+		core.drawIndexed(commandBuffer, &fullQuadVertexBuffer, 1, &offsets, fullQuadIndexBuffer, fullQuadGraphicsPipeline, fullQuadGraphicsPipelineLayout, &fullQuadDescriptorSet[core.m_currentFrame], 1);
 		PersistanceBackend::endRenderPass(commandBuffer);
 
 		
@@ -317,7 +317,7 @@ int main() {
 	PersistanceBackend::cleanUpUniformBuffers(&uniformBuffer, 1);
 	PersistanceBackend::cleanUpPipelineLayouts(&pipelayout, 1);
 	PersistanceBackend::cleanUpPipelineLayouts(&fullQuadGraphicsPipelineLayout, 1);
-
+	PersistanceBackend::cleanUpTextures(&depthTexture, 1);
 
 
 	

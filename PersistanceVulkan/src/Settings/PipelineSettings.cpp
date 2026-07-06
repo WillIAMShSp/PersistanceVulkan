@@ -118,6 +118,8 @@ void PipelineSettings::configureDepthStencilState(VkBool32 depthTestEnable, VkBo
 	m_depthStencilCreateInfo.back = back;
 
 
+	m_pDepthStencilCreateInfo = &m_depthStencilCreateInfo;
+
 }
 
 void PipelineSettings::configureMultisample()

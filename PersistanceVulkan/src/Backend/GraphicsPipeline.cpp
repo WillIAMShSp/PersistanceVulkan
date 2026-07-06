@@ -84,7 +84,7 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 	pipelinecreateinfo.pRasterizationState = &settings.getRasterCreateInfo();
 	pipelinecreateinfo.pMultisampleState = &settings.getMultisampleCreateInfo();
 	pipelinecreateinfo.pColorBlendState = &settings.getColorBlendCreateInfo();
-	pipelinecreateinfo.pDepthStencilState = core.m_depthTesting ? &settings.getDepthStencilCreateInfo() : nullptr;
+	pipelinecreateinfo.pDepthStencilState = settings.getDepthStencilCreateInfo();
 
 
 	pipelinecreateinfo.layout = layout;
