@@ -375,6 +375,31 @@ VkImageView PersistanceUtils::createImageView(VkImage& image, VkFormat format, V
 	return imageview;
 }
 
+VkIndexType PersistanceUtils::findIndexType(size_t indexBufferElementSize)
+{
+	switch (indexBufferElementSize) {
+
+		case sizeof(uint32_t) :
+			return VK_INDEX_TYPE_UINT32;
+			break;
+
+			case sizeof(uint16_t) :
+				return VK_INDEX_TYPE_UINT16;
+
+				case sizeof(uint8_t) :
+					return VK_INDEX_TYPE_UINT8;
+
+				default:
+					std::cout << "\nIndex Type not Supported!";
+					BREAK;
+
+
+
+	};
+
+	return VK_INDEX_TYPE_NONE_KHR;
+}
+
 
 
 /**

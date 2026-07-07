@@ -95,11 +95,9 @@ VkSubpassDependency PersistanceBackend::createSubpassDependency(uint32_t srcSubp
  * @param renderPassAttachments A list of renderpass attachment descriptions.
  * @return A renderpass.
  */
-RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments)
+VkRenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subpasses, const uint32_t subpassCount, const VkSubpassDependency* subpassDependency, const uint32_t dependencyCount, const AttachmentDescriptionList& renderPassAttachments)
 {
-	RenderPass renderPassObject;
-	VkRenderPass& renderPass = renderPassObject.renderpass;
-	
+	VkRenderPass renderPass;
 
 	VkRenderPassCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -120,7 +118,7 @@ RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subp
 		BREAK(0);
 	}
 
-	return renderPassObject;
+	return renderPass;
 }
 
 
@@ -136,7 +134,7 @@ RenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* subp
  * Note, clear values must be in the same order as their attachments in the renderpass.
  * @param clearValueCount the amount of clear values
  */
-void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount)
+void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, VkRenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount)
 {
 	VkRenderPassBeginInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -145,7 +143,7 @@ void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, RenderP
 	info.framebuffer = framebuffer.framebuffers[core.m_imageIndex];
 	info.renderArea.extent = extent;
 	info.renderArea.offset = offset;
-	info.renderPass = renderPass.renderpass;
+	info.renderPass = renderPass;
 	
 	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
@@ -166,10 +164,10 @@ void PersistanceBackend::endRenderPass(VkCommandBuffer& commandBuffer)
  * @param renderPass the render passes provided.
  * @param count The amount of render passes provided.
  */
-void PersistanceBackend::cleanUpRenderPasses(const RenderPass* renderPass, uint32_t count)
+void PersistanceBackend::cleanUpRenderPasses(const VkRenderPass* renderPass, uint32_t count)
 {
 	for (int i = 0; i < count; i++) {
-		vkDestroyRenderPass(core.m_device, renderPass[i].renderpass, nullptr);
+		vkDestroyRenderPass(core.m_device, renderPass[i], nullptr);
 
 	}
 }

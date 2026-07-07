@@ -60,7 +60,7 @@ const std::vector<Vertex> vertices = {
 {{0.5f, 0.5f, 3.f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 {{-0.5f, 0.5f, 3.f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
-const std::vector<uint32_t> indices =
+const std::vector<uint8_t> indices =
 {
 	0, 1, 2, 2, 3, 0
 
@@ -93,7 +93,7 @@ const std::vector<Vertex> TESTvertices = {
 {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
-Drawable drawing;
+
 
 
 
@@ -102,20 +102,15 @@ Drawable drawing;
 
 
 int main() {
-    
 	std::cout << std::filesystem::current_path() << std::endl;
-
 	core.init();
-	
 	core.createMainRenderSetup(false);
-
 	RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat, 
 		VK_SAMPLE_COUNT_1_BIT, 
 		VK_ATTACHMENT_LOAD_OP_CLEAR, 
 		VK_ATTACHMENT_STORE_OP_STORE,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
 	AttachmentReferenceList refList;
 	refList.add(attachment);
 	AttachmentDescriptionList disList;
@@ -126,7 +121,7 @@ int main() {
 
 	VkSubpassDependency dependency = PersistanceBackend::createSubpassDependency(VK_SUBPASS_EXTERNAL, 0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0);
 	
-	RenderPass renderpass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, disList);
+	VkRenderPass renderpass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, disList);
 
 	VkDescriptorSetLayoutBinding bindings[2] = {
 		PersistanceBackend::createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT),
@@ -202,7 +197,7 @@ int main() {
 	depthTexture.imageview = PersistanceUtils::createImageView(depthTexture.image, PersistanceUtils::findDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
 
-	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass.renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
+	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
 
 	VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 

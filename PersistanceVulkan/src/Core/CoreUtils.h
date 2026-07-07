@@ -34,6 +34,8 @@ namespace PersistanceUtils {
 
 	VkImageView createImageView(VkImage& image, VkFormat format, VkImageAspectFlags imageaspect = VK_IMAGE_ASPECT_COLOR_BIT);
 
+	VkIndexType findIndexType(size_t indexBufferElementSize);
+
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();
 	bool hasStencilComponent(VkFormat format);

@@ -51,7 +51,7 @@ VkPipelineLayout PersistanceBackend::createPipelineLayout(const VkDescriptorSetL
  * @param renderPass The renderpass associated with the created graphics pipeline.
  * @return A VkPipeline with the created graphics pipeline.
  */
-VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, RenderPass& renderPass)
+VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, VkRenderPass& renderPass)
 {
 	VkPipeline graphicsPipeline;
 
@@ -89,7 +89,7 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 
 	pipelinecreateinfo.layout = layout;
 	pipelinecreateinfo.pDynamicState = (settings.m_usedynamicstate) ? &dynamicstatecreateinfo : nullptr;
-	pipelinecreateinfo.renderPass = renderPass.renderpass;
+	pipelinecreateinfo.renderPass = renderPass;
 	pipelinecreateinfo.subpass = 0;
 
 	pipelinecreateinfo.basePipelineHandle = VK_NULL_HANDLE;

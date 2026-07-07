@@ -19,7 +19,7 @@ namespace PersistanceBackend
 
 	VkPipelineLayout createPipelineLayout(const VkDescriptorSetLayout* layouts, const uint32_t layoutCount, const VkPushConstantRange* pushConstantRanges, const uint32_t pushConstangRangeCount);
 
-	VkPipeline createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, RenderPass& renderPass);
+	VkPipeline createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, VkRenderPass& renderPass);
 
 	void cleanUpGraphicsPipeline(VkPipeline* pipelines, const uint32_t pipelineCount);
 

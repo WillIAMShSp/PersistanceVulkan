@@ -125,9 +125,6 @@
     <ClInclude Include="src\Vendor\vma\VmaUsage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Structures\Drawable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Core\PersistanceVkCore.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -9,6 +9,7 @@ struct Buffer {
 	VkBuffer buffer;
 	VmaAllocation allocation;
 	size_t size;
+	size_t elementSize;
 };
 
 

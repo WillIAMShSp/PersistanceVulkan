@@ -81,7 +81,7 @@ void PersistanceVkCore::createInstance()
 	//application info struct
 	VkApplicationInfo appinfo{};
 	appinfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appinfo.pApplicationName = "Game";
+	appinfo.pApplicationName = "Engine";
 	appinfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appinfo.pEngineName = "Persistance";
 	appinfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -115,6 +115,7 @@ void PersistanceVkCore::createInstance()
 	createinfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
 	std::vector<const char*> requiredextensions = getRequiredExtensions();
+
 
 	createinfo.enabledExtensionCount = (uint32_t)requiredextensions.size();
 	createinfo.ppEnabledExtensionNames = requiredextensions.data();
@@ -260,6 +261,13 @@ void PersistanceVkCore::createLogicalDevice()
 
 
 	VkPhysicalDeviceFeatures devicefeatures{};
+	
+	VkPhysicalDeviceVulkan14Features vk1_4Features{};
+	vk1_4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+	vk1_4Features.indexTypeUint8 = VK_TRUE;
+
+
+	
 	//With this struct we can set which device features we want to use. 
 	//Perhaps it would be smart to be able to change that through 
 	//some level of abstraction so the user can simply and cleanly set whichever 
@@ -272,16 +280,19 @@ void PersistanceVkCore::createLogicalDevice()
 	//Since this is designed to make games, however, it is safe to asume that most, if not all, devices running this
 	//program should at LEAST be able to use samplerAnisotropy. Still wouldnt be bad to include checks. 
 
+	
 
 	VkDeviceCreateInfo devicecreateinfo{};
 
 	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	devicecreateinfo.pNext = &vk1_4Features;
 
 	devicecreateinfo.queueCreateInfoCount = static_cast<uint32_t>(queuecreateinfos.size());
 	devicecreateinfo.pQueueCreateInfos = queuecreateinfos.data();
 
 
 	devicecreateinfo.pEnabledFeatures = &devicefeatures;
+	
 
 	devicecreateinfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceextensions.size());
 	devicecreateinfo.ppEnabledExtensionNames = m_deviceextensions.data();
@@ -596,7 +607,7 @@ void PersistanceVkCore::createSwapchainFramebuffers(VkImageView* depthBufferImag
 		info.height = m_swapchainExtent.height;
 		info.width = m_swapchainExtent.width;
 		info.layers = 1;
-		info.renderPass = m_mainRenderPass.renderpass;
+		info.renderPass = m_mainRenderPass;
 		info.attachmentCount = static_cast<uint32_t>(attachments.size());
 		info.pAttachments = attachments.data();
 		info.flags = 0;
@@ -692,7 +703,7 @@ void PersistanceVkCore::cleanUpSwapchain()
  */
 void PersistanceVkCore::cleanUpMainRenderPass()
 {
-	vkDestroyRenderPass(m_device, m_mainRenderPass.renderpass, nullptr);
+	vkDestroyRenderPass(m_device, m_mainRenderPass, nullptr);
 
 }
 void PersistanceVkCore::cleanUpSyncObjects()
@@ -813,7 +824,12 @@ void PersistanceVkCore::startDrawing()
 
 }
 
-/**  */
+/**
+ * @brief Ends the drawing process and presents the swapchain image to the screen.
+ * 
+ * @param commandBuffers Command buffers to be submitted.
+ * @param commandBufferCount How many command buffers buffers must be submitted.
+ */
 void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount)
 {
 
@@ -875,12 +891,31 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 
 }
 
+/**
+ * @brief Binds a graphics pipeline during command buffer exectution.
+ * 
+ * @param commandBuffer	The command buffer executed.
+ * @param graphicsPipeline Bound graphics pipeline.
+ */
 void PersistanceVkCore::bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
 }
 
+/**
+ * @brief Draws a mesh with an index buffer.
+ * 
+ * @param commandBuffer The command buffer executed.
+ * @param vertexBuffers An array of mesh vertex buffers.
+ * @param vertexBufferCount The mesh vertex buffers count.
+ * @param offsets An offset of the start of the buffer segment inside the same index bound vertex buffer in the array.
+ * @param indexBuffer The mesh index buffers.
+ * @param graphicsPipeline The graphics pipeline in use.
+ * @param graphicsPipelineLayout The graphics pipeline layout in use.
+ * @param descriptorSets The graphic pipeline descriptor sets.
+ * @param descriptorSetCount The amount of bound descriptor sets.
+ */
 void PersistanceVkCore::drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount)
 {
 
@@ -895,12 +930,12 @@ void PersistanceVkCore::drawIndexed(VkCommandBuffer& commandBuffer, const Buffer
 
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, vertexBufferCount, buffers.data(), offsets);
-
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	
+	vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, PersistanceUtils::findIndexType(indexBuffer.elementSize));
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, descriptorSetCount, descriptorSets, 0, nullptr);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexBuffer.size / sizeof(uint32_t)), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexBuffer.size / indexBuffer.elementSize), 1, 0, 0, 0);
 
 
 }

@@ -21,7 +21,7 @@
 #include "../Structures/RenderPass.h"
 #include "../Structures/Buffer.h"
 #include "../Structures/Texture.h"
-#include "../Structures/Drawable.h"
+
 
 #include "../Debug/DebugUtilsMessengerEXT.h"
 
@@ -94,7 +94,7 @@ public:
 	Texture m_swapchainDepthBuffer;
 	bool m_depthTesting = false;
 	VkExtent2D m_swapchainExtent;
-	RenderPass m_mainRenderPass;
+	VkRenderPass m_mainRenderPass;
 	VkCommandPool m_graphicsCommandPool;
 	VkCommandPool m_transferCommandPool;
 
@@ -198,7 +198,8 @@ private:
 
 	const std::vector<const char*> m_deviceextensions
 	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		"VK_KHR_index_type_uint8"
 	};
 
 };
