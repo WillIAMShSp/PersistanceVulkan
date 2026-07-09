@@ -429,6 +429,7 @@ VkFormat PersistanceUtils::findSupportedFormat(const std::vector<VkFormat>& cand
 
 	std::cout << "\nNo supported Format found\n";
 	BREAK;
+	return VkFormat();
 }
 
 

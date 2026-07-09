@@ -805,7 +805,7 @@ void PersistanceVkCore::startDrawing()
 	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], nullptr, &m_imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], VK_NULL_HANDLE, &m_imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{

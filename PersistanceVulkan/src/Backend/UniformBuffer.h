@@ -13,7 +13,7 @@
 namespace PersistanceBackend 
 {
 	UniformBuffer createUniformBuffer(size_t size);
-
+	
 	void updateUniformBuffers(UniformBuffer& buffer, const void* data, const size_t dataSize);
 
 	void cleanUpUniformBuffers(UniformBuffer* buffers, const uint32_t bufferCount);
