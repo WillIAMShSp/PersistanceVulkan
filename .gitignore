@@ -58,6 +58,9 @@ Generated\ Files/
 TestResult.xml
 nunit-*.xml
 
+.vscode/
+Build/
+
 # Approval Tests result files
 *.received.*
 
