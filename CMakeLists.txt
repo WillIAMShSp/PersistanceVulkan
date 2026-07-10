@@ -9,12 +9,15 @@ find_package(Vulkan REQUIRED)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-add_executable(PersistanceExecutableTest)
+############################
+# Uncomment this to build test application.
+#
+#add_executable(PersistanceExecutableTest)
 
-target_sources( PersistanceExecutableTest
-PRIVATE
-	"./PersistanceVulkan/src/PersistanceVulkan.cpp"
-)
+#target_sources( PersistanceExecutableTest
+#PRIVATE
+#	"./PersistanceVulkan/src/PersistanceVulkan.cpp"
+#)
 
 file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS
 	"./PersistanceVulkan/src/**/*.cpp"
