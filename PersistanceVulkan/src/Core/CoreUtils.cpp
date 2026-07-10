@@ -306,7 +306,7 @@ std::vector<char> PersistanceUtils::readFile(const char* filepath)
 	;
 	if (!file.is_open())
 	{
-		std::cout << filepath << "\n";
+		std::cout << "Could not find file at: " << filepath << "\n";
 
 
 		throw std::runtime_error("failed to read the file");

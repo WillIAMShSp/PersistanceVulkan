@@ -1018,7 +1018,7 @@ void PersistanceVkCore::setupDebugCallBack()
 		return;
 	}
 
-	VkDebugUtilsMessengerCreateInfoEXT createinfo;
+	VkDebugUtilsMessengerCreateInfoEXT createinfo = VkDebugUtilsMessengerCreateInfoEXT();
 	setupDebugConfigCreateInfo(createinfo);
 
 	if (DebugUtilsMessengerEXT::Create(m_instance, &createinfo, nullptr, &m_debugMessenger) != VK_SUCCESS)

@@ -23,7 +23,7 @@
 #include "../Structures/Texture.h"
 
 
-#include "../Debug/DebugUtilsMessengerEXT.h"
+#include "../VulkanDebug/DebugUtilsMessengerEXT.h"
 
 
 #define BREAK __debugbreak();
