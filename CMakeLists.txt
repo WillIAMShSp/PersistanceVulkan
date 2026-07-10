@@ -2,17 +2,16 @@ cmake_minimum_required(VERSION 3.23)
 
 project(PersistanceVulkan)
 
+#Requires C++ 17 standard.
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
+add_executable(PersistanceExecutableTest)
 
-add_executable(PersistanceExecutable)
-
-target_sources( PersistanceExecutable
+target_sources( PersistanceExecutableTest
 PRIVATE
 	"./PersistanceVulkan/src/PersistanceVulkan.cpp"
 )
@@ -35,6 +34,7 @@ user32
 shell32
 )
 
-target_link_libraries(PersistanceExecutable PRIVATE PersistanceLibrary)
+target_link_libraries(PersistanceExecutableTest PRIVATE PersistanceLibrary) 
+
 
 
