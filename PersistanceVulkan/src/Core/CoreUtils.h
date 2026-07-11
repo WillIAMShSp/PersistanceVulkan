@@ -25,6 +25,19 @@ namespace PersistanceUtils {
 	void copyBuffer(VkBuffer& srcbuffer, VkBuffer& dstbuffer, VkDeviceSize size, VkCommandPool& commandpool, VkQueue& submitqueue, VkDeviceSize srcoffset = VkDeviceSize(0), VkDeviceSize dstoffset = VkDeviceSize(0));
 	void copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkCommandPool& commandpool, VkQueue& submitqueue);
 	void transitionImageLayout(VkImage& image, const VkFormat& format, VkImageLayout oldlayout, VkImageLayout newlayout, VkCommandPool& commandpool, VkQueue submitqueue);
+	
+	VkImageMemoryBarrier createImageMemoryBarrier
+	(
+		VkImage& image, 
+		VkImageLayout oldLayout, 
+		VkImageLayout newLayout, 
+		VkAccessFlags srcAccessMask, 
+		VkAccessFlags dstAccessMask, 
+		VkImageSubresourceRange subresourceRange,
+		uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+	);
+
 
 	VkCommandBuffer beginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	void endSingleTimeCommands(VkCommandBuffer& commandbuffer, const VkCommandPool& commandpool, const VkQueue& submitqueue);

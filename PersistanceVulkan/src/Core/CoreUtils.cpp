@@ -255,7 +255,34 @@ void PersistanceUtils::transitionImageLayout(VkImage& image, const VkFormat& for
 
 }
 
+/**
+ * @brief Creates an image memory barrier.
+ * 
+ * @param image is a handle to the image affected by this barrier.
+ * @param oldLayout is the old layout in an image layout transition.
+ * @param newLayout is the new layout in an image layout transition.
+ * @param srcAccessMask  is a bitmask of VkAccessFlagBits specifying a source access mask.
+ * @param dstAccessMask VkAccessFlagBits specifying a destination access mask.
+ * @param subresourceRange describes the image subresource range within image that is affected by this barrier.
+ * @param srcQueueFamilyIndex is the source queue family for a queue family ownership transfer.
+ * @param dstQueueFamilyIndex is the destination queue family for a queue family ownership transfer.
+ * @return The created image memory barrier. 
+ */
+VkImageMemoryBarrier PersistanceUtils::createImageMemoryBarrier(VkImage &image, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkImageSubresourceRange subresourceRange, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex)
+{
 
+	VkImageMemoryBarrier imgBarrier{};
+		imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imgBarrier.image = image;
+		imgBarrier.oldLayout = oldLayout;
+		imgBarrier.newLayout = newLayout;
+		imgBarrier.srcAccessMask = srcAccessMask;
+		imgBarrier.dstAccessMask = dstAccessMask;
+		imgBarrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+		imgBarrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+		imgBarrier.subresourceRange = subresourceRange;
+	return imgBarrier;
+}
 
 VkCommandBuffer PersistanceUtils::beginSingleTimeCommands(VkCommandPool& commandpool, const VkCommandBufferLevel& level)
 {
