@@ -790,17 +790,20 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
  * -Recreates the swapchain in case the image is outdated.
  * -Resets the fences
  * 
+ * @param currentFrame The current frame drawn.
+ * 
  */
 void PersistanceVkCore::startDrawing()
 {
-	if (m_currentlyDrawing)
-	{
-		std::cout << "Previous drawing not ended properly";
-	}
-	else
-	{
-		m_currentlyDrawing = true;
-	}
+	// if (m_currentlyDrawing)
+	// {
+	// 	std::cout << "Previous drawing not ended properly";
+	// }
+	// else
+	// {
+	// 	m_currentlyDrawing = true;
+	// }
+	// Array of m_currentlyDrawing booleans size MAXFRAMESINFLIGHT needed.
 
 	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
 
