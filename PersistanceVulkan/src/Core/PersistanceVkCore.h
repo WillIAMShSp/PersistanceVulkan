@@ -149,7 +149,7 @@ private:
 	void createSwapchainImageViews();
 	void createSwapchainFramebuffers(VkImageView* depthBufferImageView);
 	void createSwapchainDepthBuffer();
-	void recreateSwapchain();
+	//void recreateSwapchain();
 	
 	
 	//Destroy and clean up
@@ -163,8 +163,17 @@ private:
 
 public:
 	void createMainRenderSetup(bool doDepthTesting);
-	void beginMainRenderPass(VkCommandBuffer& commandBuffer);
+	void beginMainRenderPass(VkCommandBuffer& commandBuffer, const uint32_t* imageIndex = nullptr);
+	
 	void startDrawing();
+	void waitForCurrentFence();
+	VkResult acquireNextSwapchainImage();
+	void reRecordCommandBuffersCallBack(std::function<void()>* functions, const uint32_t count);
+	void resetFences();
+
+	void recreateSwapchain();
+	
+
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
 	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);

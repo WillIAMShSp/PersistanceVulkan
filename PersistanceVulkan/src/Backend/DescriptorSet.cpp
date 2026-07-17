@@ -129,6 +129,7 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
 	{
 		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
+		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.m_swapchainFramebuffers.images.size();
 		BREAK(0);
 	}
 

@@ -23,11 +23,9 @@
  * @param imageMemoryProperties the framebuffer image's memory properties.
  * @return the fully created framebuffers
  */
-Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint32_t width, uint32_t height, uint32_t layers, VkFormat imageFormat, VkImageTiling imageTiling, VkImageUsageFlags imageUsageFlags, VkMemoryPropertyFlags imageMemoryProperties, VkImageView* depthAndStencilImageView)
+Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint32_t width, uint32_t height, uint32_t layers, VkFormat imageFormat, VkImageTiling imageTiling, VkImageUsageFlags imageUsageFlags, VkMemoryPropertyFlags imageMemoryProperties, VkImageView* depthAndStencilImageView, uint32_t imageCount)
 {
 	Framebuffer framebuffer;
-
-	uint32_t imageCount = PersistanceLib::MAXFRAMESINFLIGHT;
 
 	framebuffer.images.resize(imageCount);
 	framebuffer.allocations.resize(imageCount);

@@ -4,6 +4,7 @@
  * 
  * @author Luis Camilo Alvarez Carrau
  * @date   6-29-2026
+ * @cite   The Vulkan Documentation: https://docs.vulkan.org/spec/latest/index.html
  *********************************************************************/
 
 #include "./PersistanceVkCore.h"
@@ -15,6 +16,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../Vendor/stb_image.h"
+#include "PersistanceVkCore.h"
 
 
 #define VMA_IMPLEMENTATION
@@ -501,7 +503,7 @@ void PersistanceVkCore::createSyncObjects()
 	s_imageAvailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	s_renderFinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	f_inFlightFence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	f_imagesInFlight.resize(3/*m_swapchainImages.size()*/, VK_NULL_HANDLE);
+	f_imagesInFlight.resize(m_swapchainFramebuffers.images.size(), VK_NULL_HANDLE);
 
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
@@ -759,12 +761,14 @@ void PersistanceVkCore::createMainRenderSetup(bool doDepthTesting)
 
 }
 
+
 /**
  * @brief Begin the main renderpass on a specified command buffer.
  * 
  * @param commandBuffer the specified command buffer
+ * @param imageIndex If set, the framebuffer selected will be of that index.
  */
-void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
+void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer &commandBuffer, const uint32_t *imageIndex)
 {
 	VkOffset2D offset{0,0};
 	VkClearValue colorClearValue{};
@@ -778,7 +782,7 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
 	
 	uint32_t clearValueCount = m_depthTesting ? 2 : 1;
 
-	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValues, clearValueCount);
+	PersistanceBackend::beginRenderPass(commandBuffer, m_mainRenderPass, m_swapchainFramebuffers, offset, m_swapchainExtent, clearValues, clearValueCount, imageIndex);
 }
 
 
@@ -793,7 +797,7 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer& commandBuffer)
  * @param currentFrame The current frame drawn.
  * 
  */
-void PersistanceVkCore::startDrawing()
+void PersistanceVkCore:: startDrawing()
 {
 	// if (m_currentlyDrawing)
 	// {
@@ -818,6 +822,8 @@ void PersistanceVkCore::startDrawing()
 	{
 		throw std::runtime_error("Failed to aquire swapchain image!");
 	}
+
+	
 	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
 	{
 		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
@@ -825,6 +831,53 @@ void PersistanceVkCore::startDrawing()
 	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
 	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 
+}
+
+/**
+ * @brief Waits for the main fences of the current frame to be free.
+ * 
+ */
+void PersistanceVkCore::waitForCurrentFence()
+{
+	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
+}
+
+/**
+ * @brief Returns the status about the acquired image.
+ * 
+ * @return The corresponding return status code.
+ */
+VkResult PersistanceVkCore::acquireNextSwapchainImage()
+{
+	return vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], VK_NULL_HANDLE, &m_imageIndex);
+}
+
+/**
+ * @brief Checks if the swapchain image is out of date and executes the function callback if this is true.
+ * 
+ * @param functions callback functions that preferably rerecord the command buffers
+ * @param count the amount of callback functions.
+ */
+void PersistanceVkCore::reRecordCommandBuffersCallBack(std::function<void()> *functions, const uint32_t count)
+{
+	for (uint32_t i = 0; i < count; i++) {
+		functions[i]();
+	}
+}
+
+/**
+ * @brief Waits for the wanted image to be unused before setting the current fence in flight
+ * to the images in flight fence for the acquired swapchain image and resets the fence in flight.
+ * 
+ */
+void PersistanceVkCore::resetFences()
+{
+	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
+	{
+		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
+	}
+	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
+	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 }
 
 /**
@@ -877,7 +930,7 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 
 	VkResult result = vkQueuePresentKHR(m_presentQueue, &presentinfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result != VK_SUBOPTIMAL_KHR || m_windowResized)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_windowResized)
 	{
 		recreateSwapchain();
 		m_windowResized = false;

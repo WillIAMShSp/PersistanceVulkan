@@ -18,7 +18,8 @@ namespace PersistanceBackend {
 		VkImageTiling imageTiling, 
 		VkImageUsageFlags imageUsageFlags, 
 		VkMemoryPropertyFlags imageMemoryProperties,
-		VkImageView* depthAndStencilImageView = nullptr
+		VkImageView* depthAndStencilImageView = nullptr,
+		uint32_t imageCount = PersistanceLib::MAXFRAMESINFLIGHT
 	);
 	
 	void cleanUpFramebuffers(Framebuffer* framebuffers, const uint32_t framebufferCount);
