@@ -1,6 +1,6 @@
 #include "PipelineSettings.h"
 
-void PipelineSettings::createVertexInputState(VertexInputStateLayout& layout)
+void PipelineSettings::createVertexInputState(VertexInputStateLayout layout)
 {
 
 	

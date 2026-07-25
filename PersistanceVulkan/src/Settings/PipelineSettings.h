@@ -63,7 +63,7 @@ class PipelineSettings
 public:
 	PipelineSettings() = default;
 	
-	void createVertexInputState(VertexInputStateLayout& layout);
+	void createVertexInputState(VertexInputStateLayout layout);
 	void defineInputAssemblyState(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VkBool32 primitiverestart = VK_FALSE);
 	void createStaticViewPortAndScissors(uint32_t xPos, uint32_t yPos, float minDepth, float maxDepth, VkExtent2D viewportExtent, VkExtent2D scissorsExtent, VkOffset2D scissorsOffset);
 	void configureRasterizationStage();
