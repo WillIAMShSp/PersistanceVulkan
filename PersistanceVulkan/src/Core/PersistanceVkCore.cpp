@@ -526,7 +526,8 @@ void PersistanceVkCore::createSyncObjects()
 void PersistanceVkCore::createSwapchainRenderPass()
 {
 
-	RenderPassAttachment colorattachment = PersistanceBackend::createRenderPassAttachment(0, 
+	RenderPassAttachment colorattachment = PersistanceBackend::createRenderPassAttachment(
+		0, 
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
 		m_swapchainImageFormat, 
 		VK_SAMPLE_COUNT_1_BIT, 
@@ -535,7 +536,15 @@ void PersistanceVkCore::createSwapchainRenderPass()
 		VK_IMAGE_LAYOUT_UNDEFINED, 
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 	);
-	RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(
+		1, 
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 
+		PersistanceUtils::findDepthFormat(),
+		VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
+		VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	);
 	
 
 	AttachmentReferenceList refList;

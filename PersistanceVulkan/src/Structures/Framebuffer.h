@@ -6,6 +6,11 @@ typedef uint32_t FramebufferHandle;
 
 struct Framebuffer {
 	Framebuffer() = default;
+	Framebuffer(Framebuffer&& other);
+
+	Framebuffer& operator=(Framebuffer&& other) noexcept;
+
+	void cleanup();
 
 	std::vector<VkFramebuffer> framebuffers;
 	std::vector<VkImageView> imageviews;

@@ -87,3 +87,44 @@ void PersistanceBackend::cleanUpFramebuffers(Framebuffer* framebuffers, const ui
 		}
 	}
 }
+
+/// @brief Framebuffer move constructor.
+/// @param other other framebuffer object.
+Framebuffer::Framebuffer(Framebuffer &&other) noexcept
+:framebuffers (std::move(other.framebuffers)),
+allocations( std::move(other.allocations)),
+images (std::move(other.images)),
+imageviews (std::move(other.imageviews))
+{
+
+}
+
+/// @brief Framebuffer move operator.
+/// @param other other framebuffer object.
+/// @return The object once its been moved.
+Framebuffer &Framebuffer::operator=(Framebuffer &&other) noexcept
+{
+	if (this != &other) {
+		cleanup();
+
+		framebuffers = std::move(other.framebuffers);
+		images = std::move(other.images);
+		imageviews = std::move(other.imageviews);
+		allocations = std::move(other.allocations);
+	}
+
+	return *this;
+}
+
+/// @brief Clears the framebuffer resources.
+void Framebuffer::cleanup()
+{
+
+	PersistanceBackend::cleanUpFramebuffers(this, 1);
+
+	framebuffers.clear();
+	images.clear();
+	imageviews.clear();
+	allocations.clear();
+	
+}
