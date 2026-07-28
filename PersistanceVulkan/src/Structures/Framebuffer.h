@@ -6,7 +6,7 @@ typedef uint32_t FramebufferHandle;
 
 struct Framebuffer {
 	Framebuffer() = default;
-	Framebuffer(Framebuffer&& other);
+	Framebuffer(Framebuffer&& other) noexcept;
 
 	Framebuffer& operator=(Framebuffer&& other) noexcept;
 
