@@ -197,7 +197,7 @@ int main() {
 	depthTexture.imageview = PersistanceUtils::createImageView(depthTexture.image, PersistanceUtils::findDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
 
-	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
+	Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, core.getScreenWidth(), core.getScreenHeight(), 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
 
 	VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 

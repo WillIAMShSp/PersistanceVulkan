@@ -1,3 +1,7 @@
+# Example code
+
+This code is all that is needed, and a little extra, to create a PersistanceVulkan application.
+
 ```cpp
 #include "Backend/RenderPass.h"
 #include "Backend/RenderPassAttachment.h"
@@ -89,20 +93,24 @@ const std::vector<Vertex> TESTvertices = {
 };
 
 int main() {
-std::cout << std::filesystem::current_path() << std::endl;
-core.init();
-core.createMainRenderSetup(false);
-RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat,
-VK_SAMPLE_COUNT_1_BIT,
-VK_ATTACHMENT_LOAD_OP_CLEAR,
-VK_ATTACHMENT_STORE_OP_STORE,
-VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-AttachmentReferenceList refList;
-refList.add(attachment);
-AttachmentDescriptionList disList;
-disList.add(&attachment, 1);
-disList.add(&depthAttachment, 1);
+    std::cout << std::filesystem::current_path() << std::endl;
+
+    //1. Initialize the framework.
+    core.init();
+    core.createMainRenderSetup(false);
+
+    //Create a render pass.
+    RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat,
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_ATTACHMENT_LOAD_OP_CLEAR,
+        VK_ATTACHMENT_STORE_OP_STORE,
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    RenderPassAttachment depthAttachment = PersistanceBackend::createRenderPassAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, PersistanceUtils::findDepthFormat(), VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    AttachmentReferenceList refList;
+    refList.add(attachment);
+    AttachmentDescriptionList disList;
+    disList.add(&attachment, 1);
+    disList.add(&depthAttachment, 1);
 
     VkSubpassDescription description = PersistanceBackend::createSubpassDescription(&refList, &depthAttachment, nullptr, nullptr, 0);
 
@@ -110,6 +118,7 @@ disList.add(&depthAttachment, 1);
 
     VkRenderPass renderpass = PersistanceBackend::createRenderPass(&description, 1, &dependency, 1, disList);
 
+    //Create a descriptor set layout.
     VkDescriptorSetLayoutBinding bindings[2] = {
     	PersistanceBackend::createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT),
     	PersistanceBackend::createDescriptorSetLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -118,12 +127,12 @@ disList.add(&depthAttachment, 1);
     VkDescriptorSetLayout layout = PersistanceBackend::createDescriptorSetLayout(bindings, 2);
 
 
-
+    //Create a graphics pipeline settings object.
     PipelineSettings settings;
 
     VertexInputStateLayout vertexbufferlayout;
     vertexbufferlayout.push<glm::vec3>();/*Configure vertex array layout*/
-    vertexbufferlayout.push<glm::vec3>();//
+    vertexbufferlayout.push<glm::vec3>();// Think of this like the VAO in OpenGl
     vertexbufferlayout.push<glm::vec2>();//
     settings.createVertexInputState(vertexbufferlayout);
     settings.defineInputAssemblyState();
@@ -132,8 +141,9 @@ disList.add(&depthAttachment, 1);
     settings.configureRasterizationStage();
     settings.configureMultisample();
     settings.configureColorBlend();
-    //settings.UseDynamicViewport();
+    //settings.UseDynamicViewport(); // You may choose to use static or dynamic viewports and scissors.
 
+    //Create a shader.
     PersistanceBackend::Shader shader;
 
     std::string basicVertexShaderSource = std::string(RESOURCE_DIR) + "/Shaders/basicvert.spv";
@@ -143,20 +153,23 @@ disList.add(&depthAttachment, 1);
     shader.createShaderStage(basicVertexShaderSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
     shader.createShaderStage(basicFragmentShaderSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    //Create Graphics pipeline and layout.
     VkPipelineLayout pipelayout = PersistanceBackend::createPipelineLayout(&layout, 1, nullptr, 0);
     VkPipeline graphicsPipeline = PersistanceBackend::createGraphicsPipeline(pipelayout, shader, settings, renderpass);
 
+    //Create a texture.
     std::string textureSource = std::string(RESOURCE_DIR) + "/Textures/Placeholder.png";
     Texture texture = PersistanceBackend::createTexture(textureSource.c_str());
     VkSampler sampler = PersistanceBackend::createTextureSampler();
 
+    //Create vertex and index buffers.
     Buffer vertexBuffer = PersistanceBackend::createVertexBuffer(vertices.data(), sizeof(vertices[0]), static_cast<uint32_t>(vertices.size()));
     Buffer indexBuffer = PersistanceBackend::createIndexBuffer(indices.data(), sizeof(indices[0]), static_cast<uint32_t>(indices.size()));
 
     Buffer testVBuffer = PersistanceBackend::createVertexBuffer(TESTvertices.data(), sizeof(TESTvertices[0]), static_cast<uint32_t>(TESTvertices.size()));
 
 
-
+    //Create a descriptor pool.
     DescriptorPoolSizeList desPoolList;
 
     VkDescriptorPoolSize uniformBufferSize = PersistanceBackend::createDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
@@ -167,9 +180,10 @@ disList.add(&depthAttachment, 1);
 
     VkDescriptorPool descriptorPool = PersistanceBackend::createDescriptorPool(desPoolList);
 
-
+    //Create an uniform buffer.
     UniformBuffer uniformBuffer = PersistanceBackend::createUniformBuffer(sizeof(ModelViewProjectionBuffer));
 
+    //Create a descriptor set.
     VkWriteDescriptorSet writeDescriptors[2];
     std::vector<VkDescriptorSet> descriptorSet = PersistanceBackend::allocateDescriptorSet(descriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, layout);
     std::vector<VkDescriptorBufferInfo> uniformBufferinfo = PersistanceBackend::createDescriptorBufferInfo(uniformBuffer.buffers.data(), static_cast<uint32_t>(uniformBuffer.buffers.size()), 0, sizeof(ModelViewProjectionBuffer));
@@ -180,15 +194,17 @@ disList.add(&depthAttachment, 1);
 
     PersistanceBackend::updateDescriptorSets(descriptorSet, writeDescriptors, 2);
 
+    //Create a depth texture.
     Texture depthTexture;
 
     PersistanceUtils::createImage(core.m_swapchainExtent.width, core.m_swapchainExtent.height, PersistanceUtils::findDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthTexture.image, depthTexture.allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
     depthTexture.imageview = PersistanceUtils::createImageView(depthTexture.image, PersistanceUtils::findDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
-
+    //Create a framebuffer.
     Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
 
+    //Create command buffers.
     VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VkCommandBuffer commandBuffers[PersistanceLib::MAXFRAMESINFLIGHT];
@@ -199,6 +215,7 @@ disList.add(&depthAttachment, 1);
 
 #pragma region fullQuadTest
 
+    //Repeat steps for a full screen quad.
     VkDescriptorSetLayoutBinding fullQuadBinding = PersistanceBackend::createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayout fullQuadDescriptorSetLayout = PersistanceBackend::createDescriptorSetLayout(&fullQuadBinding, 1);
 
@@ -224,7 +241,7 @@ disList.add(&depthAttachment, 1);
     fullQuadShader.createShaderStage(fullQuadFragmentShaderSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineLayout fullQuadGraphicsPipelineLayout = PersistanceBackend::createPipelineLayout(&fullQuadDescriptorSetLayout, 1, nullptr, 0);
-    VkPipeline fullQuadGraphicsPipeline = PersistanceBackend::createGraphicsPipeline(fullQuadGraphicsPipelineLayout, fullQuadShader, fullQuadPipeSettings, core.m_mainRenderPass);
+    VkPipeline fullQuadGraphicsPipeline = PersistanceBackend::createGraphicsPipeline(fullQuadGraphicsPipelineLayout, fullQuadShader, fullQuadPipeSettings, core.m_mainRenderPass); //uses the main renderpass for the creation fo resources.
 
     Buffer fullQuadVertexBuffer = PersistanceBackend::createVertexBuffer(quadVertices, sizeof(float), 20);
     Buffer fullQuadIndexBuffer = PersistanceBackend::createIndexBuffer(quadIndices, sizeof(uint32_t), 6);
@@ -243,10 +260,13 @@ disList.add(&depthAttachment, 1);
 
     PersistanceBackend::updateDescriptorSets(fullQuadDescriptorSet, &fullQuadSamplerWriteDescriptorSet, 1);
 
+    //No depth texture necessary for the full screen quad.
+
 #pragma endregion
 
+    //command buffer rerecording.
     std::function<void()> recreateCommandBuffers = [&commandBuffers, &renderpass, &framebuffer, &graphicsPipeline, &vertexBuffer, &testVBuffer, &indexBuffer, &pipelayout, &descriptorSet, &fullQuadGraphicsPipeline, &fullQuadGraphicsPipelineLayout, &fullQuadVertexBuffer, &fullQuadIndexBuffer, &fullQuadDescriptorSet] {
-
+        // Records command buffers for all frames in flight
     	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) {
 
     		VkCommandBuffer& cb = commandBuffers[i];
@@ -265,8 +285,6 @@ disList.add(&depthAttachment, 1);
     		core.bindGraphicsPipeline(cb, graphicsPipeline);
 
     		MVP();
-
-    		//PersistanceBackend::updateUniformBuffers(uniformBuffer, &buf, sizeof(ModelViewProjectionBuffer));
 
     		core.drawIndexed(cb, &testVBuffer, 1, &offsets, indexBuffer, graphicsPipeline, pipelayout, &descriptorSet[i], 1);
     		core.drawIndexed(cb, &vertexBuffer, 1, &offsets, indexBuffer, graphicsPipeline, pipelayout, &descriptorSet[i], 1);
@@ -329,20 +347,10 @@ disList.add(&depthAttachment, 1);
     	clearValues[0].color = { 0.0f,0.0f,0.0f,0.0f };
     	clearValues[1].depthStencil = { 1.f, 0 };
 
-    	// PersistanceBackend::beginRenderPass(commandBuffer, renderpass, framebuffer, {0,0}, core.m_swapchainExtent, clearValues, 2);
+
 
     	VkDeviceSize offsets = 0;
 
-    	// core.bindGraphicsPipeline(commandBuffer, graphicsPipeline);
-
-
-    	// PersistanceBackend::updateUniformBuffers(uniformBuffer, &buf, sizeof(ModelViewProjectionBuffer));
-
-    	// core.drawIndexed(commandBuffer, &testVBuffer, 1, &offsets, indexBuffer, graphicsPipeline, pipelayout, &descriptorSet[core.m_currentFrame], 1);
-    	// core.drawIndexed(commandBuffer, &vertexBuffer, 1, &offsets, indexBuffer, graphicsPipeline, pipelayout, &descriptorSet[core.m_currentFrame], 1);
-
-
-    	// PersistanceBackend::endRenderPass(commandBuffer);
 
 
     	core.beginMainRenderPass(commandBuffer);
@@ -354,24 +362,6 @@ disList.add(&depthAttachment, 1);
 
     	PersistanceBackend::endCommandBuffer(commandBuffer);
     	core.endDrawingandPresent( &commandBuffer, 1);
-
-    	// core.waitForCurrentFence();
-    	// VkResult swapchainImageStatus = core.acquireNextSwapchainImage();
-    	// if (swapchainImageStatus == VK_ERROR_OUT_OF_DATE_KHR) {
-    	// 	core.reRecordCommandBuffersCallBack(&recreateCommandBuffers, 1);
-    	// 	core.recreateSwapchain();
-    	// }
-    	// else if (swapchainImageStatus != VK_SUCCESS && swapchainImageStatus != VK_SUBOPTIMAL_KHR)
-    	// {
-    	// 	throw std::runtime_error("Failed to aquire swapchain image!");
-    	// }
-
-    	// core.resetFences();
-
-
-
-
-
 
     }
     core.waitForDeviceIdle();

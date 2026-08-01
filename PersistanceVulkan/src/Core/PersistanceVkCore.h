@@ -28,8 +28,6 @@
 
 #define BREAK __debugbreak();
 
-const uint32_t screenwidth = 800;
-const uint32_t screenheight = 600;
 
 /**
  * @brief A string containing the validation layers.
@@ -112,10 +110,12 @@ public:
 	VmaVulkanFunctions m_vmaFunctions;
 	VmaAllocatorCreateInfo m_vmaAllocCreateInfo{};
 	
+	uint32_t getScreenWidth();
+	uint32_t getScreenHeight();
 
-	void init() {
-		initWindow();
-		initVulkan();
+	void init(uint32_t width = 800, uint32_t height = 600, const void* deviceFeatures = nullptr) {
+		initWindow(width, height);
+		initVulkan(deviceFeatures);
 	}
 	bool isRunning()
 	{
@@ -131,14 +131,14 @@ public:
 	}
 
 private:
-	void initWindow();
-	void initVulkan();
+	void initWindow(const uint32_t screenWidth, const uint32_t screenHeight);
+	void initVulkan(const void* deviceFeatures);
 
 	//Create
 	void createInstance();
 	void createSurface();
 	void selectPhysicalDevice();
-	void createLogicalDevice();
+	void createLogicalDevice(const void* deviceFeatures);
 	void createAllocator();
 	void createSwapChain();
 	void createCommandPools();
@@ -210,6 +210,10 @@ private:
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		"VK_KHR_index_type_uint8"
 	};
+
+	uint32_t m_screenWidth = 800;
+	uint32_t m_screenHeight = 600;
+
 
 };
 

@@ -24,21 +24,28 @@
 
 #define VOLK_IMPLEMENTATION
 
+uint32_t PersistanceVkCore::getScreenWidth()
+{
+    return m_screenWidth;
+}
 
-
+uint32_t PersistanceVkCore::getScreenHeight()
+{
+    return m_screenHeight;
+}
 
 /**
  * @brief Initializes a GLFW window
- * 
+ *
  */
-void PersistanceVkCore::initWindow()
+void PersistanceVkCore::initWindow(const uint32_t screenWidth, const uint32_t screenHeight)
 {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 
-	m_window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+	m_window = glfwCreateWindow(screenWidth, screenHeight, "Vulkan window", nullptr, nullptr);
 
 	std::cout << "Initialized Window \n";
 
@@ -46,12 +53,15 @@ void PersistanceVkCore::initWindow()
 
 	glfwSetWindowSizeCallback(m_window, resizeWindowCallback);
 
+	m_screenWidth = screenWidth;
+	m_screenHeight = screenHeight;
+
 }
 /**
  * @brief Initializes a Vulkan instance, surface, device, memory allocator, and sync objects
  * 
  */
-void PersistanceVkCore::initVulkan()
+void PersistanceVkCore::initVulkan(const void* deviceFeatures)
 {
 	volkInitialize();
 	createInstance();
@@ -59,7 +69,7 @@ void PersistanceVkCore::initVulkan()
 	volkLoadInstance(m_instance);
 	createSurface();
 	selectPhysicalDevice();
-	createLogicalDevice();
+	createLogicalDevice(deviceFeatures);
 	volkLoadDevice(m_device);
 	createAllocator();
 	createSwapChain();
@@ -227,7 +237,7 @@ void PersistanceVkCore::selectPhysicalDevice()
  * @brief Creates a Vulkan logical device for the selected physical device.
  * 
  */
-void PersistanceVkCore::createLogicalDevice()
+void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 {
 	std::vector<VkDeviceQueueCreateInfo> queuecreateinfos;
 
@@ -287,7 +297,7 @@ void PersistanceVkCore::createLogicalDevice()
 	VkDeviceCreateInfo devicecreateinfo{};
 
 	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	devicecreateinfo.pNext = &vk1_4Features;
+	devicecreateinfo.pNext = deviceFeatures;
 
 	devicecreateinfo.queueCreateInfoCount = static_cast<uint32_t>(queuecreateinfos.size());
 	devicecreateinfo.pQueueCreateInfos = queuecreateinfos.data();
