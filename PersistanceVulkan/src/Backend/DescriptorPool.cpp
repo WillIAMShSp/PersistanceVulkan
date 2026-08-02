@@ -46,7 +46,7 @@ VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList
 	info.flags = 0;
 	info.maxSets = PersistanceLib::MAXFRAMESINFLIGHT;
 
-	if (vkCreateDescriptorPool(core.m_device, &info, nullptr, &pool) != VK_SUCCESS) 
+	if (vkCreateDescriptorPool(core.getDevice(), &info, nullptr, &pool) != VK_SUCCESS) 
 	{
 		BREAK(0);
 	}
@@ -61,7 +61,7 @@ void PersistanceBackend::cleanUpDescriptorPools(VkDescriptorPool* descriptorPool
 
 	for (int i = 0; i < descriptorPoolCount; i++) 
 	{
-		vkDestroyDescriptorPool(core.m_device, descriptorPools[i], nullptr);
+		vkDestroyDescriptorPool(core.getDevice(), descriptorPools[i], nullptr);
 	}
 
 }

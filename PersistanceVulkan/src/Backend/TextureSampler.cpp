@@ -33,7 +33,7 @@ VkSampler PersistanceBackend::createTextureSampler(VkFilter magfilter, VkFilter 
 
 	VkPhysicalDeviceProperties properties{};
 
-	vkGetPhysicalDeviceProperties(core.m_physicalDevice, &properties);
+	vkGetPhysicalDeviceProperties(core.getPhysicalDevice(), &properties);
 
 
 
@@ -63,7 +63,7 @@ VkSampler PersistanceBackend::createTextureSampler(VkFilter magfilter, VkFilter 
 	samplerinfo.compareEnable = VK_FALSE;
 	samplerinfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	if (vkCreateSampler(core.m_device, &samplerinfo, nullptr, &sampler) != VK_SUCCESS)
+	if (vkCreateSampler(core.getDevice(), &samplerinfo, nullptr, &sampler) != VK_SUCCESS)
 	{
 		std::cout << "Failed to create texture sampler \n";
 		BREAK(0);
@@ -83,6 +83,6 @@ void PersistanceBackend::cleanUpTextureSamplers(VkSampler* samplers, const uint3
 {
 	for (uint32_t i = 0; i < samplerCount; i++) 
 	{
-		vkDestroySampler(core.m_device, samplers[i], nullptr);
+		vkDestroySampler(core.getDevice(), samplers[i], nullptr);
 	}
 }

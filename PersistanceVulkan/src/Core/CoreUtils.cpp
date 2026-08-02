@@ -24,8 +24,8 @@ void PersistanceUtils::createBuffer(const VkDeviceSize& size, VkBufferUsageFlags
 	{
 		queuefamilyindices =
 		{
-			core.m_queueFamilyIndices.graphicsfamily,
-			core.m_queueFamilyIndices.transferfamily
+			core.getQueueFamilyIndices()->graphicsfamily,
+			core.getQueueFamilyIndices()->transferfamily,
 
 		};
 
@@ -42,7 +42,7 @@ void PersistanceUtils::createBuffer(const VkDeviceSize& size, VkBufferUsageFlags
 		VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 
-	if (vmaCreateBuffer(core.m_vmaAllocator, &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
+	if (vmaCreateBuffer(core.getAllocator(), &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
 	{
 		std::cout << "Failed to create buffer";
 		BREAK(0);
@@ -89,8 +89,8 @@ void PersistanceUtils::createImage(const uint32_t& width, const uint32_t height,
 	{
 		queuefamilyindices =
 		{
-			core.m_queueFamilyIndices.graphicsfamily,
-			core.m_queueFamilyIndices.transferfamily
+			core.getQueueFamilyIndices()->graphicsfamily,
+			core.getQueueFamilyIndices()->transferfamily,
 
 		};
 
@@ -103,7 +103,7 @@ void PersistanceUtils::createImage(const uint32_t& width, const uint32_t height,
 	else
 	{
 		imageinfo.queueFamilyIndexCount = 1;
-		imageinfo.pQueueFamilyIndices = &core.m_queueFamilyIndices.graphicsfamily;
+		imageinfo.pQueueFamilyIndices = &core.getQueueFamilyIndices()->graphicsfamily;
 	}
 
 	VmaAllocationCreateInfo allocationcreateinfo{};
@@ -113,7 +113,7 @@ void PersistanceUtils::createImage(const uint32_t& width, const uint32_t height,
 
 
 
-	if (vmaCreateImage(core.m_vmaAllocator, &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS)
+	if (vmaCreateImage(core.getAllocator(), &imageinfo, &allocationcreateinfo, &image, &allocation, nullptr) != VK_SUCCESS)
 	{
 		std::cout << "Failed to create image!";
 		BREAK(0);
@@ -294,7 +294,7 @@ VkCommandBuffer PersistanceUtils::beginSingleTimeCommands(VkCommandPool& command
 
 	VkCommandBuffer commandbuffer;
 
-	if (vkAllocateCommandBuffers(core.m_device, &allocinfo, &commandbuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(core.getDevice(), &allocinfo, &commandbuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate command buffer");
 	}
@@ -323,7 +323,7 @@ void PersistanceUtils::endSingleTimeCommands(VkCommandBuffer& commandBuffer, con
 	vkQueueSubmit(submitqueue, 1, &submitinfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(submitqueue);
 
-	vkFreeCommandBuffers(core.m_device, commandpool, 1, &commandBuffer);
+	vkFreeCommandBuffers(core.getDevice(), commandpool, 1, &commandBuffer);
 }
 
 std::vector<char> PersistanceUtils::readFile(const char* filepath)
@@ -367,7 +367,7 @@ VkShaderModule PersistanceUtils::createShaderModule(std::vector<char>& shaderFil
 	info.codeSize = shaderFile.size();
 	info.pCode = reinterpret_cast<const uint32_t*>(shaderFile.data());
 	info.flags = 0;
-	if (vkCreateShaderModule(core.m_device, &info, nullptr, &module) != VK_SUCCESS) 
+	if (vkCreateShaderModule(core.getDevice(), &info, nullptr, &module) != VK_SUCCESS) 
 	{
 		BREAK(0);
 	}
@@ -392,7 +392,7 @@ VkImageView PersistanceUtils::createImageView(VkImage& image, VkFormat format, V
 	viewinfo.subresourceRange.baseMipLevel = 0;
 	viewinfo.subresourceRange.levelCount = 1;
 
-	if (vkCreateImageView(core.m_device, &viewinfo, nullptr, &imageview) != VK_SUCCESS)
+	if (vkCreateImageView(core.getDevice(), &viewinfo, nullptr, &imageview) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create texture image view");
 
@@ -444,7 +444,7 @@ VkFormat PersistanceUtils::findSupportedFormat(const std::vector<VkFormat>& cand
 	for (auto candidate : candidates) {
 		VkFormatProperties formatProperties;
 
-		vkGetPhysicalDeviceFormatProperties(core.m_physicalDevice, candidate, &formatProperties);
+		vkGetPhysicalDeviceFormatProperties(core.getPhysicalDevice(), candidate, &formatProperties);
 
 		if (tiling == VK_IMAGE_TILING_LINEAR && (features & formatProperties.linearTilingFeatures) == features) {
 			return candidate;

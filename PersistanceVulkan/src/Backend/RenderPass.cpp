@@ -114,7 +114,7 @@ VkRenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* su
 
 	info.flags = 0;
 
-	if (vkCreateRenderPass(core.m_device, &info, nullptr, &renderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(core.getDevice(), &info, nullptr, &renderPass) != VK_SUCCESS) {
 		BREAK(0);
 	}
 
@@ -136,7 +136,7 @@ VkRenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* su
  */
 void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, VkRenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount, const uint32_t* currentImage)
 {
-	uint32_t imageIndex = currentImage ? *currentImage : core.m_imageIndex;
+	uint32_t imageIndex = currentImage ? *currentImage : core.getImageIndex();
 
 	VkRenderPassBeginInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -169,7 +169,7 @@ void PersistanceBackend::endRenderPass(VkCommandBuffer& commandBuffer)
 void PersistanceBackend::cleanUpRenderPasses(const VkRenderPass* renderPass, uint32_t count)
 {
 	for (int i = 0; i < count; i++) {
-		vkDestroyRenderPass(core.m_device, renderPass[i], nullptr);
+		vkDestroyRenderPass(core.getDevice(), renderPass[i], nullptr);
 
 	}
 }

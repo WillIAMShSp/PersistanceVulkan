@@ -27,7 +27,7 @@ VkCommandBuffer PersistanceBackend::allocateCommandBuffer(VkCommandPool commandP
 	info.commandPool = commandPool;
 
 
-	if (vkAllocateCommandBuffers(core.m_device, &info, &commandBuffer) != VK_SUCCESS) 
+	if (vkAllocateCommandBuffers(core.getDevice(), &info, &commandBuffer) != VK_SUCCESS) 
 	{
 		BREAK(0);
 	}

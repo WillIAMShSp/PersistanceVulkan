@@ -33,7 +33,7 @@ VkPipelineLayout PersistanceBackend::createPipelineLayout(const VkDescriptorSetL
 	info.setLayoutCount = layoutCount;
 	info.flags = 0;
 
-	if (vkCreatePipelineLayout(core.m_device, &info, nullptr, &layout) != VK_SUCCESS) 
+	if (vkCreatePipelineLayout(core.getDevice(), &info, nullptr, &layout) != VK_SUCCESS) 
 	{
 		BREAK(0);
 	}
@@ -97,7 +97,7 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 
 	pipelinecreateinfo.pNext = nullptr;
 
-	if (vkCreateGraphicsPipelines(core.m_device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(core.getDevice(), VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create the graphics pipeline");
 
@@ -105,7 +105,7 @@ VkPipeline PersistanceBackend::createGraphicsPipeline(VkPipelineLayout& layout, 
 
 	for (auto modules : shader.shaderModules) 
 	{
-		vkDestroyShaderModule(core.m_device, modules, nullptr);
+		vkDestroyShaderModule(core.getDevice(), modules, nullptr);
 	}
 
 	return graphicsPipeline;
@@ -122,7 +122,7 @@ void PersistanceBackend::cleanUpGraphicsPipeline(VkPipeline* pipelines, const ui
 {
 	for (uint32_t i = 0; i < pipelineCount; i++) 
 	{
-		vkDestroyPipeline(core.m_device, pipelines[i], nullptr);
+		vkDestroyPipeline(core.getDevice(), pipelines[i], nullptr);
 	}
 
 }
@@ -137,6 +137,6 @@ void PersistanceBackend::cleanUpPipelineLayouts(VkPipelineLayout* layouts, const
 {
 	for (uint32_t i = 0; i < layoutCount; i++) 
 	{
-		vkDestroyPipelineLayout(core.m_device, layouts[i], nullptr);
+		vkDestroyPipelineLayout(core.getDevice(), layouts[i], nullptr);
 	}
 }

@@ -58,7 +58,7 @@ Framebuffer PersistanceBackend::createFramebuffer(VkRenderPass& renderpass, uint
 		info.layers = layers;
 		info.renderPass = renderpass;
 		
-		vkCreateFramebuffer(core.m_device, &info, nullptr, &framebuffer.framebuffers[i]);
+		vkCreateFramebuffer(core.getDevice(), &info, nullptr, &framebuffer.framebuffers[i]);
 	
 	}
 	return framebuffer;
@@ -78,12 +78,12 @@ void PersistanceBackend::cleanUpFramebuffers(Framebuffer* framebuffers, const ui
 	{
 		for (auto framebuffer : framebuffers[i].framebuffers) 
 		{
-			vkDestroyFramebuffer(core.m_device, framebuffer, nullptr);
+			vkDestroyFramebuffer(core.getDevice(), framebuffer, nullptr);
 		}
 		for (uint32_t j = 0; j < framebuffers[i].images.size(); j++)
 		{
-			vmaDestroyImage(core.m_vmaAllocator, framebuffers[i].images[j], framebuffers[i].allocations[j]);
-			vkDestroyImageView(core.m_device, framebuffers[i].imageviews[j], nullptr);
+			vmaDestroyImage(core.getAllocator(), framebuffers[i].images[j], framebuffers[i].allocations[j]);
+			vkDestroyImageView(core.getDevice(), framebuffers[i].imageviews[j], nullptr);
 		}
 	}
 }

@@ -18,7 +18,6 @@
 
 #include "../Vendor/stb_image.h"
 #include "../Structures/Framebuffer.h"
-#include "../Structures/RenderPass.h"
 #include "../Structures/Buffer.h"
 #include "../Structures/Texture.h"
 
@@ -75,43 +74,43 @@ struct QueueFamilyIndices
 class PersistanceVkCore
 {
 public:
-	
-	GLFWwindow* m_window = nullptr;
-	VkInstance m_instance;
-	VkDebugUtilsMessengerEXT m_debugMessenger;
-	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-	QueueFamilyIndices m_queueFamilyIndices;
-	VkDevice m_device;
-	VkQueue m_graphicsQueue;
-	VkQueue m_presentQueue;
-	VkQueue m_transferQueue;
-	VkSurfaceKHR m_surface;
-	VkSwapchainKHR m_swapchain;
-	VkFormat m_swapchainImageFormat;
-	Framebuffer m_swapchainFramebuffers;
-	Texture m_swapchainDepthBuffer;
-	bool m_depthTesting = false;
-	VkExtent2D m_swapchainExtent;
-	VkRenderPass m_mainRenderPass;
-	VkCommandPool m_graphicsCommandPool;
-	VkCommandPool m_transferCommandPool;
 
-	std::vector<VkSemaphore> s_imageAvailable;
-	std::vector<VkSemaphore> s_renderFinished;
-	std::vector<VkFence> f_inFlightFence;
-	std::vector<VkFence> f_imagesInFlight;
-	bool m_windowResized = false;
+	//Getters and Setters
 
-	uint32_t m_currentFrame = 0;
-	uint32_t m_imageIndex = 0;
-	bool m_currentlyDrawing = false;
+	GLFWwindow* getWindow();
+	void setWindow(GLFWwindow* window);
 
-	VmaAllocator m_vmaAllocator;
-	VmaVulkanFunctions m_vmaFunctions;
-	VmaAllocatorCreateInfo m_vmaAllocCreateInfo{};
-	
+	bool windowResized();
+
+	const VkInstance& getInstance();
+
+	const VkPhysicalDevice& getPhysicalDevice();
+
+	QueueFamilyIndices* getQueueFamilyIndices();
+
+	const VkDevice& getDevice();
+
+	VkQueue& getGraphicsQueue();
+	VkQueue& getPresentQueue();
+	VkQueue& getTransferQueue();
+
+	const VkSwapchainKHR& getSwapchain();
+	const VkFormat getSwapchainFormat();
+	Framebuffer* getSwapchainFramebuffers();
+	VkRenderPass& getMainRenderPass();
+	Texture* getSwapchainDepthBuffer();
+	bool swapchainIsDepthTesting();
+	VkExtent2D getSwapchainExtent();
+	VkCommandPool& getGraphicsCommandPool();
+	VkCommandPool& getTransferCommandPool();
+
+	uint32_t getCurrentFrame();
+	uint32_t getImageIndex();
+
 	uint32_t getScreenWidth();
 	uint32_t getScreenHeight();
+
+	const VmaAllocator& getAllocator();
 
 	void init(uint32_t width = 800, uint32_t height = 600, const void* deviceFeatures = nullptr) {
 		initWindow(width, height);
@@ -213,7 +212,40 @@ private:
 
 	uint32_t m_screenWidth = 800;
 	uint32_t m_screenHeight = 600;
+	GLFWwindow* m_window = nullptr;
+	VkInstance m_instance;
+	VkDebugUtilsMessengerEXT m_debugMessenger;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+	QueueFamilyIndices m_queueFamilyIndices;
+	VkDevice m_device;
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
+	VkQueue m_transferQueue;
+	VkSurfaceKHR m_surface;
+	VkSwapchainKHR m_swapchain;
+	VkFormat m_swapchainImageFormat;
+	Framebuffer m_swapchainFramebuffers;
+	Texture m_swapchainDepthBuffer;
+	bool m_depthTesting = false;
+	VkExtent2D m_swapchainExtent;
+	VkRenderPass m_mainRenderPass;
+	VkCommandPool m_graphicsCommandPool;
+	VkCommandPool m_transferCommandPool;
 
+	std::vector<VkSemaphore> s_imageAvailable;
+	std::vector<VkSemaphore> s_renderFinished;
+	std::vector<VkFence> f_inFlightFence;
+	std::vector<VkFence> f_imagesInFlight;
+	bool m_windowResized = false;
+
+	uint32_t m_currentFrame = 0;
+	uint32_t m_imageIndex = 0;
+	bool m_currentlyDrawing = false;
+
+	VmaAllocator m_vmaAllocator;
+	VmaVulkanFunctions m_vmaFunctions;
+	VmaAllocatorCreateInfo m_vmaAllocCreateInfo{};
+	
 
 };
 

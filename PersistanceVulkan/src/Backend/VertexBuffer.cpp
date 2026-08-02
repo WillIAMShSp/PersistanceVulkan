@@ -29,15 +29,15 @@ Buffer PersistanceBackend::createVertexBuffer(const void* buffer, const size_t e
 
 	void* data;
 
-	vmaMapMemory(core.m_vmaAllocator, stagingBuffer.allocation, &data);
+	vmaMapMemory(core.getAllocator(), stagingBuffer.allocation, &data);
 	memcpy(data, buffer, bufferSize);
-	vmaUnmapMemory(core.m_vmaAllocator, stagingBuffer.allocation);
+	vmaUnmapMemory(core.getAllocator(), stagingBuffer.allocation);
 
 	PersistanceUtils::createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer.buffer, vertexBuffer.allocation, VK_SHARING_MODE_CONCURRENT);
 
-	PersistanceUtils::copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer, bufferSize, core.m_transferCommandPool, core.m_transferQueue);
+	PersistanceUtils::copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer, bufferSize, core.getTransferCommandPool(), core.getTransferQueue());
 
-	vmaDestroyBuffer(core.m_vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+	vmaDestroyBuffer(core.getAllocator(), stagingBuffer.buffer, stagingBuffer.allocation);
 
 	vertexBuffer.size = bufferSize;
 	vertexBuffer.elementSize = elementSize;
@@ -56,7 +56,7 @@ void PersistanceBackend::cleanUpVertexBuffers(Buffer* buffers, const uint32_t bu
 {
 	for (uint32_t i = 0; i < bufferCount; i++) 
 	{
-		vmaDestroyBuffer(core.m_vmaAllocator, buffers[i].buffer, buffers[i].allocation);
+		vmaDestroyBuffer(core.getAllocator(), buffers[i].buffer, buffers[i].allocation);
 	
 	}
 }

@@ -34,6 +34,11 @@ uint32_t PersistanceVkCore::getScreenHeight()
     return m_screenHeight;
 }
 
+const VmaAllocator &PersistanceVkCore::getAllocator()
+{
+    return m_vmaAllocator;
+}
+
 /**
  * @brief Initializes a GLFW window
  *
@@ -44,18 +49,20 @@ void PersistanceVkCore::initWindow(const uint32_t screenWidth, const uint32_t sc
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-
-	m_window = glfwCreateWindow(screenWidth, screenHeight, "Vulkan window", nullptr, nullptr);
-
-	std::cout << "Initialized Window \n";
-
-	glfwSetWindowUserPointer(m_window, this);
-
-	glfwSetWindowSizeCallback(m_window, resizeWindowCallback);
-
-	m_screenWidth = screenWidth;
-	m_screenHeight = screenHeight;
-
+	if (m_window == nullptr)
+	{
+		m_window = glfwCreateWindow(screenWidth, screenHeight, "Vulkan window", nullptr, nullptr);
+		
+		std::cout << "Initialized Window \n";
+		
+		glfwSetWindowUserPointer(m_window, this);
+		
+		glfwSetWindowSizeCallback(m_window, resizeWindowCallback);
+		
+		m_screenWidth = screenWidth;
+		m_screenHeight = screenHeight;
+	}
+		
 }
 /**
  * @brief Initializes a Vulkan instance, surface, device, memory allocator, and sync objects
@@ -1467,3 +1474,107 @@ VkExtent2D PersistanceVkCore::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& s
 
 }
 
+GLFWwindow *PersistanceVkCore::getWindow()
+{
+    return m_window;
+}
+
+void PersistanceVkCore::setWindow(GLFWwindow *window)
+{
+	m_window = window;
+}
+
+bool PersistanceVkCore::windowResized()
+{
+    return m_windowResized;
+}
+
+const VkInstance &PersistanceVkCore::getInstance()
+{
+    return m_instance;
+}
+
+const VkPhysicalDevice &PersistanceVkCore::getPhysicalDevice()
+{
+    return m_physicalDevice;
+}
+
+QueueFamilyIndices *PersistanceVkCore::getQueueFamilyIndices()
+{
+    return &m_queueFamilyIndices;
+}
+
+const VkDevice &PersistanceVkCore::getDevice()
+{
+    return m_device;
+}
+
+VkQueue &PersistanceVkCore::getGraphicsQueue()
+{
+    return m_graphicsQueue;
+}
+
+VkQueue &PersistanceVkCore::getPresentQueue()
+{
+    return m_presentQueue;
+}
+
+VkQueue &PersistanceVkCore::getTransferQueue()
+{
+    return m_transferQueue;
+}
+
+const VkSwapchainKHR &PersistanceVkCore::getSwapchain()
+{
+    return m_swapchain;
+}
+
+const VkFormat PersistanceVkCore::getSwapchainFormat()
+{
+    return m_swapchainImageFormat;
+}
+
+Framebuffer *PersistanceVkCore::getSwapchainFramebuffers()
+{
+    return &m_swapchainFramebuffers;
+}
+
+VkRenderPass &PersistanceVkCore::getMainRenderPass()
+{
+	return m_mainRenderPass;
+}
+
+Texture *PersistanceVkCore::getSwapchainDepthBuffer()
+{
+    return &m_swapchainDepthBuffer;
+}
+
+bool PersistanceVkCore::swapchainIsDepthTesting()
+{
+    return m_depthTesting;
+}
+
+VkExtent2D PersistanceVkCore::getSwapchainExtent()
+{
+    return m_swapchainExtent;
+}
+
+VkCommandPool &PersistanceVkCore::getGraphicsCommandPool()
+{
+    return m_graphicsCommandPool;
+}
+
+VkCommandPool &PersistanceVkCore::getTransferCommandPool()
+{
+    return m_transferCommandPool;
+}
+
+uint32_t PersistanceVkCore::getCurrentFrame()
+{
+    return m_currentFrame;
+}
+
+uint32_t PersistanceVkCore::getImageIndex()
+{
+    return m_imageIndex;
+}

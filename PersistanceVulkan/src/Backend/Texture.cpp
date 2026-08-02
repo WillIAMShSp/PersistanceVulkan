@@ -40,9 +40,9 @@ Texture PersistanceBackend::createTexture(const char* imagePath)
 	void* data;
 
 
-	vmaMapMemory(core.m_vmaAllocator, stagingalloc, &data);
+	vmaMapMemory(core.getAllocator(), stagingalloc, &data);
 	memcpy(data, pixels, static_cast<uint32_t>(buffersize));
-	vmaUnmapMemory(core.m_vmaAllocator, stagingalloc);
+	vmaUnmapMemory(core.getAllocator(), stagingalloc);
 
 	stbi_image_free(pixels);
 
@@ -51,13 +51,13 @@ Texture PersistanceBackend::createTexture(const char* imagePath)
 		finalTexture.image, finalTexture.allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
 
-	PersistanceUtils::transitionImageLayout(finalTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, core.m_transferCommandPool, core.m_transferQueue);
+	PersistanceUtils::transitionImageLayout(finalTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, core.getTransferCommandPool(), core.getTransferQueue());
 
-	PersistanceUtils::copyBufferToImage(stagingbuffer, finalTexture.image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), core.m_transferCommandPool, core.m_transferQueue);
+	PersistanceUtils::copyBufferToImage(stagingbuffer, finalTexture.image, static_cast<uint32_t>(width), static_cast<uint32_t>(height), core.getTransferCommandPool(), core.getTransferQueue());
 
-	PersistanceUtils::transitionImageLayout(finalTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, core.m_graphicsCommandPool, core.m_graphicsQueue);
+	PersistanceUtils::transitionImageLayout(finalTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, core.getGraphicsCommandPool(), core.getGraphicsQueue());
 
-	vmaDestroyBuffer(core.m_vmaAllocator, stagingbuffer, stagingalloc);
+	vmaDestroyBuffer(core.getAllocator(), stagingbuffer, stagingalloc);
 
 	
 	finalTexture.imageview = PersistanceUtils::createImageView(finalTexture.image, VK_FORMAT_R8G8B8A8_SRGB);
@@ -76,8 +76,8 @@ void PersistanceBackend::cleanUpTextures(Texture* textures, const uint32_t textu
 {
 	for (uint32_t i = 0; i < textureCount; i++) 
 	{
-		vmaDestroyImage(core.m_vmaAllocator, textures[i].image, textures[i].allocation);
-		vkDestroyImageView(core.m_device, textures[i].imageview, nullptr);
+		vmaDestroyImage(core.getAllocator(), textures[i].image, textures[i].allocation);
+		vkDestroyImageView(core.getDevice(), textures[i].imageview, nullptr);
 	}
 }
 

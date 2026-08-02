@@ -23,7 +23,7 @@ UniformBuffer PersistanceBackend::createUniformBuffer(size_t size)
 	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
 	{
 		PersistanceUtils::createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uniformBuffer.buffers[i], uniformBuffer.allocations[i], VK_SHARING_MODE_CONCURRENT);
-		vmaMapMemory(core.m_vmaAllocator, uniformBuffer.allocations[i], &uniformBuffer.memorymaps[i]);
+		vmaMapMemory(core.getAllocator(), uniformBuffer.allocations[i], &uniformBuffer.memorymaps[i]);
 	}
 
 	return uniformBuffer;
@@ -39,7 +39,7 @@ UniformBuffer PersistanceBackend::createUniformBuffer(size_t size)
  */
 void PersistanceBackend::updateUniformBuffers(UniformBuffer& buffer, const void* data, const size_t dataSize)
 {
-	memcpy(buffer.memorymaps[core.m_currentFrame], data, dataSize);
+	memcpy(buffer.memorymaps[core.getCurrentFrame()], data, dataSize);
 }
 
 
@@ -55,9 +55,8 @@ void PersistanceBackend::cleanUpUniformBuffers(UniformBuffer* buffers, const uin
 	{
 		for (uint32_t b = 0; b < buffers[i].buffers.size(); b++) 
 		{
-			vmaUnmapMemory(core.m_vmaAllocator, buffers[i].allocations[b]);
-			vmaDestroyBuffer(core.m_vmaAllocator, buffers[i].buffers[b], buffers[i].allocations[b]);
-		
+			vmaUnmapMemory(core.getAllocator(), buffers[i].allocations[b]);
+			vmaDestroyBuffer(core.getAllocator(), buffers[i].buffers[b], buffers[i].allocations[b]);
 		}
 		
 	}

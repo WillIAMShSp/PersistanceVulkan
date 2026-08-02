@@ -11,7 +11,6 @@
 #include "../Core/PersistanceVkCore.h"
 #include "./Shader.h"
 #include "../Settings/PipelineSettings.h"
-#include "../Structures/RenderPass.h"
 
 
 namespace PersistanceBackend 

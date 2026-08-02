@@ -32,7 +32,7 @@ std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSet(VkDescrip
 	info.descriptorSetCount = descriptorSetCount;
 	info.pNext = nullptr;
 
-	if (vkAllocateDescriptorSets(core.m_device, &info, descriptorSet.data()) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(core.getDevice(), &info, descriptorSet.data()) != VK_SUCCESS) {
 		BREAK(0);
 	}
 	return descriptorSet;
@@ -129,7 +129,7 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
 	{
 		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
-		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.m_swapchainFramebuffers.images.size();
+		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.getSwapchainFramebuffers()->images.size();
 		BREAK(0);
 	}
 
@@ -164,7 +164,7 @@ void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& desc
 			writeDescriptorSets[j].dstSet = descriptorSet[i];
 		}
 		
-		vkUpdateDescriptorSets(core.m_device, static_cast<uint32_t>(writeDescriptorCount), writeDescriptorSets, 0, nullptr);
+		vkUpdateDescriptorSets(core.getDevice(), static_cast<uint32_t>(writeDescriptorCount), writeDescriptorSets, 0, nullptr);
 		
 	}
 

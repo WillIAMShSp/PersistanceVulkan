@@ -18,8 +18,8 @@ Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkM
 	{
 		queuefamilyindices =
 		{
-			core.m_queueFamilyIndices.graphicsfamily,
-			core.m_queueFamilyIndices.transferfamily
+			core.getQueueFamilyIndices()->graphicsfamily,
+			core.getQueueFamilyIndices()->transferfamily
 
 		};
 
@@ -36,7 +36,7 @@ Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkM
 		VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 
-	if (vmaCreateBuffer(core.m_vmaAllocator, &buffercreateinfo, &allocationcreateinfo, &buffer.buffer, &buffer.allocation, nullptr))
+	if (vmaCreateBuffer(core.getAllocator(), &buffercreateinfo, &allocationcreateinfo, &buffer.buffer, &buffer.allocation, nullptr))
 	{
 		std::cout << "Failed to create buffer";
 		BREAK(0);

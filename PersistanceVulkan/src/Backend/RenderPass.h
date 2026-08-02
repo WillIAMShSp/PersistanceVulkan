@@ -8,7 +8,7 @@
 
 #pragma once
 #include "../Core/PersistanceVkCore.h"
-#include "../Structures/RenderPass.h"
+#include "../Structures/RenderPassAttachment.h"
 
 namespace PersistanceBackend {
 	

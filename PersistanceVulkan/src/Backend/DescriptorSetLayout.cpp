@@ -50,7 +50,7 @@ VkDescriptorSetLayout PersistanceBackend::createDescriptorSetLayout(const VkDesc
 	info.bindingCount = bindingCount;
 	info.flags = 0;
 
-	if (vkCreateDescriptorSetLayout(core.m_device, &info, nullptr, &layout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(core.getDevice(), &info, nullptr, &layout) != VK_SUCCESS) {
 		BREAK(0);
 
 	};
@@ -70,7 +70,7 @@ void PersistanceBackend::cleanUpDescriptorSetLayouts(VkDescriptorSetLayout* desc
 {
 	for (int i = 0; i < descriptorSetLayoutCount; i++) 
 	{
-		vkDestroyDescriptorSetLayout(core.m_device, descriptorSetLayouts[i], nullptr);
+		vkDestroyDescriptorSetLayout(core.getDevice(), descriptorSetLayouts[i], nullptr);
 
 	}
 
