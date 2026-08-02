@@ -20,7 +20,7 @@ This code is all that is needed, and a little extra, to create a PersistanceVulk
 #include <filesystem>
 
 #ifndef RESOURCE_DIR
-#define RESOURCE_DIR ""
+#define RESOURCE_DIR "../../PersistanceVulkan/res"
 #endif
 
 struct Vertex
@@ -51,7 +51,7 @@ static auto starttime = std::chrono::high_resolution_clock::now();
 
     mvp.model = glm::mat4(1.0);
     mvp.view = glm::lookAt(glm::vec3(0.0f, 1.f, -3.0f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 1.0f, 0.0f));
-    mvp.projection = glm::perspective(45.f, ((float)core.m_swapchainExtent.width) / ((float)core.m_swapchainExtent.height), 0.1f, 100.f);
+    mvp.projection = glm::perspective(45.f, ((float)core.getSwapchainExtent().width) / ((float)core.getSwapchainExtent().height), 0.1f, 100.f);
 
     //mvp.projection[1][1] *= -1;
     buf = mvp;
@@ -100,7 +100,7 @@ int main() {
     core.createMainRenderSetup(false);
 
     //Create a render pass.
-    RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.m_swapchainImageFormat,
+    RenderPassAttachment attachment = PersistanceBackend::createRenderPassAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, core.getSwapchainFormat(),
         VK_SAMPLE_COUNT_1_BIT,
         VK_ATTACHMENT_LOAD_OP_CLEAR,
         VK_ATTACHMENT_STORE_OP_STORE,
@@ -136,7 +136,7 @@ int main() {
     vertexbufferlayout.push<glm::vec2>();//
     settings.createVertexInputState(vertexbufferlayout);
     settings.defineInputAssemblyState();
-    settings.createStaticViewPortAndScissors(0, 0, 0.f, 1.f, core.m_swapchainExtent, core.m_swapchainExtent, {0,0});
+    settings.createStaticViewPortAndScissors(0, 0, 0.f, 1.f, core.getSwapchainExtent(), core.getSwapchainExtent(), {0,0});
     settings.configureDepthStencilState(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS);
     settings.configureRasterizationStage();
     settings.configureMultisample();
@@ -197,20 +197,20 @@ int main() {
     //Create a depth texture.
     Texture depthTexture;
 
-    PersistanceUtils::createImage(core.m_swapchainExtent.width, core.m_swapchainExtent.height, PersistanceUtils::findDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthTexture.image, depthTexture.allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
+    PersistanceUtils::createImage(core.getSwapchainExtent().width, core.getSwapchainExtent().height, PersistanceUtils::findDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthTexture.image, depthTexture.allocation, VK_SHARING_MODE_CONCURRENT, VK_IMAGE_LAYOUT_UNDEFINED);
 
     depthTexture.imageview = PersistanceUtils::createImageView(depthTexture.image, PersistanceUtils::findDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
     //Create a framebuffer.
-    Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, screenwidth, screenheight, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
+    Framebuffer framebuffer = PersistanceBackend::createFramebuffer(renderpass, core.getScreenWidth(), core.getScreenHeight(), 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthTexture.imageview);
 
     //Create command buffers.
-    VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VkCommandBuffer commandBuffer = PersistanceBackend::allocateCommandBuffer(core.getGraphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VkCommandBuffer commandBuffers[PersistanceLib::MAXFRAMESINFLIGHT];
     for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
     {
-    	commandBuffers[i] = PersistanceBackend::allocateCommandBuffer(core.m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    	commandBuffers[i] = PersistanceBackend::allocateCommandBuffer(core.getGraphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     }
 
 #pragma region fullQuadTest
@@ -227,7 +227,7 @@ int main() {
     fullQuadVertexLayout.push<glm::vec2>();
     fullQuadPipeSettings.createVertexInputState(fullQuadVertexLayout);
     fullQuadPipeSettings.defineInputAssemblyState();
-    fullQuadPipeSettings.createStaticViewPortAndScissors(0, 0, 0.f, 1.f, core.m_swapchainExtent, core.m_swapchainExtent, { 0,0 });
+    fullQuadPipeSettings.createStaticViewPortAndScissors(0, 0, 0.f, 1.f, core.getSwapchainExtent(), core.getSwapchainExtent(), { 0,0 });
     fullQuadPipeSettings.configureRasterizationStage();
     fullQuadPipeSettings.configureMultisample();
     fullQuadPipeSettings.configureColorBlend();
@@ -241,7 +241,7 @@ int main() {
     fullQuadShader.createShaderStage(fullQuadFragmentShaderSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineLayout fullQuadGraphicsPipelineLayout = PersistanceBackend::createPipelineLayout(&fullQuadDescriptorSetLayout, 1, nullptr, 0);
-    VkPipeline fullQuadGraphicsPipeline = PersistanceBackend::createGraphicsPipeline(fullQuadGraphicsPipelineLayout, fullQuadShader, fullQuadPipeSettings, core.m_mainRenderPass); //uses the main renderpass for the creation fo resources.
+    VkPipeline fullQuadGraphicsPipeline = PersistanceBackend::createGraphicsPipeline(fullQuadGraphicsPipelineLayout, fullQuadShader, fullQuadPipeSettings, core.getMainRenderPass()); //uses the main renderpass for the creation fo resources.
 
     Buffer fullQuadVertexBuffer = PersistanceBackend::createVertexBuffer(quadVertices, sizeof(float), 20);
     Buffer fullQuadIndexBuffer = PersistanceBackend::createIndexBuffer(quadIndices, sizeof(uint32_t), 6);
@@ -278,7 +278,7 @@ int main() {
     		clearValues[0].color = { 0.0f,0.0f,0.0f,0.0f };
     		clearValues[1].depthStencil = { 1.f, 0 };
 
-    		PersistanceBackend::beginRenderPass(cb, renderpass, framebuffer, {0,0}, core.m_swapchainExtent, clearValues, 2, &i);
+    		PersistanceBackend::beginRenderPass(cb, renderpass, framebuffer, {0,0}, core.getSwapchainExtent(), clearValues, 2, &i);
 
     		VkDeviceSize offsets = 0;
 
@@ -327,13 +327,13 @@ int main() {
     	VkSubmitInfo submitInfo{};
     	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     	submitInfo.commandBufferCount = 1;
-    	submitInfo.pCommandBuffers =  &commandBuffers[core.m_currentFrame];
+    	submitInfo.pCommandBuffers =  &commandBuffers[core.getCurrentFrame()];
     	submitInfo.signalSemaphoreCount = 0;
     	submitInfo.waitSemaphoreCount = 0;
     	submitInfo.pSignalSemaphores = nullptr;
     	submitInfo.pWaitSemaphores = 0;
 
-    	vkQueueSubmit(core.m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    	vkQueueSubmit(core.getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
     	core.waitForDeviceIdle();
 
     	MVP();
@@ -355,7 +355,7 @@ int main() {
 
     	core.beginMainRenderPass(commandBuffer);
     	core.bindGraphicsPipeline(commandBuffer, fullQuadGraphicsPipeline);
-    	core.drawIndexed(commandBuffer, &fullQuadVertexBuffer, 1, &offsets, fullQuadIndexBuffer, fullQuadGraphicsPipeline, fullQuadGraphicsPipelineLayout, &fullQuadDescriptorSet[core.m_currentFrame], 1);
+    	core.drawIndexed(commandBuffer, &fullQuadVertexBuffer, 1, &offsets, fullQuadIndexBuffer, fullQuadGraphicsPipeline, fullQuadGraphicsPipelineLayout, &fullQuadDescriptorSet[core.getCurrentFrame()], 1);
     	PersistanceBackend::endRenderPass(commandBuffer);
 
 
@@ -390,6 +390,7 @@ int main() {
 
 
     core.finalize();
+
 
 }
 ```
