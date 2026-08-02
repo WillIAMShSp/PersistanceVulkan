@@ -91,7 +91,10 @@ int main() {
     std::cout << std::filesystem::current_path() << std::endl;
 
     //1. Initialize the framework.
-    core.init();
+
+    
+
+    core.init(800, 600);
     core.createMainRenderSetup(false);
 
     //Create a render pass.
