@@ -88,8 +88,12 @@ const std::vector<Vertex> TESTvertices = {
 {{-0.5f, 0.5f, 0.f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
+
 int main() {
     std::cout << std::filesystem::current_path() << std::endl;
+
+    GLFWwindow* window;
+    
 
     //1. Initialize the framework.
     VkPhysicalDeviceIndexTypeUint8Features uint8Features{};

@@ -129,6 +129,12 @@ public:
 		vkDeviceWaitIdle(m_device);
 	}
 
+	static void resizeWindowCallback(GLFWwindow* window, int width, int height)
+	{
+		auto app = reinterpret_cast<PersistanceVkCore*>(glfwGetWindowUserPointer(window));
+		app->m_windowResized = true;
+	}
+
 private:
 	void initWindow(const uint32_t screenWidth, const uint32_t screenHeight);
 	void initVulkan(const void* deviceFeatures);
@@ -184,14 +190,7 @@ private:
 
 	std::vector<const char*> getRequiredExtensions();
 
-	static void resizeWindowCallback(GLFWwindow* window, int width, int height)
-	{
-		auto app = reinterpret_cast<PersistanceVkCore*>(glfwGetWindowUserPointer(window));
-		app->m_windowResized = true;
-
-
-	}
-
+	
 	bool deviceExtensionSupport(VkPhysicalDevice& physicaldevice);
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice& physicaldevice);
 	bool rateDevice(VkPhysicalDevice& physicaldevice, uint32_t& scorehandle, bool& presentfamily, VkPhysicalDeviceProperties* propertieshandle = nullptr);
