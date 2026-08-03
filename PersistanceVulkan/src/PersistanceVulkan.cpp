@@ -11,6 +11,7 @@
 #include "Backend/DescriptorSet.h"
 #include "Backend/Framebuffer.h"
 #include "Backend/CommandBuffer.h"
+#include "Core/DeviceFeatures.h"
 
 #include <filesystem>
 
@@ -91,10 +92,13 @@ int main() {
     std::cout << std::filesystem::current_path() << std::endl;
 
     //1. Initialize the framework.
+    VkPhysicalDeviceIndexTypeUint8Features uint8Features{};
+    uint8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES;
+    uint8Features.indexTypeUint8 = VK_TRUE;
 
-    
+    PersistanceUtils::DeviceFeatures<VkPhysicalDeviceIndexTypeUint8Features> features(uint8Features);
 
-    core.init(800, 600);
+    core.init(800, 600, features.getFeatures());
     core.createMainRenderSetup(false);
 
     //Create a render pass.

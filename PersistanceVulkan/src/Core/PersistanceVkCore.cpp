@@ -285,6 +285,8 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	vk1_4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
 	vk1_4Features.indexTypeUint8 = VK_TRUE;
 
+	
+
 
 	
 	//With this struct we can set which device features we want to use. 
