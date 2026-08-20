@@ -5,6 +5,7 @@
  * @author Luis Camilo Alvarez Carrau
  * @date   6-30-2026
  *********************************************************************/
+#pragma once
 #include "../Structures/Framebuffer.h"
 #include "../PersistanceLib.h"
 
