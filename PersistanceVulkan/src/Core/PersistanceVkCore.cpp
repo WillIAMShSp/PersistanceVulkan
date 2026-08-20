@@ -40,6 +40,16 @@ const VmaAllocator &PersistanceVkCore::getAllocator()
 }
 
 /**
+ * @brief Adds an extension to the Vulkan Logical Device
+ * 
+ * @param extensionName 
+ */
+void PersistanceVkCore::addExtension(const char *extensionName)
+{
+	m_deviceextensions.push_back(extensionName);
+}
+
+/**
  * @brief Initializes a GLFW window
  *
  */
@@ -279,30 +289,9 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	}
 
 
-	VkPhysicalDeviceFeatures devicefeatures{};
+	VkPhysicalDeviceFeatures phyisicalDeviceFeatures{};
+	phyisicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	
-	VkPhysicalDeviceVulkan14Features vk1_4Features{};
-	vk1_4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
-	vk1_4Features.indexTypeUint8 = VK_TRUE;
-
-	
-
-
-	
-	//With this struct we can set which device features we want to use. 
-	//Perhaps it would be smart to be able to change that through 
-	//some level of abstraction so the user can simply and cleanly set whichever 
-	// device features they would like to use.
-
-	devicefeatures.samplerAnisotropy = VK_TRUE;
-	//in this case I'm only using this one ^ 
-
-	//We should add a check that allows or doesnt allow device features depending on what the hardware is capable of.
-	//Since this is designed to make games, however, it is safe to asume that most, if not all, devices running this
-	//program should at LEAST be able to use samplerAnisotropy. Still wouldnt be bad to include checks. 
-
-	
-
 	VkDeviceCreateInfo devicecreateinfo{};
 
 	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -312,7 +301,7 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	devicecreateinfo.pQueueCreateInfos = queuecreateinfos.data();
 
 
-	devicecreateinfo.pEnabledFeatures = &devicefeatures;
+	devicecreateinfo.pEnabledFeatures = &phyisicalDeviceFeatures;
 	
 
 	devicecreateinfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceextensions.size());
@@ -1131,6 +1120,8 @@ std::vector<const char*> PersistanceVkCore::getRequiredExtensions()
 	}
 
 	requiredextensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+	
 
 
 	if (enablevalidationlayers)

@@ -80,8 +80,6 @@ public:
 	GLFWwindow* getWindow();
 	void setWindow(GLFWwindow* window);
 
-	bool windowResized();
-
 	const VkInstance& getInstance();
 
 	const VkPhysicalDevice& getPhysicalDevice();
@@ -111,6 +109,10 @@ public:
 	uint32_t getScreenHeight();
 
 	const VmaAllocator& getAllocator();
+
+	void addExtension(const char* extensionName);
+
+	bool windowResized();
 
 	void init(uint32_t width = 800, uint32_t height = 600, const void* deviceFeatures = nullptr) {
 		initWindow(width, height);
@@ -203,10 +205,9 @@ private:
 
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfacecapabilities);
 
-	const std::vector<const char*> m_deviceextensions
+	std::vector<const char*> m_deviceextensions
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		"VK_KHR_index_type_uint8"
 	};
 
 	uint32_t m_screenWidth = 800;

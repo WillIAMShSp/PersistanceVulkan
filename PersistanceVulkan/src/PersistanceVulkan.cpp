@@ -37,7 +37,7 @@ alignas(16) glm::mat4 projection;
 ModelViewProjectionBuffer buf;
 void MVP()
 {
-static auto starttime = std::chrono::high_resolution_clock::now();
+    static auto starttime = std::chrono::high_resolution_clock::now();
 
     auto currenttime = std::chrono::high_resolution_clock::now();
 
@@ -92,15 +92,15 @@ const std::vector<Vertex> TESTvertices = {
 int main() {
     std::cout << std::filesystem::current_path() << std::endl;
 
-    GLFWwindow* window;
-    
+    //Initialize the framework.
 
-    //1. Initialize the framework.
+    //Optional device features and extensions
     VkPhysicalDeviceIndexTypeUint8Features uint8Features{};
     uint8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES;
     uint8Features.indexTypeUint8 = VK_TRUE;
 
     PersistanceUtils::DeviceFeatures<VkPhysicalDeviceIndexTypeUint8Features> features(uint8Features);
+    core.addExtension(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
     core.init(800, 600, features.getFeatures());
     core.createMainRenderSetup(false);
