@@ -45,12 +45,12 @@ const VmaAllocator &PersistanceVkCore::getAllocator()
  */
 void PersistanceVkCore::initWindow(const uint32_t screenWidth, const uint32_t screenHeight)
 {
+	if (m_window == nullptr)
+	{
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	if (m_window == nullptr)
-	{
 		m_window = glfwCreateWindow(screenWidth, screenHeight, "Vulkan window", nullptr, nullptr);
 		
 		std::cout << "Initialized Window \n";
