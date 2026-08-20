@@ -799,12 +799,10 @@ void PersistanceVkCore::createMainRenderSetup(bool doDepthTesting)
 void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer &commandBuffer, const uint32_t *imageIndex)
 {
 	VkOffset2D offset{0,0};
-	VkClearValue colorClearValue{};
-	colorClearValue.color = { 0,0,0,1 };
 	
 	VkClearValue clearValues[2];
 
-	clearValues[0].color = { 0,0,0,1 };
+	clearValues[0].color = { 0.f, 0.f, 0.f, 1.f };
 	clearValues[1].depthStencil = { 1.0f, 0};
 	
 	

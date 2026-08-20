@@ -343,12 +343,6 @@ int main() {
     	PersistanceBackend::beginCommandBuffer(commandBuffer, 0);
 
 
-    	VkClearValue clearValues[2];
-    	clearValues[0].color = { 0.0f,0.0f,0.0f,0.0f };
-    	clearValues[1].depthStencil = { 1.f, 0 };
-
-
-
     	VkDeviceSize offsets = 0;
 
 
