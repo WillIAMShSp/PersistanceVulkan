@@ -31,13 +31,13 @@ shell32
 ############################
 # Uncomment this to build test application.
 #
-add_executable(PersistanceExecutableTest)
+#add_executable(PersistanceExecutableTest)
 
-target_sources( PersistanceExecutableTest
-PRIVATE
-	"./PersistanceVulkan/src/PersistanceVulkan.cpp"
-)
-target_link_libraries(PersistanceExecutableTest PRIVATE PersistanceLibrary) 
+#target_sources( PersistanceExecutableTest
+#PRIVATE
+#	"./PersistanceVulkan/src/PersistanceVulkan.cpp"
+#)
+#target_link_libraries(PersistanceExecutableTest PRIVATE PersistanceLibrary) 
 #############################
 
 
