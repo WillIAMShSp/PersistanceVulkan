@@ -44,3 +44,5 @@ Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkM
 	}
 	return buffer;
 }
+
+
