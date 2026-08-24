@@ -11,18 +11,15 @@
 #include "../Core/PersistanceVkCore.h"
 #include "./Shader.h"
 #include "../Settings/PipelineSettings.h"
+#include "./Pipeline.h"
 
 
 namespace PersistanceBackend 
 {
 
-	VkPipelineLayout createPipelineLayout(const VkDescriptorSetLayout* layouts, const uint32_t layoutCount, const VkPushConstantRange* pushConstantRanges, const uint32_t pushConstangRangeCount);
-
 	VkPipeline createGraphicsPipeline(VkPipelineLayout& layout, Shader& shader, PipelineSettings& settings, VkRenderPass& renderPass);
 
 	void cleanUpGraphicsPipeline(VkPipeline* pipelines, const uint32_t pipelineCount);
-
-	void cleanUpPipelineLayouts(VkPipelineLayout* layouts, const uint32_t layoutCount);
 
 }
 
