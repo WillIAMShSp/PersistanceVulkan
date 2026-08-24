@@ -5,8 +5,8 @@
 namespace PersistanceBackend 
 {
 
-
-    void DispatchComputeShader();
+    VkPipeline createComputeShader();
+    void dispatchComputeShader(VkCommandBuffer& commandBuffer, size_t x, size_t y, size_t z);
 
 
 }
