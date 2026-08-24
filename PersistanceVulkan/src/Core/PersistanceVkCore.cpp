@@ -262,7 +262,8 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	{
 		m_queueFamilyIndices.graphicsfamily,
 		m_queueFamilyIndices.presentfamily,
-		m_queueFamilyIndices.transferfamily
+		m_queueFamilyIndices.transferfamily,
+		m_queueFamilyIndices.computefamily
 
 	};
 	queuecreateinfos.reserve(uniquequeuefamilies.size());
@@ -328,6 +329,7 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsfamily, 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentfamily, 0, &m_presentQueue);
 	vkGetDeviceQueue(m_device, m_queueFamilyIndices.transferfamily, 0, &m_transferQueue);
+	vkGetDeviceQueue(m_device, m_queueFamilyIndices.computefamily, 0, &m_computeQueue);
 
 }
 

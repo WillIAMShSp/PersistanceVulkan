@@ -221,6 +221,7 @@ private:
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
 	VkQueue m_transferQueue;
+	VkQueue m_computeQueue;
 	VkSurfaceKHR m_surface;
 	VkSwapchainKHR m_swapchain;
 	VkFormat m_swapchainImageFormat;
