@@ -143,7 +143,7 @@ public:
 private:
 	std::vector<VkVertexInputAttributeDescription> m_attributeDescription{};
 	VkVertexInputBindingDescription m_bindingDescription{};
-	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo{};
+	VkPipelineVertexInputStateCreateInfo m_vertexInputStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
 	VkPipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCreateInfo{};
 	VkViewport m_staticViewport{};
 	VkRect2D m_staticScissors{};

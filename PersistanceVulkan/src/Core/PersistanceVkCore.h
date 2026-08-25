@@ -176,7 +176,7 @@ public:
 	void waitForCurrentFence();
 	VkResult acquireNextSwapchainImage();
 	void reRecordCommandBuffersCallBack(std::function<void()>* functions, const uint32_t count);
-	void resetFences();
+
 
 	void recreateSwapchain();
 	
@@ -236,7 +236,6 @@ private:
 	std::vector<VkSemaphore> s_imageAvailable;
 	std::vector<VkSemaphore> s_renderFinished;
 	std::vector<VkFence> f_inFlightFence;
-	std::vector<VkFence> f_imagesInFlight;
 	bool m_windowResized = false;
 
 	uint32_t m_currentFrame = 0;

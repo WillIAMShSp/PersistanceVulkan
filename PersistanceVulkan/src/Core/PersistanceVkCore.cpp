@@ -513,7 +513,7 @@ void PersistanceVkCore::createSyncObjects()
 	s_imageAvailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	s_renderFinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	f_inFlightFence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	f_imagesInFlight.resize(m_swapchainFramebuffers.images.size(), VK_NULL_HANDLE);
+	
 
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
@@ -834,6 +834,7 @@ void PersistanceVkCore:: startDrawing()
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		recreateSwapchain();
+		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
@@ -841,11 +842,7 @@ void PersistanceVkCore:: startDrawing()
 	}
 
 	
-	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
-	{
-		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
-	}
-	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
+
 	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 
 }
@@ -880,21 +877,6 @@ void PersistanceVkCore::reRecordCommandBuffersCallBack(std::function<void()> *fu
 	for (uint32_t i = 0; i < count; i++) {
 		functions[i]();
 	}
-}
-
-/**
- * @brief Waits for the wanted image to be unused before setting the current fence in flight
- * to the images in flight fence for the acquired swapchain image and resets the fence in flight.
- * 
- */
-void PersistanceVkCore::resetFences()
-{
-	if (f_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
-	{
-		vkWaitForFences(m_device, 1, &f_imagesInFlight[m_imageIndex], true, UINT64_MAX);
-	}
-	f_imagesInFlight[m_imageIndex] = f_inFlightFence[m_currentFrame];
-	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 }
 
 /**
@@ -949,8 +931,8 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_windowResized)
 	{
-		recreateSwapchain();
 		m_windowResized = false;
+		recreateSwapchain();
 
 	}
 	else if (result != VK_SUCCESS)
@@ -960,8 +942,6 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 	}
 
 	m_currentFrame = (m_currentFrame + 1) % PersistanceLib::MAXFRAMESINFLIGHT;
-	m_currentlyDrawing = false;
-
 }
 
 /**
