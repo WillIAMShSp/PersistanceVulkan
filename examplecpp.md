@@ -16,6 +16,7 @@ This code is all that is needed, and a little extra, to create a PersistanceVulk
 #include "Backend/DescriptorSet.h"
 #include "Backend/Framebuffer.h"
 #include "Backend/CommandBuffer.h"
+#include "Core/DeviceFeatures.h"
 
 #include <filesystem>
 
