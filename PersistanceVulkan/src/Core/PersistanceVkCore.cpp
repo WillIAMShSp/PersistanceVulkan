@@ -511,20 +511,25 @@ void PersistanceVkCore::createSyncObjects()
 	fencecreateinfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	s_imageAvailable.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-	s_renderFinished.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+	s_renderFinished.resize(m_swapchainFramebuffers.images.size());
 	f_inFlightFence.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 	
 
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
-		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageAvailable[i]) != VK_SUCCESS 
-			|| vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_renderFinished[i]) != VK_SUCCESS 
+		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &s_imageAvailable[i]) != VK_SUCCESS  
 			|| vkCreateFence(m_device, &fencecreateinfo, nullptr, &f_inFlightFence[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Semaphores or fences could not be initialized!");
 		}
 
+	}
+	for (auto& renderFinished : s_renderFinished) {
+		if (vkCreateSemaphore(m_device, &semaphorecreateinfo, nullptr, &renderFinished) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("Semaphores or fences could not be initialized!");
+		}
 	}
 }
 
@@ -732,8 +737,12 @@ void PersistanceVkCore::cleanUpSyncObjects()
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		vkDestroySemaphore(m_device, s_imageAvailable[i], nullptr);
-		vkDestroySemaphore(m_device, s_renderFinished[i], nullptr);
 		vkDestroyFence(m_device, f_inFlightFence[i], nullptr);
+		
+	}
+	for (auto& semaphore : s_renderFinished) 
+	{
+		vkDestroySemaphore(m_device, semaphore, nullptr);
 
 	}
 }
@@ -889,7 +898,7 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 {
 
 	VkSemaphore waitsemaphores[] = { s_imageAvailable[m_currentFrame] };
-	VkSemaphore signalsemaphores[] = { s_renderFinished[m_currentFrame] };
+	VkSemaphore signalsemaphores[] = { s_renderFinished[m_imageIndex] };
 	VkPipelineStageFlags waitstages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 	VkSubmitInfo submitinfo{};
