@@ -156,7 +156,7 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
  */
 void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount)
 {
-	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
+	for (int i = 0; i < static_cast<int>(descriptorSet.size()); i++) 
 	{
 		
 		for (int j = 0; j < writeDescriptorCount; j++) 
