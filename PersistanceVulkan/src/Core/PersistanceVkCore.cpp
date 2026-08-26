@@ -235,14 +235,14 @@ void PersistanceVkCore::selectPhysicalDevice()
 		}
 
 
-		if (m_physicalDevice == nullptr)
-		{
-			throw std::runtime_error("Failed to find GPU");
-
-		}
+		
+	}
+	
+	if (m_physicalDevice == nullptr)
+	{
+		throw std::runtime_error("Failed to find GPU");
 
 	}
-
 
 
 
