@@ -98,7 +98,7 @@ std::vector<VkDescriptorBufferInfo> PersistanceBackend::createDescriptorBufferIn
 	if (bufferCount != PersistanceLib::MAXFRAMESINFLIGHT) 
 	{
 		std::cout<< "Buffers array is of the incorrect size!\nExpected: " + std::to_string(PersistanceLib::MAXFRAMESINFLIGHT) + " Got: "+  std::to_string(bufferCount) + "\n";
-		return;
+		BREAK;
 	}
 
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
