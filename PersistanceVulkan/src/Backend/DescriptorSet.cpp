@@ -65,29 +65,58 @@ VkWriteDescriptorSet PersistanceBackend::createWriteDescriptorSet(uint32_t descr
 }
 
 /**
- * @brief Creates a vector of descriptor buffer info objects utilized in a write descriptor set object.
+ * @brief Creates a descriptor buffer info object utilized in a write descriptor set object.
  * 
- * @param buffers An array of buffers included in the buffer information.
+ * @param buffer A buffer included in the buffer information.
+ * @param offset An offset since the beginning of the array from the first element desired in the buffer.
+ * @param range Is the size in bytes that is used for this descriptor update, or VK_WHOLE_SIZE to use the range from offset to the end of the buffer.
+ * @return A descriptor buffer info struct.
+ */
+VkDescriptorBufferInfo PersistanceBackend::createDescriptorBufferInfo(const VkBuffer& buffer, uint32_t offset, size_t range)
+{
+	VkDescriptorBufferInfo bufferInfo;
+	
+	bufferInfo.buffer = buffer;
+	bufferInfo.offset = offset;
+	bufferInfo.range = range;
+
+	return bufferInfo;
+
+}
+
+/**
+ * @brief Creates a vector of descriptor buffer info objects per frame utilized in a write descriptor set object.
+ * 
+ * @param bufferArray An array of buffers included in the buffer information.
  * @param bufferCount The size of the array of buffers.
  * @param offset An offset since the beginning of the array from the first element desired in the buffers.
  * @param range Is the size in bytes that is used for this descriptor update, or VK_WHOLE_SIZE to use the range from offset to the end of the buffer.
  * @return A descriptor buffer info vector.
  */
-std::vector<VkDescriptorBufferInfo> PersistanceBackend::createDescriptorBufferInfo(const VkBuffer* buffers, const uint32_t bufferCount, uint32_t offset, size_t range)
+std::vector<VkDescriptorBufferInfo> PersistanceBackend::createDescriptorBufferInfoPerFrame(const VkBuffer* bufferArray, size_t bufferCount, uint32_t offset, size_t range)
 {
+	if (bufferCount != PersistanceLib::MAXFRAMESINFLIGHT) 
+	{
+		std::cout<< "Buffers array is of the incorrect size!\nExpected: " + std::to_string(PersistanceLib::MAXFRAMESINFLIGHT) + " Got: "+  std::to_string(bufferCount) + "\n";
+		return;
+	}
+
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	bufferInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
+
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
-		bufferInfos[i].buffer = buffers[i];
+
+		
+		bufferInfos[i].buffer = bufferArray[i];
 		bufferInfos[i].offset = offset;
 		bufferInfos[i].range = range;
+		
 	}
 
 
 	return bufferInfos;
-
 }
 
 /**
