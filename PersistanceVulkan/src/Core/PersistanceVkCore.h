@@ -91,6 +91,7 @@ public:
 	VkQueue& getGraphicsQueue();
 	VkQueue& getPresentQueue();
 	VkQueue& getTransferQueue();
+	VkQueue& getComputeQueue();
 
 	const VkSwapchainKHR& getSwapchain();
 	const VkFormat getSwapchainFormat();
@@ -99,8 +100,10 @@ public:
 	Texture* getSwapchainDepthBuffer();
 	bool swapchainIsDepthTesting();
 	VkExtent2D getSwapchainExtent();
+
 	VkCommandPool& getGraphicsCommandPool();
 	VkCommandPool& getTransferCommandPool();
+	VkCommandPool& getComputeCommandPool();
 
 	uint32_t getCurrentFrame();
 	uint32_t getImageIndex();
@@ -232,6 +235,7 @@ private:
 	VkRenderPass m_mainRenderPass;
 	VkCommandPool m_graphicsCommandPool;
 	VkCommandPool m_transferCommandPool;
+	VkCommandPool m_computeCommandPool;
 
 	std::vector<VkSemaphore> s_imageAvailable;
 	std::vector<VkSemaphore> s_renderFinished;

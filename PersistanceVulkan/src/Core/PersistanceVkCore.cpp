@@ -494,6 +494,19 @@ void PersistanceVkCore::createCommandPools()
 
 	}
 
+	if (indices.computefamily != -1) 
+	{
+		VkCommandPoolCreateInfo computepoolinfo{};
+		computepoolinfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		computepoolinfo.queueFamilyIndex = indices.computefamily;
+		computepoolinfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+		if (vkCreateCommandPool(m_device, &computepoolinfo, nullptr, &m_computeCommandPool) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create the compute command pool");
+		}
+
+	}
+
 }
 
 /**
@@ -1506,6 +1519,11 @@ VkQueue &PersistanceVkCore::getTransferQueue()
     return m_transferQueue;
 }
 
+VkQueue &PersistanceVkCore::getComputeQueue()
+{
+	return m_computeQueue;
+}
+
 const VkSwapchainKHR &PersistanceVkCore::getSwapchain()
 {
     return m_swapchain;
@@ -1549,6 +1567,11 @@ VkCommandPool &PersistanceVkCore::getGraphicsCommandPool()
 VkCommandPool &PersistanceVkCore::getTransferCommandPool()
 {
     return m_transferCommandPool;
+}
+
+VkCommandPool &PersistanceVkCore::getComputeCommandPool()
+{
+	return m_computeCommandPool;
 }
 
 uint32_t PersistanceVkCore::getCurrentFrame()
