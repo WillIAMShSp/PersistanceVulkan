@@ -9,6 +9,7 @@
 #include "DescriptorSet.h"
 #include "../Core/PersistanceVkCore.h"
 
+
 /**
  * @brief Allocates a vector of descriptor sets of size equal to the descriptorSetCount parameter from a descriptor pool.
  * 
@@ -63,6 +64,56 @@ VkWriteDescriptorSet PersistanceBackend::createWriteDescriptorSet(uint32_t descr
 
 	return writeDescriptorSet;
 }
+
+/**
+ * @brief Creates a write descriptor set per frame.
+ * 
+ * @param descriptorCount The amount of descriptors in the write descriptor set.
+ * @param descriptorType The type of the descriptor.
+ * @param binding The descriptor binding.
+ * @param bufferInfo A provided descriptor buffer informaiton object (i.e. A uniform buffer).
+ * @param imageInfo A provided descriptor image information object (i.e. information about an image view and its sampler for textures).
+ * @param dstArrayElement The initial array element.
+ * @return The configured write descriptor set.
+ */
+std::array<VkWriteDescriptorSet, PersistanceLib::MAXFRAMESINFLIGHT> PersistanceBackend::createWriteDescriptorSetsPerFrame(const uint32_t descriptorCount, const VkDescriptorType descriptorType, uint32_t binding, PersistanceUtils::ArrayView<VkDescriptorBufferInfo> bufferInfo, PersistanceUtils::ArrayView<VkDescriptorImageInfo> imageInfo, uint32_t dstArrayElement)
+{
+
+	if (descriptorCount == 0) {
+		std::cout<< "Error: descriptorCount cannot be 0\n";
+		BREAK;
+	}
+
+    std::array<VkWriteDescriptorSet, PersistanceLib::MAXFRAMESINFLIGHT> writeDescriptorSets{};
+	
+	if (bufferInfo.data() != nullptr && !bufferInfo.empty() && (bufferInfo.size() % descriptorCount != 0  || bufferInfo.size() / descriptorCount > PersistanceLib::MAXFRAMESINFLIGHT)) {
+		std::cout<< "Error: Invalid number of descriptorCount in relation to bufferInfo structs!\n";
+		BREAK;
+	}
+	if (imageInfo.data() != nullptr && !imageInfo.empty() && (imageInfo.size() % descriptorCount != 0 || imageInfo.size() / descriptorCount > PersistanceLib::MAXFRAMESINFLIGHT)) {
+		std::cout<< "Error: Invalid number of descriptorCount in relation to imageInfo structs!\n";
+		BREAK;
+	}
+
+	uint32_t infoIndex = 0;
+
+	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) {
+
+		writeDescriptorSets[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[i].dstBinding = binding;
+		writeDescriptorSets[i].descriptorType = descriptorType;
+		writeDescriptorSets[i].descriptorCount = descriptorCount;
+		writeDescriptorSets[i].dstArrayElement = dstArrayElement;
+		
+		writeDescriptorSets[i].pBufferInfo = bufferInfo.subView(infoIndex, descriptorCount).data();
+		writeDescriptorSets[i].pImageInfo = imageInfo.subView(infoIndex, descriptorCount).data();
+		infoIndex += descriptorCount;
+	}
+	
+
+	return writeDescriptorSets;
+}
+
 
 /**
  * @brief Creates a descriptor buffer info object utilized in a write descriptor set object.
@@ -159,7 +210,7 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 	{
 		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
 		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.getSwapchainFramebuffers()->images.size();
-		BREAK(0);
+		BREAK;
 	}
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
@@ -200,5 +251,27 @@ void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& desc
 }
 
 
+/**
+ * @brief Updates a descriptor sets in every frame with the write descriptor set object.
+ * 
+ * @param descriptorSet The updated descriptor sets.
+ * @param writeDescriptorSets The write descriptor sets used.
+
+ */
+void PersistanceBackend::updateDescriptorSetPerFrame(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
+{
+	if (writeDescriptorSets.data() == nullptr) {
+		std::cout<< "Write descriptor set viewer must not be empty";
+		BREAK;
+	}
+
+	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
+	{
+		writeDescriptorSets[i].dstSet = descriptorSet[i];
+	}
+	
+	vkUpdateDescriptorSets(core.getDevice(), PersistanceLib::MAXFRAMESINFLIGHT, writeDescriptorSets.data(), 0, nullptr);
+
+}
 
 

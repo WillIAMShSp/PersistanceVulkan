@@ -9,7 +9,7 @@ class PersistanceLib
 {
 public:
 
-	static const uint32_t MAXFRAMESINFLIGHT = 2;
+	static constexpr uint32_t MAXFRAMESINFLIGHT = 2;
 
 
 

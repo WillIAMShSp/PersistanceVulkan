@@ -767,6 +767,7 @@ void PersistanceVkCore::cleanUpCommandPools()
 {
 	vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 	vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
+	vkDestroyCommandPool(m_device, m_computeCommandPool, nullptr);
 
 }
 
