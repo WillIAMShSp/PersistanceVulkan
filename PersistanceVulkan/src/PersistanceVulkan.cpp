@@ -191,14 +191,14 @@ int main() {
 
     //Create a descriptor set.
     VkWriteDescriptorSet writeDescriptors[2];
-    std::vector<VkDescriptorSet> descriptorSet = PersistanceBackend::allocateDescriptorSet(descriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, layout);
+    std::vector<VkDescriptorSet> descriptorSet = PersistanceBackend::allocateDescriptorSetArray(descriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, layout);
     std::vector<VkDescriptorBufferInfo> uniformBufferinfo = PersistanceBackend::createDescriptorBufferInfoPerFrame(uniformBuffer.buffers.data(), static_cast<uint32_t>(uniformBuffer.buffers.size()), 0, sizeof(ModelViewProjectionBuffer));
     writeDescriptors[0] = PersistanceBackend::createWriteDescriptorSet(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, uniformBufferinfo.data(), nullptr, 0);
     std::vector<VkDescriptorImageInfo> imageInfo = PersistanceBackend::createDescriptorImageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texture.imageview, sampler);
     writeDescriptors[1] = PersistanceBackend::createWriteDescriptorSet(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, nullptr, imageInfo.data(), 0);
 
 
-    PersistanceBackend::updateDescriptorSets(descriptorSet, writeDescriptors, 2);
+    PersistanceBackend::updateDescriptorSetsPerFrame(descriptorSet, writeDescriptors, 2);
 
     //Create a depth texture.
     Texture depthTexture;
@@ -259,12 +259,12 @@ int main() {
 
     VkDescriptorPool fullQuadDescriptorPool = PersistanceBackend::createDescriptorPool(fullQuadDesPoolList);
 
-    std::vector<VkDescriptorSet> fullQuadDescriptorSet = PersistanceBackend::allocateDescriptorSet(fullQuadDescriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, fullQuadDescriptorSetLayout);
-    std::vector<VkDescriptorImageInfo> fullQuadImageInfo = PersistanceBackend::createDescriptorImageInfoPerFrame(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, framebuffer.imageviews, sampler);
+    std::vector<VkDescriptorSet> fullQuadDescriptorSet = PersistanceBackend::allocateDescriptorSetArray(fullQuadDescriptorPool, PersistanceLib::MAXFRAMESINFLIGHT, fullQuadDescriptorSetLayout);
+    std::vector<VkDescriptorImageInfo> fullQuadImageInfo = PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, framebuffer.imageviews, sampler);
 
     VkWriteDescriptorSet fullQuadSamplerWriteDescriptorSet = PersistanceBackend::createWriteDescriptorSet(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, nullptr, fullQuadImageInfo.data(), 0);
 
-    PersistanceBackend::updateDescriptorSets(fullQuadDescriptorSet, &fullQuadSamplerWriteDescriptorSet, 1);
+    PersistanceBackend::updateDescriptorSetsPerFrame(fullQuadDescriptorSet, &fullQuadSamplerWriteDescriptorSet, 1);
 
     //No depth texture necessary for the full screen quad.
 

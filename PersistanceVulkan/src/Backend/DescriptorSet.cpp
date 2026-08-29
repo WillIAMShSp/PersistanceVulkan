@@ -18,7 +18,7 @@
  * @param layout The descriptor set layout for these descriptorSets.
  * @return A vector of descriptor sets.
  */
-std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSet(VkDescriptorPool& descriptorPool, uint32_t descriptorSetCount, VkDescriptorSetLayout& layout)
+std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSetArray(VkDescriptorPool& descriptorPool, uint32_t descriptorSetCount, VkDescriptorSetLayout& layout)
 {
 	std::vector<VkDescriptorSet> descriptorSet;
 	descriptorSet.resize(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -178,18 +178,16 @@ std::vector<VkDescriptorBufferInfo> PersistanceBackend::createDescriptorBufferIn
  * @param sampler The provided sampler for the image view.
  * @return A descriptor image info vector.
  */
-std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler)
+VkDescriptorImageInfo PersistanceBackend::createDescriptorImageInfo(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler)
 {
-	std::vector<VkDescriptorImageInfo> imageInfos;
-	imageInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
-
-	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
-	{
-		imageInfos[i].imageLayout = imageLayout;
-		imageInfos[i].imageView = imageView;
-		imageInfos[i].sampler = sampler;
+	VkDescriptorImageInfo imageInfos;
+	
+	
+	imageInfos.imageLayout = imageLayout;
+	imageInfos.imageView = imageView;
+	imageInfos.sampler = sampler;
 		
-	}
+	
 
 	return imageInfos;
 }
@@ -201,10 +199,10 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
  * 
  * @param imageLayout The layout of the provided images in the image view.
  * @param imageViews The imageview objects of the provided image.
- * @param sampler
+ * @param sampler The used sampler for all of the image views.
  * @return 
  */
-std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler)
+std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler)
 {
 	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
 	{
@@ -228,13 +226,37 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 }
 
 /**
- * @brief Updates the descriptor sets with the write descriptor set objects.
+ * @brief Updates a singular descriptor set with the write descriptor set objects.
  * 
+ * @param descriptorSet The updated descriptor set.
+ * @param writeDescriptorSets The write descriptor sets.
+ * @param writeDescriptorCount The amount of write descriptor sets.
+ */
+void PersistanceBackend::updateDescriptorSet(VkDescriptorSet &descriptorSet, VkWriteDescriptorSet *writeDescriptorSets, const uint32_t writeDescriptorCount)
+{
+	if (writeDescriptorSets == nullptr)
+	{ 
+		std::cout<<"Error: WriteDescriptorSets array cannot be nullptr!";
+		BREAK;
+	}
+
+	for (uint32_t i = 0; i < writeDescriptorCount; i++) 
+	{
+		writeDescriptorSets[i].dstSet = descriptorSet;
+	}
+
+	vkUpdateDescriptorSets(core.getDevice(), writeDescriptorCount, writeDescriptorSets, 0, nullptr);
+
+}
+
+/**
+ * @brief Updates the descriptor sets with the write descriptor set objects.
+ *
  * @param descriptorSet The updated descriptor sets.
  * @param writeDescriptorSets The write descriptor sets used.
  * @param writeDescriptorCount The amount of write descriptor sets.
  */
-void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount)
+void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount)
 {
 	for (int i = 0; i < static_cast<int>(descriptorSet.size()); i++) 
 	{
@@ -258,7 +280,7 @@ void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& desc
  * @param writeDescriptorSets The write descriptor sets used.
 
  */
-void PersistanceBackend::updateDescriptorSetPerFrame(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
+void PersistanceBackend::updateDescriptorSetPerFrameWithArray(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
 {
 	if (writeDescriptorSets.data() == nullptr) {
 		std::cout<< "Write descriptor set viewer must not be empty";
