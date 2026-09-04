@@ -10,6 +10,7 @@
 #include "../Core/PersistanceVkCore.h"
 #include "PersistanceLib.h"
 #include "Utility.h"
+#include "vulkan/vulkan_core.h"
 
 
 /**
@@ -36,7 +37,7 @@ std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSetArray(VkDe
 	info.pNext = nullptr;
 
 	if (vkAllocateDescriptorSets(core.getDevice(), &info, descriptorSet.data()) != VK_SUCCESS) {
-		BREAK(0);
+		BREAK;
 	}
 	return descriptorSet;
 }
@@ -203,11 +204,7 @@ VkDescriptorImageInfo PersistanceBackend::createDescriptorImageInfo(const VkImag
  * @param sampler The used sampler for all of the image views.
  * @return 
  */
-<<<<<<< HEAD
-std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler)
-=======
 std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler)
->>>>>>> Descriptor-Set-Features-Added
 {
 	std::vector<VkDescriptorImageInfo> imageInfos;
 	imageInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -247,28 +244,8 @@ void PersistanceBackend::updateDescriptorSet(VkDescriptorSet &descriptorSet, VkW
 
 }
 
-/**
- * @brief Updates the descriptor sets with the write descriptor set objects.
- *
- * @param descriptorSet The updated descriptor sets.
- * @param writeDescriptorSets The write descriptor sets used.
- * @param writeDescriptorCount The amount of write descriptor sets.
- */
-void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount)
-{
-	for (int i = 0; i < static_cast<int>(descriptorSet.size()); i++) 
-	{
-		
-		for (int j = 0; j < writeDescriptorCount; j++) 
-		{
-			writeDescriptorSets[j].dstSet = descriptorSet[i];
-		}
-		
-		vkUpdateDescriptorSets(core.getDevice(), static_cast<uint32_t>(writeDescriptorCount), writeDescriptorSets, 0, nullptr);
-		
-	}
 
-}
+
 
 
 /**
@@ -278,11 +255,7 @@ void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSe
  * @param writeDescriptorSets The write descriptor sets used.
 
  */
-<<<<<<< HEAD
-void PersistanceBackend::updateDescriptorSetPerFrameWithArray(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
-=======
 void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
->>>>>>> Descriptor-Set-Features-Added
 {
 	
 	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
@@ -353,4 +326,27 @@ void PersistanceBackend::updateDescriptorSetsPerFrame(
 		writeDescriptorSet.dstSet = descriptorSet[i];
 		vkUpdateDescriptorSets(core.getDevice(), 1, &writeDescriptorSet, 0, nullptr);
 	}
+}
+
+/**
+ * @brief Updates the descriptor sets with the write descriptor set objects.
+ *
+ * @param descriptorSet The updated descriptor sets.
+ * @param writeDescriptorSets The write descriptor sets used.
+ * @param writeDescriptorCount The amount of write descriptor sets.
+ */
+void PersistanceBackend::updateDescriptorSets(
+    std::vector<VkDescriptorSet> &descriptorSet,
+    VkWriteDescriptorSet *writeDescriptorSets,
+    const uint32_t writeDescriptorCount) {
+  
+	for (uint32_t i = 0; i < descriptorSet.size(); i++) 
+	{
+		for (int j = 0; j < writeDescriptorCount; j++) {
+			writeDescriptorSets[j].dstSet = descriptorSet[i];
+		}
+		vkUpdateDescriptorSets(core.getDevice(), writeDescriptorCount, writeDescriptorSets, 0, nullptr);
+
+	}
+
 }

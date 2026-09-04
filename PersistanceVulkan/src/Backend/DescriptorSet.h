@@ -24,22 +24,14 @@ namespace PersistanceBackend
 	VkDescriptorBufferInfo createDescriptorBufferInfo(const VkBuffer& buffer, uint32_t offset, size_t range);
 	std::vector<VkDescriptorBufferInfo> createDescriptorBufferInfoPerFrame(const VkBuffer* buffers, size_t bufferCount, uint32_t offset, size_t range);
 	
-<<<<<<< HEAD
 	VkDescriptorImageInfo createDescriptorImageInfo(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler);
-	std::vector<VkDescriptorImageInfo> createDescriptorImageInfoPerFrameWithArray(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler);
-	
-	void updateDescriptorSet(VkDescriptorSet& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount);
-	void updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount);
-	void updateDescriptorSetPerFrameWithArray(std::vector<VkDescriptorSet>& descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets = {nullptr, 0});
-=======
-	std::vector<VkDescriptorImageInfo> createDescriptorImageInfo(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler);
 	std::vector<VkDescriptorImageInfo> createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler);
 	std::vector<VkDescriptorImageInfo> createDescriptorImageInfoPerFrameWithArray(const VkImageLayout imageLayout, PersistanceUtils::ArrayView<VkImageView> imageViews, VkSampler& sampler);
 
+	void updateDescriptorSet(VkDescriptorSet &descriptorSet, VkWriteDescriptorSet *writeDescriptorSets, const uint32_t writeDescriptorCount);
 	void updateDescriptorSets(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet* writeDescriptorSets, const uint32_t writeDescriptorCount);
 	void updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet>& descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSet);
 	void updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet>& descriptorSet, VkWriteDescriptorSet& writeDescriptorSet);
 	void updateDescriptorSetPerFrameWithArray(std::vector<VkDescriptorSet>& descriptorSets, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets);
->>>>>>> Descriptor-Set-Features-Added
 	
 }
