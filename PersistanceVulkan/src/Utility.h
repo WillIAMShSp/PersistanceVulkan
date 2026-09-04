@@ -18,7 +18,7 @@ namespace PersistanceUtils
         ArrayView(T* data, size_t size) :m_data(data), m_size(size){}
         ArrayView(std::vector<T>& data) :m_data(data.data()), m_size(data.size()){}
         template<std::size_t N>
-        ArrayView(const std::array<T, N>& data) :m_data(data), m_size(data.size()) {}
+        ArrayView(std::array<T, N>& data) :m_data(data.data()), m_size(data.size()) {}
 
         T& operator[](uint32_t index) { return m_data[index];}
         void operator=(std::vector<T> data) { m_data = data.data(); m_size = data.size();}

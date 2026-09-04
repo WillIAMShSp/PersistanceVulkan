@@ -8,6 +8,8 @@
 
 #include "DescriptorSet.h"
 #include "../Core/PersistanceVkCore.h"
+#include "PersistanceLib.h"
+#include "Utility.h"
 
 
 /**
@@ -18,7 +20,7 @@
  * @param layout The descriptor set layout for these descriptorSets.
  * @return A vector of descriptor sets.
  */
-std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSet(VkDescriptorPool& descriptorPool, uint32_t descriptorSetCount, VkDescriptorSetLayout& layout)
+std::vector<VkDescriptorSet> PersistanceBackend::allocateDescriptorSetArray(VkDescriptorPool& descriptorPool, uint32_t descriptorSetCount, VkDescriptorSetLayout& layout)
 {
 	std::vector<VkDescriptorSet> descriptorSet;
 	descriptorSet.resize(PersistanceLib::MAXFRAMESINFLIGHT);
@@ -196,30 +198,22 @@ std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfo
 
 
 /**
- * @brief Creates a vector of descriptor image info objects with a provided image per frame and a sampler utilized in a write descriptor set object.
- * If the size of the imageViews vector is not equal to the amount of frames in flight, the function will break.
+ * @brief Creates a vector of descriptor image info objects per frame with a provided image and a sampler utilized in a write descriptor set object.
  * 
  * @param imageLayout The layout of the provided images in the image view.
  * @param imageViews The imageview objects of the provided image.
  * @param sampler
  * @return 
  */
-std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, std::vector<VkImageView>& imageViews, VkSampler& sampler)
+std::vector<VkDescriptorImageInfo> PersistanceBackend::createDescriptorImageInfoPerFrame(const VkImageLayout imageLayout, VkImageView& imageView, VkSampler& sampler)
 {
-	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
-	{
-		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
-		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.getSwapchainFramebuffers()->images.size();
-		BREAK;
-	}
-
 	std::vector<VkDescriptorImageInfo> imageInfos;
 	imageInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
 
 	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
 	{
 		imageInfos[i].imageLayout = imageLayout;
-		imageInfos[i].imageView = imageViews[i];
+		imageInfos[i].imageView = imageView;
 		imageInfos[i].sampler = sampler;
 
 	}
@@ -252,26 +246,81 @@ void PersistanceBackend::updateDescriptorSets(std::vector<VkDescriptorSet>& desc
 
 
 /**
- * @brief Updates a descriptor sets in every frame with the write descriptor set object.
+ * @brief Updates an array of descriptor sets of size equal to that of the max frames in flight with an array write descriptor buffers.
  * 
  * @param descriptorSet The updated descriptor sets.
  * @param writeDescriptorSets The write descriptor sets used.
 
  */
-void PersistanceBackend::updateDescriptorSetPerFrame(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
+void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSet> &descriptorSet, PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets)
 {
-	if (writeDescriptorSets.data() == nullptr) {
-		std::cout<< "Write descriptor set viewer must not be empty";
+	
+	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
+	{
+		for (uint32_t w = 0; w < writeDescriptorSets.size(); w++) 
+		{
+			writeDescriptorSets[w].dstSet = descriptorSet[i];
+
+		}
+		vkUpdateDescriptorSets(core.getDevice(), PersistanceLib::MAXFRAMESINFLIGHT, writeDescriptorSets.data(), 0, nullptr);
+	}
+	
+
+}
+
+void PersistanceBackend::updateDescriptorSetPerFrameWithArray(
+    std::vector<VkDescriptorSet> &descriptorSets,
+    PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets) 
+{
+
+	if (writeDescriptorSets.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
+	{
+		std::cout<< "Error: Incorrect write descriptor set array size! Array must be of size: " << PersistanceLib::MAXFRAMESINFLIGHT <<"\n";
 		BREAK;
 	}
 
 	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
 	{
-		writeDescriptorSets[i].dstSet = descriptorSet[i];
+		writeDescriptorSets[i].dstSet = descriptorSets[i];
 	}
-	
-	vkUpdateDescriptorSets(core.getDevice(), PersistanceLib::MAXFRAMESINFLIGHT, writeDescriptorSets.data(), 0, nullptr);
 
+	vkUpdateDescriptorSets(core.getDevice(), PersistanceLib::MAXFRAMESINFLIGHT, writeDescriptorSets.data(), 0, nullptr);
 }
 
 
+std::vector<VkDescriptorImageInfo>
+PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(
+    const VkImageLayout imageLayout,
+    PersistanceUtils::ArrayView<VkImageView> imageViews, VkSampler &sampler) 
+{
+	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
+	{
+		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
+		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.getSwapchainFramebuffers()->images.size();
+		BREAK;
+	}
+
+	std::vector<VkDescriptorImageInfo> imageInfos;
+	imageInfos.resize(PersistanceLib::MAXFRAMESINFLIGHT);
+
+	for (int i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++)
+	{
+		imageInfos[i].imageLayout = imageLayout;
+		imageInfos[i].imageView = imageViews[i];
+		imageInfos[i].sampler = sampler;
+
+	}
+
+	return imageInfos;
+}
+
+void PersistanceBackend::updateDescriptorSetsPerFrame(
+    std::vector<VkDescriptorSet> &descriptorSet,
+    VkWriteDescriptorSet &writeDescriptorSet) 
+{
+	for (uint32_t i = 0; i < PersistanceLib::MAXFRAMESINFLIGHT; i++) 
+	{
+		writeDescriptorSet.dstSet = descriptorSet[i];
+		vkUpdateDescriptorSets(core.getDevice(), 1, &writeDescriptorSet, 0, nullptr);
+	}
+}
