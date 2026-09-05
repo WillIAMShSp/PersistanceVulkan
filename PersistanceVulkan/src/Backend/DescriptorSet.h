@@ -17,6 +17,7 @@
 namespace PersistanceBackend
 {
 	std::vector<VkDescriptorSet> allocateDescriptorSetArray(VkDescriptorPool& descriptorPool, uint32_t descriptorSetCount, VkDescriptorSetLayout& layout);
+	VkDescriptorSet allocateDescriptorSet(VkDescriptorPool& descriptorPool, VkDescriptorSetLayout& layout);
 	VkWriteDescriptorSet createWriteDescriptorSet(uint32_t descriptorCount, VkDescriptorType descriptorType, uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorImageInfo* imageInfo, uint32_t dstArrayElement);
 	std::array<VkWriteDescriptorSet, PersistanceLib::MAXFRAMESINFLIGHT> createWriteDescriptorSetsPerFrame(const uint32_t descriptorCount, const VkDescriptorType descriptorType, uint32_t binding, PersistanceUtils::ArrayView<VkDescriptorBufferInfo> bufferInfo = {nullptr, 0}, PersistanceUtils::ArrayView<VkDescriptorImageInfo> imageInfo = {nullptr, 0}, uint32_t dstArrayElement = 0);
 

@@ -45,7 +45,7 @@ void PersistanceUtils::createBuffer(const VkDeviceSize& size, VkBufferUsageFlags
 	if (vmaCreateBuffer(core.getAllocator(), &buffercreateinfo, &allocationcreateinfo, &buffer, &allocation, nullptr))
 	{
 		std::cout << "Failed to create buffer";
-		BREAK(0);
+		BREAK;
 
 	}
 

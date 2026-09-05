@@ -1,5 +1,6 @@
 #pragma once
 #include "../PersistanceLib.h"
+#include "Core/CoreUtils.h"
 
 typedef uint32_t BufferHandle;
 
@@ -12,5 +13,4 @@ struct Buffer {
 	size_t elementSize;
 };
 
-
-static Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);

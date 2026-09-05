@@ -348,5 +348,27 @@ void PersistanceBackend::updateDescriptorSets(
 		vkUpdateDescriptorSets(core.getDevice(), writeDescriptorCount, writeDescriptorSets, 0, nullptr);
 
 	}
+}
+
+/**
+ * @brief Allocates a singular descriptor set.
+ * 
+ * @param descriptorPool From where the descriptors will be allocated.
+ * @param layout The layout of the descriptor set.
+ * @return The newly allocated descriptor set.
+ */
+VkDescriptorSet PersistanceBackend::allocateDescriptorSet(VkDescriptorPool &descriptorPool, VkDescriptorSetLayout &layout) 
+{
+	VkDescriptorSet descriptorSet;
+	VkDescriptorSetAllocateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	info.pNext = nullptr;
+	info.descriptorPool = descriptorPool;
+	info.descriptorSetCount = 1;
+	info.pSetLayouts = &layout;
+	
+	vkAllocateDescriptorSets(core.getDevice(), &info, &descriptorSet);
+
+	return descriptorSet;
 
 }
