@@ -13,4 +13,9 @@ struct Buffer {
 	size_t elementSize;
 };
 
-Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+namespace PersistanceBackend 
+{
+	Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode = VK_SHARING_MODE_EXCLUSIVE);
+	void mapBuffer(Buffer& buffer, void* dataMap);
+}
+	

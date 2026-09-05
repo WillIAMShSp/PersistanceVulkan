@@ -1,7 +1,8 @@
 #include "./Buffer.h"
+#include "Vendor/vma/VmaUsage.h"
 
 
-Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode)
+Buffer PersistanceBackend::createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkMemoryPropertyFlags properties, VkSharingMode sharingmode)
 {
 
 	Buffer buffer;
@@ -11,4 +12,9 @@ Buffer createBuffer(const VkDeviceSize& size, VkBufferUsageFlags usageflags, VkM
 	return buffer;
 }
 
+void PersistanceBackend::mapBuffer(Buffer &buffer, void *dataMap) {
+  
+	vmaMapMemory(core.getAllocator(), buffer.allocation, &dataMap);
+
+}
 
