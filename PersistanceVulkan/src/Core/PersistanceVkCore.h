@@ -7,6 +7,7 @@
  *********************************************************************/
 #pragma once
 #include "../PersistanceLib.h"
+#include "vulkan/vulkan_core.h"
 
 
 #define GLFW_INCLUDE_VULKAN
@@ -187,6 +188,7 @@ public:
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
 	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);
+	void drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer &indexBuffer);
 	void finalize();
 private:
 

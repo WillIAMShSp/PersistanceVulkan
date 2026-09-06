@@ -12,6 +12,7 @@
 #include "./CoreUtils.h"
 #include "../Backend/RenderPass.h"
 #include "../Backend/RenderPassAttachment.h"
+#include "vulkan/vulkan_core.h"
 
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -1583,4 +1584,11 @@ uint32_t PersistanceVkCore::getCurrentFrame()
 uint32_t PersistanceVkCore::getImageIndex()
 {
     return m_imageIndex;
+}
+
+void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer &indexBuffer)
+{
+	vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, PersistanceUtils::findIndexType(indexBuffer.elementSize));
+
+	vkCmdDrawIndexedIndirect(commandBuffer, indirectBuffer.buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 }
