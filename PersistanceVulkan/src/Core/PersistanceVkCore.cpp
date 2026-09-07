@@ -1586,7 +1586,7 @@ uint32_t PersistanceVkCore::getImageIndex()
     return m_imageIndex;
 }
 
-void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer &indexBuffer)
+void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer& vertexBuffer, Buffer &indexBuffer)
 {
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, PersistanceUtils::findIndexType(indexBuffer.elementSize));
 

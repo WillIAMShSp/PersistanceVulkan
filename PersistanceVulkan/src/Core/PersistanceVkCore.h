@@ -66,7 +66,7 @@ struct QueueFamilyIndices
 
 };
 
-
+class Buffer;
 /**
  * @brief Manages core resources required to set up and implement Vulkan like a Vulkan Device, 
  * memory management, window creation through GLFW, Swapchain images, framebuffers, and renderpass, 
@@ -188,7 +188,7 @@ public:
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
 	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);
-	void drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer &indexBuffer);
+	void drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer& vertexBuffer, Buffer &indexBuffer);
 	void finalize();
 private:
 
