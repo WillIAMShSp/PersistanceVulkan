@@ -108,6 +108,7 @@ public:
 
 	uint32_t getCurrentFrame();
 	uint32_t getImageIndex();
+	uint32_t getSwapchainImageCount();
 
 	uint32_t getScreenWidth();
 	uint32_t getScreenHeight();
@@ -174,7 +175,7 @@ private:
 
 public:
 	void createMainRenderSetup(bool doDepthTesting);
-	void beginMainRenderPass(VkCommandBuffer& commandBuffer, const uint32_t* imageIndex = nullptr);
+	void beginMainRenderPass(VkCommandBuffer& commandBuffer, const int8_t imageIndex = -1);
 	
 	void startDrawing();
 	void waitForCurrentFence();
@@ -234,6 +235,7 @@ private:
 	Texture m_swapchainDepthBuffer;
 	bool m_depthTesting = false;
 	VkExtent2D m_swapchainExtent;
+	uint32_t m_swapchainImageCount;
 	VkRenderPass m_mainRenderPass;
 	VkCommandPool m_graphicsCommandPool;
 	VkCommandPool m_transferCommandPool;

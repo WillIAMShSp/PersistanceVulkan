@@ -134,9 +134,9 @@ VkRenderPass PersistanceBackend::createRenderPass(const VkSubpassDescription* su
  * Note, clear values must be in the same order as their attachments in the renderpass.
  * @param clearValueCount the amount of clear values
  */
-void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, VkRenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount, const uint32_t* currentImage)
+void PersistanceBackend::beginRenderPass(VkCommandBuffer& commandBuffer, VkRenderPass& renderPass, Framebuffer& framebuffer, VkOffset2D offset, VkExtent2D extent, const VkClearValue* clearValues, const uint32_t clearValueCount, const int8_t currentImage)
 {
-	uint32_t imageIndex = currentImage ? *currentImage : core.getImageIndex();
+	uint32_t imageIndex = currentImage > -1 ? currentImage : core.getImageIndex();
 
 	VkRenderPassBeginInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

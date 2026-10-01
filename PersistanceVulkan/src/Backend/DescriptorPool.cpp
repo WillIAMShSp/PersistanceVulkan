@@ -32,7 +32,7 @@ VkDescriptorPoolSize PersistanceBackend::createDescriptorPoolSize(VkDescriptorTy
  * @param list A list of descriptor pool sizes.
  * @return The resulting descriptor pool.
  */
-VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList& list)
+VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList& list, VkDescriptorPoolCreateFlags flags)
 {
 	VkDescriptorPool pool;
 
@@ -40,7 +40,7 @@ VkDescriptorPool PersistanceBackend::createDescriptorPool(DescriptorPoolSizeList
 	VkDescriptorPoolCreateInfo info{};
 
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	info.flags = 0;
+	info.flags = flags;
 	info.poolSizeCount = static_cast<uint32_t>(list.sizes.size());
 	info.pPoolSizes = list.sizes.data();
 	info.flags = 0;

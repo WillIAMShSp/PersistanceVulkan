@@ -371,11 +371,11 @@ void PersistanceVkCore::createSwapChain()
 	VkPresentModeKHR surfacepresentmode = chooseSwapPresentMode(details.presentmode);
 	VkExtent2D extent = chooseSwapExtent(details.surfacecapabilities);
 
-	uint32_t imagecount = details.surfacecapabilities.minImageCount + 1;
+	m_swapchainImageCount = details.surfacecapabilities.minImageCount + 1;
 
-	if (details.surfacecapabilities.maxImageCount > 0 && imagecount > details.surfacecapabilities.maxImageCount)
+	if (details.surfacecapabilities.maxImageCount > 0 && m_swapchainImageCount > details.surfacecapabilities.maxImageCount)
 	{
-		imagecount = details.surfacecapabilities.maxImageCount;
+		m_swapchainImageCount = details.surfacecapabilities.maxImageCount;
 
 	}
 
@@ -384,7 +384,7 @@ void PersistanceVkCore::createSwapChain()
 
 	createinfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 
-	createinfo.minImageCount = imagecount;
+	createinfo.minImageCount = m_swapchainImageCount;
 
 
 	createinfo.surface = m_surface;
@@ -811,7 +811,7 @@ void PersistanceVkCore::createMainRenderSetup(bool doDepthTesting)
  * @param commandBuffer the specified command buffer
  * @param imageIndex If set, the framebuffer selected will be of that index.
  */
-void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer &commandBuffer, const uint32_t *imageIndex)
+void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer &commandBuffer, const int8_t imageIndex)
 {
 	VkOffset2D offset{0,0};
 	
@@ -1584,6 +1584,11 @@ uint32_t PersistanceVkCore::getCurrentFrame()
 uint32_t PersistanceVkCore::getImageIndex()
 {
     return m_imageIndex;
+}
+
+uint32_t PersistanceVkCore::getSwapchainImageCount()
+{
+    return m_swapchainImageCount;
 }
 
 void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer& vertexBuffer, Buffer &indexBuffer)
