@@ -110,6 +110,9 @@ public:
 	uint32_t getImageIndex();
 	uint32_t getSwapchainImageCount();
 
+	VkFence& getInFlightFence();
+	VkSemaphore& getImageAvailableSemaphore();
+
 	uint32_t getScreenWidth();
 	uint32_t getScreenHeight();
 
@@ -184,7 +187,6 @@ public:
 
 
 	void recreateSwapchain();
-	
 
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);

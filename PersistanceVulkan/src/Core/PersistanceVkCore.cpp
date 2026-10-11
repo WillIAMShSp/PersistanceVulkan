@@ -840,15 +840,6 @@ void PersistanceVkCore::beginMainRenderPass(VkCommandBuffer &commandBuffer, cons
  */
 void PersistanceVkCore:: startDrawing()
 {
-	// if (m_currentlyDrawing)
-	// {
-	// 	std::cout << "Previous drawing not ended properly";
-	// }
-	// else
-	// {
-	// 	m_currentlyDrawing = true;
-	// }
-	// Array of m_currentlyDrawing booleans size MAXFRAMESINFLIGHT needed.
 
 	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -1589,6 +1580,22 @@ uint32_t PersistanceVkCore::getImageIndex()
 uint32_t PersistanceVkCore::getSwapchainImageCount()
 {
     return m_swapchainImageCount;
+}
+
+/**
+ * @return The current fence in flight.
+ */
+VkFence &PersistanceVkCore::getInFlightFence()
+{
+	return f_inFlightFence[m_currentFrame];
+}
+
+/**
+ * @return The semaphore that determines if the current image is ready to be drawn into.
+ */
+VkSemaphore &PersistanceVkCore::getImageAvailableSemaphore()
+{
+	return s_imageAvailable[m_currentFrame];
 }
 
 void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer& vertexBuffer, Buffer &indexBuffer)

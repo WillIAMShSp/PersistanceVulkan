@@ -20,6 +20,7 @@ add_library(PersistanceLibrary STATIC ${LIB_SOURCES})
 target_include_directories(PersistanceLibrary PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Include)
 target_include_directories(PersistanceLibrary PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Include/Vulkan)
 target_include_directories(PersistanceLibrary PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/PersistanceVulkan/src) 
+target_include_directories(PersistanceLibrary PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/PersistanceVulkan/src/Vendor/volk)
 
 target_link_libraries(PersistanceLibrary PUBLIC 
 ${CMAKE_CURRENT_SOURCE_DIR}/Lib/GLFW/glfw3_mt.lib
