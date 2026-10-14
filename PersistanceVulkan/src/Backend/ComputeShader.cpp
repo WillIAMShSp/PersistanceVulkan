@@ -1,15 +1,25 @@
 #include "ComputeShader.h"
 
 /**
- * @brief Creates a compute pipeline for a compute shader.
+ * @brief Creates a compute pipeline for a compute shader.:w
+ * 
  * 
  * @param layout The pipeline layout.
  * @param stage The ShaderStageCreateInfo struct for the shader.
  * @return The compute pipeline.
  */
-VkPipeline PersistanceBackend::createComputePipeline(VkPipelineLayout &layout, VkPipelineShaderStageCreateInfo stage)
+VkPipeline PersistanceBackend::createComputePipeline(VkPipelineLayout &layout, Shader& shader)
 {
     VkPipeline pipeline;
+
+    if (shader.stages.size() != 1 || shader.stages[0].stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+        std::cout<< "Incorrect shader stages given to compute pipeline! This function only expects a single compute stage.\n";
+        BREAK;
+    }
+
+
+    VkPipelineShaderStageCreateInfo& stage = shader.stages[0];
+
 
     VkComputePipelineCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
