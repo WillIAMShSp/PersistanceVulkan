@@ -271,6 +271,11 @@ void PersistanceBackend::updateDescriptorSetsPerFrame(std::vector<VkDescriptorSe
 
 }
 
+/**
+ * Updates the descriptor set per frame with an array.
+ * @param descriptorSets the descriptor sets to update.
+ * @param writeDescriptorSets the WriteDescriptorSets with which to update.
+ */
 void PersistanceBackend::updateDescriptorSetPerFrameWithArray(
     std::vector<VkDescriptorSet> &descriptorSets,
     PersistanceUtils::ArrayView<VkWriteDescriptorSet> writeDescriptorSets) 
@@ -290,7 +295,14 @@ void PersistanceBackend::updateDescriptorSetPerFrameWithArray(
 	vkUpdateDescriptorSets(core.getDevice(), PersistanceLib::MAXFRAMESINFLIGHT, writeDescriptorSets.data(), 0, nullptr);
 }
 
-
+/**
+ * Creates a descriptor image info per frame with a given array.
+ * That is to say that every element of the array corresponds to a frame, or an image view.
+ * For this reason, the arrays must be of the size equal to the max frames in flight.
+ * @param imageLayout The layout of the provided image views.
+ * @param imageViews The provided image views to the descriptor.
+ * @param sammpler The sampler used in the shader.
+ */
 std::vector<VkDescriptorImageInfo>
 PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(
     const VkImageLayout imageLayout,
@@ -299,7 +311,7 @@ PersistanceBackend::createDescriptorImageInfoPerFrameWithArray(
 	if (imageViews.size() != PersistanceLib::MAXFRAMESINFLIGHT) 
 	{
 		std::cout << "ERROR: The imageViews Vector in createDescriptorImageInfoPerFrame() function does not have the right amount of VkImageView objects.";
-		std::cout << "Got: "<< imageViews.size()<< "Expected: "<< core.getSwapchainFramebuffers()->images.size();
+		std::cout << "Got: "<< imageViews.size()<< "Expected: " << PersistanceLib::MAXFRAMESINFLIGHT;
 		BREAK;
 	}
 
