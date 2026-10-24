@@ -22,6 +22,8 @@
 #include "../Structures/Buffer.h"
 #include "../Structures/Texture.h"
 
+#include "Utility.h"
+
 
 #include "../VulkanDebug/DebugUtilsMessengerEXT.h"
 
@@ -112,6 +114,7 @@ public:
 
 	VkFence& getInFlightFence();
 	VkSemaphore& getImageAvailableSemaphore();
+	VkSemaphore& getRenderFinishedSemaphore();
 
 	uint32_t getScreenWidth();
 	uint32_t getScreenHeight();
@@ -184,10 +187,12 @@ public:
 	void waitForCurrentFence();
 	VkResult acquireNextSwapchainImage();
 	void reRecordCommandBuffersCallBack(std::function<void()>* functions, const uint32_t count);
-
+	
 
 	void recreateSwapchain();
 
+	void submitQueue(PersistanceUtils::ArrayView<VkCommandBuffer> commandBuffers, VkQueue& queue, PersistanceUtils::ArrayView<VkSemaphore>waitSemaphores, PersistanceUtils::ArrayView<VkSemaphore>signalSemaphores, PersistanceUtils::ArrayView<VkPipelineStageFlags>waitDstStageFlags, VkFence* fence);
+	
 	void endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount);
 	void bindGraphicsPipeline(VkCommandBuffer& commandBuffer, const VkPipeline& graphicsPipeline);
 	void drawIndexed(VkCommandBuffer& commandBuffer, const Buffer* vertexBuffers, const uint32_t vertexBufferCount, const VkDeviceSize* offsets, Buffer& indexBuffer, VkPipeline& graphicsPipeline, VkPipelineLayout& graphicsPipelineLayout, const VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount);

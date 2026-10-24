@@ -15,4 +15,8 @@ namespace PersistanceBackend {
 
 	void cleanUpTextures(Texture* textures, const uint32_t textureCount);
 
+
+	template<size_t N>
+	void cleanUpMultiTextures(MultiTexture<N>* multiTextures, const uint32_t multiTextureObjectCount);
+
 }

@@ -294,6 +294,7 @@ void PersistanceVkCore::createLogicalDevice(const void* deviceFeatures)
 	VkPhysicalDeviceFeatures phyisicalDeviceFeatures{};
 	phyisicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	
+	
 	VkDeviceCreateInfo devicecreateinfo{};
 
 	devicecreateinfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -712,6 +713,32 @@ void PersistanceVkCore::recreateSwapchain()
 
 }
 
+void PersistanceVkCore::submitQueue(PersistanceUtils::ArrayView<VkCommandBuffer> commandBuffers, VkQueue &queue, PersistanceUtils::ArrayView<VkSemaphore> waitSemaphores, PersistanceUtils::ArrayView<VkSemaphore> signalSemaphores, PersistanceUtils::ArrayView<VkPipelineStageFlags> waitDstStageFlags, VkFence* fence)
+{
+
+	VkSubmitInfo submitinfo{};
+
+
+	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitinfo.commandBufferCount = commandBuffers.size();
+	submitinfo.pCommandBuffers = commandBuffers.data();
+	submitinfo.waitSemaphoreCount = waitSemaphores.size();
+	submitinfo.pWaitSemaphores = waitSemaphores.data();
+	submitinfo.pWaitDstStageMask = waitDstStageFlags.data();
+	submitinfo.signalSemaphoreCount = signalSemaphores.size();
+	submitinfo.pSignalSemaphores = signalSemaphores.data();
+
+
+
+	if (vkQueueSubmit(queue, 1, &submitinfo, (fence)? *fence : VK_NULL_HANDLE) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to submit graphics queue!");
+
+	}
+
+
+}
+
 /**
  * @brief Cleans up the swapchain resources i.e. the framebuffers and imageviews.
  *
@@ -843,7 +870,6 @@ void PersistanceVkCore:: startDrawing()
 
 	vkWaitForFences(m_device, 1, &f_inFlightFence[m_currentFrame], VK_TRUE, UINT64_MAX);
 
-
 	VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, s_imageAvailable[m_currentFrame], VK_NULL_HANDLE, &m_imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -855,8 +881,6 @@ void PersistanceVkCore:: startDrawing()
 	{
 		throw std::runtime_error("Failed to aquire swapchain image!");
 	}
-
-	
 
 	vkResetFences(m_device, 1, &f_inFlightFence[m_currentFrame]);
 
@@ -903,29 +927,11 @@ void PersistanceVkCore::reRecordCommandBuffersCallBack(std::function<void()> *fu
 void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, const uint32_t commandBufferCount)
 {
 
-	VkSemaphore waitsemaphores[] = { s_imageAvailable[m_currentFrame] };
-	VkSemaphore signalsemaphores[] = { s_renderFinished[m_imageIndex] };
-	VkPipelineStageFlags waitstages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	std::array<VkSemaphore, 1> waitsemaphores = { s_imageAvailable[m_currentFrame] };
+	std::array<VkSemaphore, 1> signalsemaphores = { s_renderFinished[m_imageIndex] };
+	std::array<VkPipelineStageFlags, 1> waitstages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-	VkSubmitInfo submitinfo{};
-
-
-	submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitinfo.commandBufferCount = commandBufferCount;
-	submitinfo.pCommandBuffers = commandBuffers;
-	submitinfo.waitSemaphoreCount = 1;
-	submitinfo.pWaitSemaphores = waitsemaphores;
-	submitinfo.pWaitDstStageMask = waitstages;
-	submitinfo.signalSemaphoreCount = 1;
-	submitinfo.pSignalSemaphores = signalsemaphores;
-
-
-
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitinfo, f_inFlightFence[m_currentFrame]) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to submit graphics queue!");
-
-	}
+	submitQueue({commandBuffers, commandBufferCount}, m_graphicsQueue, waitsemaphores, signalsemaphores, waitstages, &f_inFlightFence[m_currentFrame]);
 
 	VkSwapchainKHR swapchains[] = { m_swapchain };
 
@@ -933,7 +939,7 @@ void PersistanceVkCore::endDrawingandPresent(VkCommandBuffer* commandBuffers, co
 	presentinfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentinfo.waitSemaphoreCount = 1;
-	presentinfo.pWaitSemaphores = signalsemaphores;
+	presentinfo.pWaitSemaphores = signalsemaphores.data();
 
 	presentinfo.swapchainCount = 1;
 	presentinfo.pSwapchains = swapchains;
@@ -1596,6 +1602,14 @@ VkFence &PersistanceVkCore::getInFlightFence()
 VkSemaphore &PersistanceVkCore::getImageAvailableSemaphore()
 {
 	return s_imageAvailable[m_currentFrame];
+}
+
+/**
+ * @return The semaphore that determines if the current image in the image index has finished rendering.
+ */
+VkSemaphore &PersistanceVkCore::getRenderFinishedSemaphore()
+{
+    return s_renderFinished[core.m_imageIndex];
 }
 
 void PersistanceVkCore::drawIndexedIndirect(VkCommandBuffer &commandBuffer, Buffer& indirectBuffer, Buffer& vertexBuffer, Buffer &indexBuffer)

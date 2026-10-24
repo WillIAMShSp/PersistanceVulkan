@@ -2,7 +2,6 @@
 
 #include "./PersistanceVkCore.h"
 
-
 namespace PersistanceUtils {
 
 	void createBuffer(const VkDeviceSize& size,

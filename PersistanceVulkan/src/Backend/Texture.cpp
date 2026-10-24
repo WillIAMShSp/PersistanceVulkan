@@ -81,4 +81,23 @@ void PersistanceBackend::cleanUpTextures(Texture* textures, const uint32_t textu
 	}
 }
 
+/**
+ * Cleans up specified multitexture objects.
+ * 
+ * @param multiTextures
+ * @param multiTextureObjectCount
+ */
+template<size_t N>
+void PersistanceBackend::cleanUpMultiTextures(MultiTexture<N> *multiTextures, const uint32_t multiTextureObjectCount)
+{
+	for (uint32_t i = 0; i < multiTextureObjectCount; i++) 
+	{
+		MultiTexture<N>& currentTexture = multiTextures[i];
 
+		for (size_t x = 0; x < currentTexture.size; x++)
+		{
+			vmaDestroyImage(core.getAllocator(), currentTexture.images[x], currentTexture.allocations[x]);
+			vkDestroyImageView(core.getDevice(), currentTexture.imageViews[x], nullptr);
+		}
+	}
+}
